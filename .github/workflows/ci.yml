@@ -5,17 +5,55 @@ on:
     branches: [ main ]
 
 jobs:
-  # Job 1: Runs your actual tests
-  test:
-    name: Run Automated Tests
+  backend:
+    name: Backend (ruff + pytest)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: biletflow
+          POSTGRES_PASSWORD: biletflow
+          POSTGRES_DB: biletflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U biletflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://biletflow:biletflow@localhost:5432/biletflow
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-      - name: Run a dummy test
-        run: echo "Tests passed successfully!"
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.1"
+      - run: uv sync --all-groups
+      - run: uv run ruff check .
+      - run: uv run pytest
 
-  # Job 2: Enforces approval constraints for free accounts
+  frontend:
+    name: Frontend (lint + typecheck + vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint
+      - run: npx tsc -b --noEmit
+      - run: npm run test
+
   enforce-rules:
     name: Enforce PR Review Requirements
     runs-on: ubuntu-latest
@@ -29,7 +67,7 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number,
             });
-            
+
             const approved = reviews.some(review => review.state === 'APPROVED');
             if (!approved) {
               core.setFailed('This PR requires at least 1 approved review before merging.');

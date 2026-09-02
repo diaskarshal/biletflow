@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-heading: "Manrope", system-ui, sans-serif;
+  --color-brand: #6d28d9;
+  --color-brand-dark: #4c1d95;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+}

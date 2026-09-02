@@ -1,0 +1,14 @@
+.claude/
+.venv/
+.github/
+info/
+
+.env
+
+__pycache__/
+*.pyc
+
+node_modules/
+dist/
+
+.expo/
