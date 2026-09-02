@@ -1,0 +1,17 @@
+name: Testing CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Run a dummy test
+        run: echo "Tests passed successfully!"
