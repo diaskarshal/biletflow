@@ -1,0 +1,5 @@
+# Everyone is the default owner
+* @your-github-username
+
+# Frontend team owns the web directory
+/web/ @frontend-team-handle
