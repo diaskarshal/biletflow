@@ -1,8 +1,3 @@
-"""Idempotent demo data: 2 organizers, 3 events (draft/published/cancelled), 5 ticket types.
-
-Run with: uv run python -m app.db.seed
-"""
-
 from datetime import UTC, datetime, timedelta
 
 from app.core.security import hash_password

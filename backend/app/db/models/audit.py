@@ -7,8 +7,6 @@ from app.db.base import Base
 
 
 class AuditLog(Base):
-    """Append-only: never UPDATE, never DELETE (WEEK1-PLAN.md #4)."""
-
     __tablename__ = "audit_log"
 
     id: Mapped[int] = mapped_column(primary_key=True)

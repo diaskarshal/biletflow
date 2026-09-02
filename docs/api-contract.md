@@ -49,6 +49,21 @@ POST   /api/v1/checkin                  {qr_token, event_id}  -> validates AND c
 
 ## Status
 
-Week 1: contract defined, `/health` implemented. All endpoints above are Week 2+ work
-(see WEEK1-PLAN.md #13.3) — none of them exist yet, on purpose (WEEK1-PLAN.md #12: "Do not write
-feature code" until the schema is settled).
+All 20 endpoints above are implemented, plus `/health`, covering the MVP-1 golden path
+(WEEK1-PLAN.md #13): register/login, create+publish a free event, register for it, get a
+QR-coded ticket, get checked in, second scan refused. Deviations from the contract as written:
+
+- **`GET /tickets/{id}/pdf` → `GET /tickets/{id}/qr`.** Returns the raw QR PNG instead of a
+  print-optimized PDF. Full PDF rendering (WeasyPrint/ReportLab, per WEEK1-PLAN.md #4.3 spike) is
+  Week 7 scope; this is the minimum needed for the mobile app to have something scannable now.
+- **Paid ticket types are rejected at checkout** with `PAID_CHECKOUT_NOT_IMPLEMENTED` (501). The
+  simulated payment provider (`docs/decisions/003`) isn't built yet, so `POST /orders` only
+  accepts `price_kzt: 0` ticket types for now.
+- **`POST /checkin` only authorizes the event's organizer**, not arbitrary `event_staff`. There's
+  no staff-assignment endpoint in this contract yet, so `event_staff` rows are never populated —
+  add the lookup once that endpoint exists.
+- **`POST /auth/logout` is a no-op.** JWTs are stateless; nothing is revoked server-side. Add a
+  revocation list if forced early logout is ever needed.
+- **Any authenticated user can create events.** `organizer_profiles` is auto-provisioned on first
+  `POST /events` — verification (`docs/decisions/005`) only gates *paid* sales activation, not
+  event creation, per SRS §3.1/§4.2.

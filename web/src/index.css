@@ -3,8 +3,8 @@
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-heading: "Manrope", system-ui, sans-serif;
-  --color-brand: #6d28d9;
-  --color-brand-dark: #4c1d95;
+  --color-brand: #0d6efd;
+  --color-brand-dark: #0b5ed7;
 }
 
 body {

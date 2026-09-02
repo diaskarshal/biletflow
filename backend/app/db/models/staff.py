@@ -23,7 +23,6 @@ class EventStaff(Base):
 class CheckInRecord(Base):
     __tablename__ = "check_in_records"
     __table_args__ = (
-        # Makes double check-in physically impossible, not merely unlikely (WEEK1-PLAN.md #4).
         Index(
             "uq_check_in_records_active_ticket",
             "ticket_id",

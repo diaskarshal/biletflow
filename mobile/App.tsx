@@ -2,8 +2,6 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { useState } from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
 
-// Week 1 scope: prove the camera preview renders on a physical device (WEEK1-PLAN.md #5.4).
-// QR decoding + check-in API call is the Week 2 spike.
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
   const [showCamera, setShowCamera] = useState(false);

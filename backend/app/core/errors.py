@@ -4,11 +4,6 @@ from fastapi.responses import JSONResponse
 
 
 class APIError(Exception):
-    """Raise for any expected business-rule failure.
-
-    Frontend switches on `code`, never parses `message` as English (WEEK1-PLAN.md #8).
-    """
-
     def __init__(self, code: str, message: str, status_code: int = 400, details: dict | None = None):
         self.code = code
         self.message = message
