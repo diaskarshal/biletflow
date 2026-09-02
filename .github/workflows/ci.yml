@@ -5,13 +5,32 @@ on:
     branches: [ main ]
 
 jobs:
+  # Job 1: Runs your actual tests
   test:
     name: Run Automated Tests
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-
       - name: Run a dummy test
         run: echo "Tests passed successfully!"
+
+  # Job 2: Enforces approval constraints for free accounts
+  enforce-rules:
+    name: Enforce PR Review Requirements
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR Approval Count
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+            
+            const approved = reviews.some(review => review.state === 'APPROVED');
+            if (!approved) {
+              core.setFailed('This PR requires at least 1 approved review before merging.');
+            }
