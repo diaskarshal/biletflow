@@ -11,6 +11,8 @@ Event ticketing platform for Kazakhstan.
 ## Run locally
 
 ```bash
+git clone git@github.com:diaskarshal/biletflow.git
+cd biletflow
 cp .env.example .env
 cd infra
 docker compose up -d --build
