@@ -35,3 +35,21 @@ class UserOut(BaseModel):
     email_verified_at: datetime | None
 
     model_config = {"from_attributes": True}
+
+
+class OrganizerProfileOut(BaseModel):
+    id: int
+    user_id: int
+    display_name: str
+    contact_email: str
+    phone: str | None
+    verification_status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class OrganizerProfileUpdate(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1)
+    contact_email: EmailStr | None = None
+    phone: str | None = None

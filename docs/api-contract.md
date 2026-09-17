@@ -1,9 +1,8 @@
-# API Contract v0.1
+# API Contract v0.2
 
-Twenty endpoints. This defines the first MVP surface (MVP-0/MVP-1, see WEEK1-PLAN.md #13). No
-more endpoints get added without updating this file first — the frontend generates its client
-from the backend's OpenAPI schema, so this is the thing both halves agree on before writing code
-in parallel.
+This defines the MVP surface (MVP-0/MVP-1, see WEEK1-PLAN.md #13). No more endpoints get added
+without updating this file first — the frontend generates its client from the backend's OpenAPI
+schema, so this is the thing both halves agree on before writing code in parallel.
 
 ```
 POST   /api/v1/auth/register            {email, password, full_name}
@@ -13,13 +12,19 @@ POST   /api/v1/auth/refresh
 POST   /api/v1/auth/logout
 GET    /api/v1/me
 
-POST   /api/v1/events                   organizer only
+GET    /api/v1/organizer/profile        auto-creates on first call
+PATCH  /api/v1/organizer/profile
+
+POST   /api/v1/events                   organizer only, may include ticket_types: [...] inline
 GET    /api/v1/events                   public, published only, paginated
-GET    /api/v1/events/{slug}            public
+GET    /api/v1/events/{slug}            published/completed: public. draft/cancelled: owner only
 PATCH  /api/v1/events/{id}
 POST   /api/v1/events/{id}/publish
 POST   /api/v1/events/{id}/cancel
 GET    /api/v1/organizer/events
+
+POST   /api/v1/events/{id}/staff        organizer only, {email, role: event_admin|organizer_staff}
+GET    /api/v1/events/{id}/staff        organizer only
 
 POST   /api/v1/events/{id}/ticket-types
 GET    /api/v1/events/{id}/ticket-types
@@ -33,6 +38,7 @@ GET    /api/v1/events/{id}/attendees    organizer only
 GET    /api/v1/tickets/{id}
 GET    /api/v1/tickets/{id}/pdf
 POST   /api/v1/checkin                  {qr_token, event_id}  -> validates AND checks in, one call
+                                         organizer OR event_staff with role=event_admin
 ```
 
 ## Conventions
@@ -49,9 +55,11 @@ POST   /api/v1/checkin                  {qr_token, event_id}  -> validates AND c
 
 ## Status
 
-All 20 endpoints above are implemented, plus `/health`, covering the MVP-1 golden path
+All endpoints above are implemented, plus `/health`, covering the MVP-1 golden path
 (WEEK1-PLAN.md #13): register/login, create+publish a free event, register for it, get a
-QR-coded ticket, get checked in, second scan refused. Deviations from the contract as written:
+QR-coded ticket, get checked in, second scan refused. `POST /checkin` now checks the
+`event_staff` table (role `event_admin`) in addition to organizer ownership — assign staff via
+`POST /events/{id}/staff` first. Deviations from the contract as written:
 
 - **`GET /tickets/{id}/pdf` → `GET /tickets/{id}/qr`.** Returns the raw QR PNG instead of a
   print-optimized PDF. Full PDF rendering (WeasyPrint/ReportLab, per WEEK1-PLAN.md #4.3 spike) is
@@ -59,11 +67,11 @@ QR-coded ticket, get checked in, second scan refused. Deviations from the contra
 - **Paid ticket types are rejected at checkout** with `PAID_CHECKOUT_NOT_IMPLEMENTED` (501). The
   simulated payment provider (`docs/decisions/003`) isn't built yet, so `POST /orders` only
   accepts `price_kzt: 0` ticket types for now.
-- **`POST /checkin` only authorizes the event's organizer**, not arbitrary `event_staff`. There's
-  no staff-assignment endpoint in this contract yet, so `event_staff` rows are never populated —
-  add the lookup once that endpoint exists.
 - **`POST /auth/logout` is a no-op.** JWTs are stateless; nothing is revoked server-side. Add a
   revocation list if forced early logout is ever needed.
 - **Any authenticated user can create events.** `organizer_profiles` is auto-provisioned on first
-  `POST /events` — verification (`docs/decisions/005`) only gates *paid* sales activation, not
-  event creation, per SRS §3.1/§4.2.
+  `POST /events` (or first `GET`/`PATCH /organizer/profile`) — verification
+  (`docs/decisions/005`) only gates *paid* sales activation, not event creation, per SRS §3.1/§4.2.
+- **`POST /events/{id}/staff` identifies the target by email**, and that user must already have
+  an account (no invite flow) — `USER_NOT_FOUND` (404) if not. No `DELETE` endpoint yet to remove
+  staff.

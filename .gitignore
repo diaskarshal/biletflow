@@ -1,13 +1,15 @@
-.claude/
 .venv/
 .github/
 info/
 
 .env
+alembic.ini
 
 __pycache__/
 *.pyc
-
+.pytest_cache/
+.ruff_cache/
+.claude/
 node_modules/
 dist/
 

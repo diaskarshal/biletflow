@@ -8,7 +8,7 @@ from app.modules.events import service as events_service
 
 def check_in(db: Session, event_admin: User, qr_token: str, event_id: int) -> dict:
     event = events_service.get_event_or_404(db, event_id)
-    events_service.require_owner(db, event_admin, event)
+    events_service.require_event_admin(db, event_admin, event)
 
     ticket = db.query(Ticket).filter_by(qr_token=qr_token).one_or_none()
     if ticket is None:

@@ -1,6 +1,9 @@
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
+
+from app.modules.tickets.schemas import TicketTypeCreate, TicketTypeOut
 
 
 class EventCreate(BaseModel):
@@ -16,6 +19,7 @@ class EventCreate(BaseModel):
     capacity: int | None = None
     registration_opens_at: datetime | None = None
     registration_closes_at: datetime | None = None
+    ticket_types: list[TicketTypeCreate] = Field(default_factory=list)
 
 
 class EventUpdate(BaseModel):
@@ -56,6 +60,25 @@ class EventOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class EventWithTicketTypesOut(EventOut):
+    ticket_types: list[TicketTypeOut]
+
+
 class EventListOut(BaseModel):
     items: list[EventOut]
     next_cursor: str | None
+
+
+class StaffCreate(BaseModel):
+    email: EmailStr
+    role: Literal["event_admin", "organizer_staff"]
+
+
+class StaffOut(BaseModel):
+    id: int
+    event_id: int
+    user_id: int
+    role: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

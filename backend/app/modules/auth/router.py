@@ -9,6 +9,8 @@ from app.db.models import User
 from app.modules.auth import service
 from app.modules.auth.schemas import (
     LoginRequest,
+    OrganizerProfileOut,
+    OrganizerProfileUpdate,
     RefreshRequest,
     RegisterRequest,
     TokenResponse,
@@ -63,3 +65,18 @@ def logout(user: User = Depends(get_current_user)) -> None:
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)) -> User:
     return user
+
+
+@router.get("/organizer/profile", response_model=OrganizerProfileOut)
+def get_organizer_profile(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return service.get_or_create_organizer_profile(db, user)
+
+
+@router.patch("/organizer/profile", response_model=OrganizerProfileOut)
+def update_organizer_profile(
+    body: OrganizerProfileUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = service.get_or_create_organizer_profile(db, user)
+    return service.update_organizer_profile(db, profile, body.model_dump(exclude_unset=True))

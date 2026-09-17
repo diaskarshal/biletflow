@@ -70,3 +70,12 @@ def get_or_create_organizer_profile(db: Session, user: User) -> OrganizerProfile
     db.commit()
     db.refresh(profile)
     return profile
+
+
+def update_organizer_profile(db: Session, profile: OrganizerProfile, data: dict) -> OrganizerProfile:
+    for field, value in data.items():
+        if value is not None:
+            setattr(profile, field, value)
+    db.commit()
+    db.refresh(profile)
+    return profile
