@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Link, Route, Routes } from "react-router-dom";
 import { Home } from "./pages/Home";
 import { Placeholder } from "./pages/Placeholder";
+import { Login } from "./pages/Login";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +25,7 @@ function App() {
       <Nav />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Placeholder title="Login" />} />
+        <Route path="/login" element={<Login/>} />
         <Route path="/register" element={<Placeholder title="Register" />} />
         <Route path="/events/:slug" element={<Placeholder title="Event" />} />
         <Route path="/organizer" element={<Placeholder title="Organizer Dashboard" />} />
