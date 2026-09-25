@@ -3,6 +3,7 @@ import { Link, Route, Routes } from "react-router-dom";
 import { Home } from "./pages/Home";
 import { Placeholder } from "./pages/Placeholder";
 import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
 
 const queryClient = new QueryClient();
 
@@ -26,7 +27,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login/>} />
-        <Route path="/register" element={<Placeholder title="Register" />} />
+        <Route path="/register" element={<Register/>} />
         <Route path="/events/:slug" element={<Placeholder title="Event" />} />
         <Route path="/organizer" element={<Placeholder title="Organizer Dashboard" />} />
         <Route path="/organizer/events/new" element={<Placeholder title="Create Event" />} />
