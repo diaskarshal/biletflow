@@ -27,7 +27,8 @@
         {
           "cameraPermission": "BiletFlow needs camera access to scan ticket QR codes at check-in."
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

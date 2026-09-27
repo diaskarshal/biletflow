@@ -1,8 +1,14 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useState } from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
+import RegisterScreen from "./screens/RegisterScreen";
+import LoginScreen from "./screens/LoginScreen";
+import AppNavigator from "./navigation/AppNavigation";
 
 export default function App() {
+  return <AppNavigator />;
+
+  /*
   const [permission, requestPermission] = useCameraPermissions();
   const [showCamera, setShowCamera] = useState(false);
 
@@ -31,8 +37,16 @@ export default function App() {
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} facing="back" />
+
+      <View style = {styles.backButton}>
+        <Button
+          title = "Back"
+          onPress = {()=>setShowCamera(false)}
+        />
+      </View>
     </View>
   );
+  */
 }
 
 const styles = StyleSheet.create({
@@ -50,5 +64,12 @@ const styles = StyleSheet.create({
   camera: {
     width: "100%",
     height: "100%",
+    flex: 1,
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
   },
 });
+
