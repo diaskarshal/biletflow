@@ -1,4 +1,5 @@
-import { useState, createContext, useContext, type ReactNode } from 'react'
+import { useState, createContext, useContext, type ReactNode } from 'react';
+import { api } from "../api/client";
 
 type User = {
     full_name: string,
@@ -9,7 +10,7 @@ type AuthContextType = {
     user: User | null,
     token: string | null,
     login: (token: string, user: User) => void,
-    logout: () => void,
+    logout: () => Promise<void>,
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(newUser);
     }
 
-    function logout() {
+    async function logout() {
+        try {
+            await api.POST("/api/v1/auth/logout");
+        } catch {
+            // Network failure: log out locally anyway
+        }
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         setToken(null);
