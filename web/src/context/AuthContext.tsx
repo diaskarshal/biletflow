@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, type ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, type ReactNode } from 'react'
 import { api } from "../api/client";
 
 type User = {
@@ -9,11 +9,17 @@ type User = {
 type AuthContextType = {
     user: User | null,
     token: string | null,
-    login: (token: string, user: User) => void,
+    login: (token: string, refreshToken: string, user: User) => void,
     logout: () => Promise<void>,
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function clearStorage() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(() => {
@@ -22,8 +28,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
 
-    function login(newToken: string, newUser: User) {
+    // If the refresh flow gives up, log out locally
+    useEffect(() => {
+        function handleExpired() {
+            clearStorage();
+            setToken(null);
+            setUser(null);
+        }
+        window.addEventListener("auth:expired", handleExpired);
+        return () => window.removeEventListener("auth:expired", handleExpired);
+    }, []);
+
+    // On app load, check that the saved session still works
+    useEffect(() => {
+        if (!localStorage.getItem("token")) return;
+        api.GET("/api/v1/me")
+            .then(({ data }) => {
+                if (data) setUser(data);
+            })
+            .catch(() => {});
+    }, []);
+
+    function login(newToken: string, refreshToken: string, newUser: User) {
         localStorage.setItem("token", newToken);
+        localStorage.setItem("refresh_token", refreshToken);
         localStorage.setItem("user", JSON.stringify(newUser));
         setToken(newToken);
         setUser(newUser);
@@ -33,10 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             await api.POST("/api/v1/auth/logout");
         } catch {
-            // Network failure: log out locally anyway
+            // network failure: log out locally anyway
         }
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        clearStorage();
         setToken(null);
         setUser(null);
     }
