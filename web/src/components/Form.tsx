@@ -27,7 +27,7 @@ export function Form() {
                 headers: { Authorization: `Bearer ${data.access_token}` },
             });
             if (!me) throw new Error("Failed to fetch user after login");
-            login(data.access_token, me);
+            login(data, me);
             navigate("/");
         },
     });

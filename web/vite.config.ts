@@ -7,5 +7,6 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
     environment: "jsdom",
+    execArgv: ["--no-experimental-webstorage"],
   },
 });

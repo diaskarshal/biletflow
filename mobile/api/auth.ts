@@ -40,12 +40,6 @@ export async function loginUser(
     });
 }
 
-export async function getCurrentUser(
-    accessToken: string
-): Promise<User> {
-    return apiRequest<User>("/api/v1/me", {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    });
+export async function getCurrentUser(): Promise<User> {
+    return apiRequest<User>("/api/v1/me");
 }

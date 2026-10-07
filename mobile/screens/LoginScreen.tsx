@@ -57,7 +57,7 @@ export default function LoginScreen(){
 
             console.log("Login completed", tokens);
 
-            const user = await getCurrentUser(tokens.access_token);
+            const user = await getCurrentUser();
 
             console.log("Current user:", user);
 

@@ -1,14 +1,19 @@
-import { useState, createContext, useContext, type ReactNode } from 'react'
+import { useState, useEffect, createContext, useContext, type ReactNode } from 'react'
+import { clearSession, saveTokens } from '../api/client';
 
 type User = {
     full_name: string,
     email: string,
 }
 
+type Tokens = {
+    access_token: string,
+    refresh_token: string,
+}
+
 type AuthContextType = {
     user: User | null,
-    token: string | null,
-    login: (token: string, user: User) => void,
+    login: (tokens: Tokens, user: User) => void,
     logout: () => void,
 }
 
@@ -19,24 +24,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const stored = localStorage.getItem("user");
         return stored ? JSON.parse(stored) : null;
     });
-    const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
 
-    function login(newToken: string, newUser: User) {
-        localStorage.setItem("token", newToken);
+    useEffect(() => {
+        const onLogout = () => setUser(null);
+        window.addEventListener("auth:logout", onLogout);
+        return () => window.removeEventListener("auth:logout", onLogout);
+    }, []);
+
+    function login(tokens: Tokens, newUser: User) {
+        saveTokens(tokens);
         localStorage.setItem("user", JSON.stringify(newUser));
-        setToken(newToken);
         setUser(newUser);
     }
 
-    function logout() {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        setToken(null);
-        setUser(null);
-    }
-
     return (
-        <AuthContext.Provider value={{ user, token, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout: clearSession }}>
             {children}
         </AuthContext.Provider>
     );

@@ -52,11 +52,12 @@ npm run dev
 
 ```bash
 cd mobile
+cp .env.example .env
 npm install
 npx expo start
 ```
 
-Scan the QR with Expo Go on a physical phone. The camera does not work in the iOS simulator.
+Set `EXPO_PUBLIC_API_URL` in `mobile/.env` to your computer's LAN IP (the phone can't reach `localhost`). Scan the QR with Expo Go on a physical phone. The camera does not work in the iOS simulator.
 
 ## Tests
 

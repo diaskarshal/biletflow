@@ -106,6 +106,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizer/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Organizer Profile */
+        get: operations["get_organizer_profile_api_v1_organizer_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Organizer Profile */
+        patch: operations["update_organizer_profile_api_v1_organizer_profile_patch"];
+        trace?: never;
+    };
     "/api/v1/events": {
         parameters: {
             query?: never;
@@ -203,6 +221,24 @@ export interface paths {
         put?: never;
         /** Cancel Event */
         post: operations["cancel_event_api_v1_events__event_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Staff */
+        get: operations["list_staff_api_v1_events__event_id__staff_get"];
+        put?: never;
+        /** Add Staff */
+        post: operations["add_staff_api_v1_events__event_id__staff_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -464,6 +500,8 @@ export interface components {
             registration_opens_at?: string | null;
             /** Registration Closes At */
             registration_closes_at?: string | null;
+            /** Ticket Types */
+            ticket_types?: components["schemas"]["TicketTypeCreate"][];
         };
         /** EventListOut */
         EventListOut: {
@@ -547,6 +585,58 @@ export interface components {
             /** Registration Closes At */
             registration_closes_at?: string | null;
         };
+        /** EventWithTicketTypesOut */
+        EventWithTicketTypesOut: {
+            /** Id */
+            id: number;
+            /** Organizer Id */
+            organizer_id: number;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Category */
+            category: string | null;
+            /** Venue Name */
+            venue_name: string | null;
+            /** Venue Address */
+            venue_address: string | null;
+            /** Cover Image Url */
+            cover_image_url: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Display Timezone */
+            display_timezone: string;
+            /** Visibility */
+            visibility: string;
+            /** Status */
+            status: string;
+            /** Capacity */
+            capacity: number | null;
+            /** Registration Opens At */
+            registration_opens_at: string | null;
+            /** Registration Closes At */
+            registration_closes_at: string | null;
+            /** Paid Sales Enabled */
+            paid_sales_enabled: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Ticket Types */
+            ticket_types: components["schemas"]["TicketTypeOut"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -624,6 +714,35 @@ export interface components {
             /** Tickets */
             tickets: components["schemas"]["TicketOut"][];
         };
+        /** OrganizerProfileOut */
+        OrganizerProfileOut: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Display Name */
+            display_name: string;
+            /** Contact Email */
+            contact_email: string;
+            /** Phone */
+            phone: string | null;
+            /** Verification Status */
+            verification_status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** OrganizerProfileUpdate */
+        OrganizerProfileUpdate: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Phone */
+            phone?: string | null;
+        };
         /** RefreshRequest */
         RefreshRequest: {
             /** Refresh Token */
@@ -640,6 +759,35 @@ export interface components {
             password: string;
             /** Full Name */
             full_name: string;
+        };
+        /** StaffCreate */
+        StaffCreate: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "event_admin" | "organizer_staff";
+        };
+        /** StaffOut */
+        StaffOut: {
+            /** Id */
+            id: number;
+            /** Event Id */
+            event_id: number;
+            /** User Id */
+            user_id: number;
+            /** Role */
+            role: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** TicketOut */
         TicketOut: {
@@ -954,6 +1102,59 @@ export interface operations {
             };
         };
     };
+    get_organizer_profile_api_v1_organizer_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerProfileOut"];
+                };
+            };
+        };
+    };
+    update_organizer_profile_api_v1_organizer_profile_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganizerProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_events_api_v1_events_get: {
         parameters: {
             query?: {
@@ -1005,7 +1206,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EventOut"];
+                    "application/json": components["schemas"]["EventWithTicketTypesOut"];
                 };
             };
             /** @description Validation Error */
@@ -1154,6 +1355,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_staff_api_v1_events__event_id__staff_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_staff_api_v1_events__event_id__staff_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOut"];
                 };
             };
             /** @description Validation Error */
