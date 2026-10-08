@@ -4,12 +4,12 @@ import { describe, expect, it } from "vitest";
 import App from "./App";
 
 describe("App", () => {
-  it("renders the homepage nav", () => {
+  it("renders the nav", () => {
     render(
       <MemoryRouter>
         <App />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("heading", { name: "BiletFlow" })).toBeDefined();
+    expect(screen.getByRole("link", { name: "My tickets" })).toBeDefined();
   });
 });

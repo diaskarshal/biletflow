@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from "../api/client";
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/Button';
@@ -15,6 +15,7 @@ export function Form() {
     const [creds, setCreds] = useState<Creds>({ email: "", password: "" });
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const { mutate, isPending, isError, isSuccess } = useMutation({
         mutationFn: async (credentials: Creds) => {
@@ -28,7 +29,9 @@ export function Form() {
             });
             if (!me) throw new Error("Failed to fetch user after login");
             login(data, me);
-            navigate("/");
+            const next = new URLSearchParams(location.search).get("next");
+            // Only follow same-origin paths to avoid open redirects.
+            navigate(next && next.startsWith("/") && !next.startsWith("//") ? next : "/");
         },
     });
 
@@ -52,11 +55,11 @@ export function Form() {
     const status = handleStatus();
 
     return (
-        <form onSubmit={handleSubmit} className="mx-auto max-w-sm space-y-4 p-6">
-            <h1 className="font-heading text-2xl font-bold text-slate-900">Log in</h1>
+        <form onSubmit={handleSubmit} className="mx-auto mt-16 max-w-md space-y-5 rounded-[2.5rem] bg-sky p-10">
+            <h1 className="font-heading text-2xl font-bold text-brand">Log in</h1>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-slate-700">Email</span>
+                <span className="text-sm text-brand font-heading">Email</span>
                 <Input
                     type="text"
                     name="email"
@@ -66,7 +69,7 @@ export function Form() {
             </label>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-slate-700">Password</span>
+                <span className="text-sm text-brand font-heading">Password</span>
                 <Input
                     type="password"
                     name="password"
@@ -75,7 +78,7 @@ export function Form() {
                 />
             </label>
 
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} className="w-full py-3">
                 Log in
             </Button>
 
@@ -84,6 +87,7 @@ export function Form() {
                     {status}
                 </p>
             )}
+            <Link to="/register" className="block text-center text-sm underline">No account? Register</Link>
         </form>
     );
 }

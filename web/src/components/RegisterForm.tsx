@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from "../api/client";
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -46,11 +46,11 @@ export function RegisterForm() {
     const status = handleStatus();
 
     return (
-        <form onSubmit={handleSubmit} className="mx-auto max-w-sm space-y-4 p-6">
-            <h1 className="font-heading text-2xl font-bold text-slate-900">Register</h1>
+        <form onSubmit={handleSubmit} className="mx-auto mt-16 max-w-md space-y-5 rounded-[2.5rem] bg-sky p-10">
+            <h1 className="font-heading text-2xl font-bold text-brand">Register</h1>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-slate-700">Full name</span>
+                <span className="text-sm text-brand font-heading">Full name</span>
                 <Input
                     type="text"
                     name="full_name"
@@ -60,7 +60,7 @@ export function RegisterForm() {
             </label>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-slate-700">Email</span>
+                <span className="text-sm text-brand font-heading">Email</span>
                 <Input
                     type="text"
                     name="email"
@@ -70,7 +70,7 @@ export function RegisterForm() {
             </label>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-slate-700">Password</span>
+                <span className="text-sm text-brand font-heading">Password</span>
                 <Input
                     type="password"
                     name="password"
@@ -79,7 +79,7 @@ export function RegisterForm() {
                 />
             </label>
 
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} className="w-full py-3">
                 Register
             </Button>
 
@@ -88,6 +88,7 @@ export function RegisterForm() {
                     {status}
                 </p>
             )}
+            <Link to="/login" className="block text-center text-sm underline">Have an account? Log in</Link>
         </form>
     );
 }

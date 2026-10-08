@@ -1,10 +1,8 @@
 import { useState, useEffect, createContext, useContext, type ReactNode } from 'react'
 import { clearSession, saveTokens } from '../api/client';
+import type { components } from '../api/schema';
 
-type User = {
-    full_name: string,
-    email: string,
-}
+type User = components["schemas"]["UserOut"];
 
 type Tokens = {
     access_token: string,

@@ -1,12 +1,24 @@
 @import "tailwindcss";
 
+@font-face {
+    font-family: 'HeadingFont';
+    src: url('./assets/fonts/GeneralSans-Semibold.otf') format('opentype');
+}
+
+@font-face {
+    font-family: 'BodyFont';
+    src: url('./assets/fonts/GeneralSans-Regular.otf') format('opentype');
+}
+
 @theme {
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-heading: "Manrope", system-ui, sans-serif;
-  --color-brand: #0d6efd;
-  --color-brand-dark: #0b5ed7;
+  --font-sans: "BodyFont", system-ui, sans-serif;
+  --font-heading: "HeadingFont", system-ui, sans-serif;
+  --color-brand: #002262;
+  --color-brand-dark: #001a4b;
+  --color-sky: #a4d0ff;
+  --color-on-brand: #ebebeb;
 }
 
 body {
-  @apply bg-white text-slate-900 antialiased;
+  @apply bg-white text-brand antialiased;
 }
