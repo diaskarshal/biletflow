@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Route, Routes } from "react-router-dom";
 import { Home } from "./pages/Home";
-import { Placeholder } from "./pages/Placeholder";
+import { Organizer } from "./pages/Organizer";
+import { NewEvent } from "./pages/NewEvent";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { NotFound } from "./pages/NotFound";
@@ -27,8 +28,8 @@ function App() {
                         <Route element={<RequireAuth />}>
                             <Route path="/tickets" element={<MyTickets />} />
                             <Route path="/profile" element={<Profile />} />
-                            <Route path="/organizer" element={<Placeholder title="Organizer Dashboard" />} />
-                            <Route path="/organizer/events/new" element={<Placeholder title="Create Event" />} />
+                            <Route path="/organizer" element={<Organizer />} />
+                            <Route path="/organizer/events/new" element={<NewEvent />} />
                         </Route>
                         <Route path="*" element={<NotFound />} />
                     </Route>

@@ -16,12 +16,24 @@ export function slotsLeft(
 }
 
 // `badge` replaces the price label (My tickets shows the ticket type instead).
-export function EventCard({ event, badge, onClick }: { event: EventOut; badge?: string; onClick?: () => void }) {
+// `status` (organizer view) is shown next to the price when the event is not published.
+export function EventCard({
+  event,
+  badge,
+  status,
+  onClick,
+}: {
+  event: EventOut;
+  badge?: string;
+  status?: string;
+  onClick?: () => void;
+}) {
   // The list endpoint has no prices or ticket counts, so each card loads the detail (cached, shared with the event page).
   const detail = useEvent(event.slug);
   const types = detail.data?.ticket_types.filter((t) => !t.is_hidden) ?? [];
   const slots = slotsLeft(event.capacity, types);
-  const label = badge ?? (detail.data ? priceLabel(types.map((t) => t.price_kzt)) : "...");
+  const price = badge ?? (detail.data ? priceLabel(types.map((t) => t.price_kzt)) : "...");
+  const label = status && status !== "published" ? `${status} · ${price}` : price;
 
   const body = (
     <>
