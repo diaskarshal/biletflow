@@ -4,9 +4,14 @@ import { Button, StyleSheet, Text, View } from "react-native";
 import RegisterScreen from "./screens/RegisterScreen";
 import LoginScreen from "./screens/LoginScreen";
 import AppNavigator from "./navigation/AppNavigation";
+import { SessionProvider } from "./session/SessionContext";
 
 export default function App() {
-  return <AppNavigator />;
+  return (
+    <SessionProvider>
+      <AppNavigator />
+    </SessionProvider>
+  );
 
   /*
   const [permission, requestPermission] = useCameraPermissions();

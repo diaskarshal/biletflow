@@ -21,18 +21,14 @@ export default function RegisterScreen() {
         setMessage("");
 
         try{
-            const user = await registerUser({
+            await registerUser({
                 full_name: fullName,
                 email,
                 password,
             });
 
-            console.log("Registered:", user);
-
-            setMessage("Registration complete");
+            setMessage("Registration complete. You can log in now.");
         } catch (error) {
-            console.error("Registration error:", error);
-
             if (error instanceof Error) {
                 setMessage(error.message);
             } else {

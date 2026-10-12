@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# generated QR images from scripts/make-test-tickets.mjs (tokens are specific to one local database)
+/scripts/test-qr/
