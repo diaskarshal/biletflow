@@ -1,4 +1,5 @@
-import { apiRequest } from "./client";
+import { apiRequest, clearTokens, saveTokens } from "./client";
+import type { TokenPair } from "./client";
 
 type RegisterData = {
     full_name: string;
@@ -6,7 +7,7 @@ type RegisterData = {
     password: string;
 };
 
-type User = {
+export type User = {
     id: number;
     email: string;
     full_name: string;
@@ -18,9 +19,7 @@ export type LoginData = {
     password: string;
 };
 
-export type TokenResponse = {
-    access_token: string;
-    refresh_token: string;
+export type TokenResponse = TokenPair & {
     token_type: string;
 };
 
@@ -31,15 +30,28 @@ export async function registerUser(data: RegisterData): Promise<User> {
     });
 }
 
-export async function loginUser(
-    data: LoginData
-): Promise<TokenResponse> {
-    return apiRequest<TokenResponse>("/api/v1/auth/login", {
+export async function getCurrentUser(): Promise<User> {
+    return apiRequest<User>("/api/v1/me");
+}
+
+// Logs in, stores the tokens securely, and returns the signed-in user.
+export async function loginUser(data: LoginData): Promise<User> {
+    const tokens = await apiRequest<TokenResponse>("/api/v1/auth/login", {
         method: "POST",
         body: JSON.stringify(data),
     });
+    await saveTokens(tokens);
+    return getCurrentUser();
 }
 
-export async function getCurrentUser(): Promise<User> {
-    return apiRequest<User>("/api/v1/me");
+// Server-side logout is a no-op today (stateless JWTs), so it is best-effort:
+// the local tokens are always cleared even if the request fails.
+export async function logoutUser(): Promise<void> {
+    try {
+        await apiRequest<void>("/api/v1/auth/logout", { method: "POST" });
+    } catch {
+        // ignore: signing out locally is what matters
+    } finally {
+        await clearTokens();
+    }
 }

@@ -6,22 +6,19 @@ import {
     Button,
     StyleSheet,
 } from "react-native";
-import {
-    loginUser,
-    getCurrentUser,
-} from "../api/auth";
-import * as SecureStore from "expo-secure-store";
 import { useNavigation} from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type {RootStackParamList} from "../navigation/AppNavigation";
+import { useSession } from "../session/SessionContext";
 
-export default function LoginScreen(){
-   type LoginNavigationProp = NativeStackNavigationProp<
+type LoginNavigationProp = NativeStackNavigationProp<
     RootStackParamList,
     "Login"
-    >;
+>;
 
+export default function LoginScreen(){
     const navigation = useNavigation<LoginNavigationProp>();
+    const { signIn } = useSession();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -34,43 +31,14 @@ export default function LoginScreen(){
         setMessage("");
 
         try{
-            const tokens = await loginUser({
-                email,
-                password,
-            });
-
-            await SecureStore.setItemAsync(
-                "access_token",
-                tokens.access_token
-            );
-
-            await SecureStore.setItemAsync(
-                "refresh_token",
-                tokens.refresh_token
-            );
-
-            const savedAccessToken = await SecureStore.getItemAsync("access_token");
-            const savedRefreshToken = await SecureStore.getItemAsync("refresh_token");
-
-            console.log("Access token saved:", savedAccessToken != null);
-            console.log("Refresh token saved:", savedRefreshToken != null);
-
-            console.log("Login completed", tokens);
-
-            const user = await getCurrentUser();
-
-            console.log("Current user:", user);
-
-            setMessage(`Welcome, ${user.full_name}!`);
+            // On success the session switches to signedIn and this screen unmounts.
+            await signIn({ email, password });
         } catch (error){
-            console.error("Login error:", error);
-
             if (error instanceof Error){
                 setMessage(error.message);
             } else {
                 setMessage ("Login failed");
             }
-        } finally {
             setLoading(false);
         }
     }
