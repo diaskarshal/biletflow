@@ -12,10 +12,15 @@ from app.core.errors import (
 )
 from app.core.logging import request_id_middleware
 from app.db.session import SessionLocal
+from app.modules.admin.router import router as admin_router
+from app.modules.analytics.router import router as analytics_router
 from app.modules.auth.router import router as auth_router
 from app.modules.checkin.router import router as checkin_router
 from app.modules.events.router import router as events_router
 from app.modules.orders.router import router as orders_router
+from app.modules.payments.router import router as payments_router
+from app.modules.promos.router import router as promos_router
+from app.modules.support.router import router as support_router
 from app.modules.tickets.router import router as tickets_router
 
 app = FastAPI(title="BiletFlow API")
@@ -36,6 +41,11 @@ app.include_router(events_router, prefix="/api/v1")
 app.include_router(tickets_router, prefix="/api/v1")
 app.include_router(orders_router, prefix="/api/v1")
 app.include_router(checkin_router, prefix="/api/v1")
+app.include_router(payments_router, prefix="/api/v1")
+app.include_router(promos_router, prefix="/api/v1")
+app.include_router(support_router, prefix="/api/v1")
+app.include_router(analytics_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
 
 
 class HealthResponse(BaseModel):

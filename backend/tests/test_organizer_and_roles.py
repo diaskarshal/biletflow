@@ -147,6 +147,8 @@ def test_staff_role_check_gates_checkin(
         json={"qr_token": qr_token, "event_id": event_id},
     )
     assert before_assignment.status_code == 403
+    scannable = client.get("/api/v1/checkin/events", headers=staff_headers).json()
+    assert event_id not in [e["id"] for e in scannable]
 
     assign = client.post(
         f"/api/v1/events/{event_id}/staff",
@@ -158,7 +160,9 @@ def test_staff_role_check_gates_checkin(
 
     staff_list = client.get(f"/api/v1/events/{event_id}/staff", headers=org_headers)
     assert staff_list.status_code == 200
-    assert len(staff_list.json()) == 1
+    assert [s["email"] for s in staff_list.json()] == [staff_email]
+    scannable = client.get("/api/v1/checkin/events", headers=staff_headers).json()
+    assert event_id in [e["id"] for e in scannable]
 
     after_assignment = client.post(
         "/api/v1/checkin",
@@ -166,3 +170,8 @@ def test_staff_role_check_gates_checkin(
         json={"qr_token": qr_token, "event_id": event_id},
     )
     assert after_assignment.status_code == 200
+
+    client.post(f"/api/v1/events/{event_id}/cancel", headers=org_headers)
+    my_orders = client.get("/api/v1/me/orders", headers=att_headers).json()
+    [kept] = [o for o in my_orders if o["event_id"] == event_id]
+    assert kept["event"]["status"] == "cancelled"

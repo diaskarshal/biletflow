@@ -13,6 +13,10 @@ class Event(Base):
         CheckConstraint(
             "status in ('draft','published','cancelled','completed')", name="ck_events_status"
         ),
+        CheckConstraint(
+            "refund_policy in ('full_until_48h','full_anytime','no_refunds')",
+            name="ck_events_refund_policy",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -33,5 +37,11 @@ class Event(Base):
     registration_opens_at: Mapped[datetime | None]
     registration_closes_at: Mapped[datetime | None]
     paid_sales_enabled: Mapped[bool] = mapped_column(default=False)
+    refund_policy: Mapped[str] = mapped_column(
+        default="full_until_48h", server_default="full_until_48h"
+    )
+    terms_accepted_at: Mapped[datetime | None]
+    activation_paid_at: Mapped[datetime | None]
+    paid_sales_suspended_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     deleted_at: Mapped[datetime | None]

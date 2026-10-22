@@ -1,5 +1,5 @@
 import jwt
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
@@ -80,3 +80,13 @@ def update_organizer_profile(
 ):
     profile = service.get_or_create_organizer_profile(db, user)
     return service.update_organizer_profile(db, profile, body.model_dump(exclude_unset=True))
+
+
+@router.post("/organizer/verification", response_model=OrganizerProfileOut)
+def submit_verification(
+    document: UploadFile,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = service.get_or_create_organizer_profile(db, user)
+    return service.submit_verification(db, profile, document.filename or "document")

@@ -15,9 +15,6 @@ export type EventItem = {
     capacity: number | null;
 };
 
-// TODO(backend): GET /api/v1/organizer/events only returns events the user OWNS.
-// An Event Admin added through POST /events/{id}/staff cannot list their assigned
-// events yet. When an "assigned events" endpoint exists, only this function changes.
 export async function getMyEvents(): Promise<EventItem[]> {
-    return apiRequest<EventItem[]>("/api/v1/organizer/events");
+    return apiRequest<EventItem[]>("/api/v1/checkin/events");
 }

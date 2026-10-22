@@ -12,3 +12,12 @@ class CheckinResult(BaseModel):
     ticket_id: int
     attendee_name: str
     checked_in_at: datetime
+
+
+class TicketCheckinRequest(BaseModel):
+    event_id: int
+
+
+class CheckinSummary(BaseModel):
+    registered: int
+    checked_in: int

@@ -79,3 +79,13 @@ def update_organizer_profile(db: Session, profile: OrganizerProfile, data: dict)
     db.commit()
     db.refresh(profile)
     return profile
+
+
+def submit_verification(db: Session, profile: OrganizerProfile, filename: str) -> OrganizerProfile:
+    if profile.verification_status == "approved":
+        raise APIError("ALREADY_VERIFIED", "This organizer is already verified", status_code=409)
+    profile.verification_document = filename
+    profile.verification_status = "pending"
+    db.commit()
+    db.refresh(profile)
+    return profile

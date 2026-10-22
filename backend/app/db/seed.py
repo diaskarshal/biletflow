@@ -54,6 +54,7 @@ def get_or_create_ticket_type(db, event: Event, name: str, **fields) -> TicketTy
 
 def seed() -> None:
     with SessionLocal() as db:
+        get_or_create_user(db, "admin@biletflow.kz", "Platform Admin").is_admin = True
         alice = get_or_create_user(db, "alice@biletflow.kz", "Alice Organizer")
         bob = get_or_create_user(db, "bob@biletflow.kz", "Bob Organizer")
         alice_org = get_or_create_organizer(db, alice, "Almaty Events Co")

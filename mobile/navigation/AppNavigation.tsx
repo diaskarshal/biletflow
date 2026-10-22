@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AttendeesScreen from "../screens/AttendeesScreen";
 import ConnectionErrorScreen from "../screens/ConnectionErrorScreen";
 import EventsScreen from "../screens/EventsScreen";
 import LoginScreen from "../screens/LoginScreen";
@@ -13,6 +14,7 @@ export type RootStackParamList = {
     Register: undefined;
     Events: undefined;
     Scanner: { eventId: number; title: string };
+    Attendees: { eventId: number };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -45,6 +47,11 @@ export default function AppNavigator() {
                         name="Scanner"
                         component={ScannerScreen}
                         options={({ route }) => ({ title: route.params.title })}
+                    />
+                    <Stack.Screen
+                        name="Attendees"
+                        component={AttendeesScreen}
+                        options={{ title: "Attendees" }}
                     />
                 </Stack.Navigator>
             ) : (

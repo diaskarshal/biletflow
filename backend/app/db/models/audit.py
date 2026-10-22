@@ -14,6 +14,7 @@ class AuditLog(Base):
     action_type: Mapped[str]
     entity_type: Mapped[str]
     entity_id: Mapped[int]
+    event_id: Mapped[int | None] = mapped_column(ForeignKey("events.id"), index=True)
     description: Mapped[str | None]
     payload: Mapped[dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

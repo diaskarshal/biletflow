@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../api/client";
 import { CheckoutModal } from "../components/CheckoutModal";
 import { slotsLeft } from "../components/EventCard";
 import { EventImage } from "../components/EventImage";
@@ -7,14 +9,15 @@ import { ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
 import { useEvent } from "../hooks/useEvent";
-import { errorMessage, formatDate, formatPrice, formatTime } from "../lib/format";
+import { errorMessage, formatDate, formatPrice, formatTime, REFUND_POLICIES, type RefundPolicy } from "../lib/format";
 import type { components } from "../api/schema";
 
 type TicketType = components["schemas"]["TicketTypeOut"];
 
 // Why a ticket type can't be bought right now, or null if it can.
-function unavailableReason(t: TicketType, eventCancelled: boolean) {
+function unavailableReason(t: TicketType, eventCancelled: boolean, paidSalesEnabled: boolean) {
   if (eventCancelled) return "Cancelled";
+  if (t.price_kzt > 0 && !paidSalesEnabled) return "Not on sale yet";
   if (t.quantity_total - t.quantity_sold - t.quantity_reserved <= 0) return "Sold out";
   const now = Date.now();
   if (t.sales_start_at && new Date(t.sales_start_at).getTime() > now) return "Not on sale yet";
@@ -28,6 +31,20 @@ export function EventPage() {
   const navigate = useNavigate();
   const event = useEvent(slug);
   const [selected, setSelected] = useState<TicketType | null>(null);
+  const [params] = useSearchParams();
+  const token = params.get("promo");
+  const promo = useQuery({
+    queryKey: ["promo", event.data?.id, token],
+    enabled: !!token && !!event.data,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/events/{event_id}/promo", {
+        params: { path: { event_id: event.data!.id }, query: { token } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
 
   if (event.isLoading) return <Spinner />;
   if (event.isError || !event.data) {
@@ -45,7 +62,7 @@ export function EventPage() {
 
   function choose(t: TicketType) {
     if (!user) {
-      navigate(`/login?next=${encodeURIComponent(`/events/${slug}`)}`);
+      navigate(`/login?next=${encodeURIComponent(`/events/${slug}${token ? `?promo=${token}` : ""}`)}`);
       return;
     }
     setSelected(t);
@@ -64,9 +81,16 @@ export function EventPage() {
           </dl>
           {e.venue_address && <p className="mt-1 text-2xl">{e.venue_address}</p>}
           {cancelled && <p className="mt-4 font-heading text-xl text-red-700">This event was cancelled.</p>}
+          {promo.data && (
+            <p className="mt-4 border border-brand p-2">
+              Promo {promo.data.code} applied:{" "}
+              {promo.data.discount_type === "percent" ? `${promo.data.discount_value}% off` : `${formatPrice(promo.data.discount_value)} KZT off`}
+            </p>
+          )}
+          {promo.isError && <p className="mt-4 text-red-700">{errorMessage(promo.error, "This promo link is not valid")}</p>}
           <div className="mt-auto grid grid-cols-3 gap-5 pt-8">
             {types.map((t) => {
-              const reason = unavailableReason(t, cancelled);
+              const reason = unavailableReason(t, cancelled, e.paid_sales_enabled);
               return (
                 <button
                   key={t.id}
@@ -84,7 +108,15 @@ export function EventPage() {
         </div>
       </div>
       {e.description && <p className="mt-8 whitespace-pre-line text-2xl">{e.description}</p>}
-      {selected && <CheckoutModal event={e} ticketType={selected} onClose={() => setSelected(null)} />}
+      <p className="mt-6">Refund policy: {REFUND_POLICIES[e.refund_policy as RefundPolicy]}</p>
+      <p className="mt-2">
+        <Link className="underline" to={`/support/new?event_id=${e.id}`}>
+          Contact the organizer
+        </Link>
+      </p>
+      {selected && (
+        <CheckoutModal event={e} ticketType={selected} promo={promo.data ?? null} onClose={() => setSelected(null)} />
+      )}
     </div>
   );
 }

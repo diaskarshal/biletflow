@@ -2,7 +2,7 @@ import { ApiError } from "../api/client";
 
 // What the door staff sees after a scan (SRS §4.8: valid, invalid, cancelled, refunded, already used).
 export type ScanOutcome =
-    | { kind: "valid"; attendeeName: string }
+    | { kind: "valid"; attendeeName: string; ticketId: number }
     | {
           kind:
               | "already_used"
@@ -41,6 +41,8 @@ export function outcomeFromError(error: unknown): ScanOutcome {
             return { kind: "refunded", message: "This ticket has been refunded." };
         case "TICKET_INVALID":
             return { kind: "invalid", message: error.message };
+        case "TICKET_UNPAID":
+            return { kind: "invalid", message: "This ticket has not been paid for." };
         case "FORBIDDEN":
             return { kind: "forbidden", message: "You are not assigned to check in for this event." };
         case "NETWORK_ERROR":

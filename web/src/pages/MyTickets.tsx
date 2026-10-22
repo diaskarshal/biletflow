@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { Button } from "../components/Button";
 import { EventCard } from "../components/EventCard";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Modal } from "../components/Modal";
 import { Spinner } from "../components/Spinner";
 import { useEvent } from "../hooks/useEvent";
-import { errorMessage } from "../lib/format";
+import { errorMessage, formatPrice } from "../lib/format";
 import type { components } from "../api/schema";
 
 type Ticket = components["schemas"]["TicketOut"];
@@ -24,29 +26,30 @@ export function MyTickets() {
     },
   });
 
-  // Orders only carry event_id and the API has no get-event-by-id, so match against the public list.
-  const events = useQuery({
-    queryKey: ["events-by-id"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/api/v1/events", { params: { query: { limit: 100 } } });
-      if (error) throw error;
-      return new Map(data.items.map((e) => [e.id, e]));
-    },
-  });
-
-  if (orders.isLoading || events.isLoading) return <Spinner />;
-  const failure = orders.error ?? events.error;
-  const tickets = (orders.data ?? []).flatMap((o) => o.tickets.map((t) => ({ ticket: t, event: events.data?.get(o.event_id) })));
+  if (orders.isLoading) return <Spinner />;
+  const all = orders.data ?? [];
+  const awaiting = all.filter((o) => o.status === "pending" && o.payment_id);
+  const tickets = all
+    .filter((o) => ["paid", "cancelled", "refunded"].includes(o.status))
+    .flatMap((o) => o.tickets.map((t) => ({ ticket: t, event: o.event })));
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-6 py-12">
       <h1 className="font-heading text-5xl">My tickets</h1>
-      {failure && <ErrorState message={errorMessage(failure, "Could not load tickets")} />}
-      {!failure && tickets.length === 0 && <EmptyState title="No tickets yet">Get one from the Events page.</EmptyState>}
+      {orders.isError && <ErrorState message={errorMessage(orders.error, "Could not load tickets")} />}
+      {awaiting.map((o) => (
+        <p key={o.id} className="border border-slate-400 p-3">
+          Order #{o.id} for {o.event.title} ({formatPrice(o.total_kzt)} KZT) is waiting for payment.{" "}
+          <Link to={`/pay/${o.payment_id}`} className="font-semibold underline">
+            Complete payment
+          </Link>
+        </p>
+      ))}
+      {orders.isSuccess && tickets.length === 0 && <EmptyState title="No tickets yet">Get one from the Events page.</EmptyState>}
       <div className="grid grid-cols-3 gap-6">
-        {tickets.map(({ ticket, event }) =>
-          event ? <TicketCard key={ticket.id} ticket={ticket} event={event} onOpen={() => setShown(ticket)} /> : null,
-        )}
+        {tickets.map(({ ticket, event }) => (
+          <TicketCard key={ticket.id} ticket={ticket} event={event} onOpen={() => setShown(ticket)} />
+        ))}
       </div>
       {shown && (
         <Modal onClose={() => setShown(null)} label="Ticket QR code">
@@ -61,7 +64,7 @@ function TicketCard({ ticket, event, onOpen }: { ticket: Ticket; event: EventOut
   const detail = useEvent(event.slug);
   const type = detail.data?.ticket_types.find((t) => t.id === ticket.ticket_type_id)?.name ?? "Ticket";
   const badge = ticket.status === "valid" ? type : `${type} · ${ticket.status.replace(/_/g, " ")}`;
-  return <EventCard event={event} badge={badge} onClick={onOpen} />;
+  return <EventCard event={event} badge={badge} status={event.status} onClick={onOpen} />;
 }
 
 function QrCode({ ticket }: { ticket: Ticket }) {
@@ -86,6 +89,27 @@ function QrCode({ ticket }: { ticket: Ticket }) {
       {qr.isError && <ErrorState message="Could not load the QR code" />}
       {qr.data && <img src={qr.data} alt="Ticket QR code" className="mx-auto w-64 rounded-xl bg-white p-3" />}
       <p className="text-sm">Show this code at the entrance.</p>
+      <Button variant="secondary" onClick={() => downloadPdf(ticket.id)}>
+        Download PDF
+      </Button>
+      <p>
+        <Link className="underline" to={`/support/new?ticket_id=${ticket.id}`}>
+          Get help with this ticket
+        </Link>
+      </p>
     </div>
   );
+}
+
+async function downloadPdf(ticketId: number) {
+  const { data } = await api.GET("/api/v1/tickets/{ticket_id}/pdf", {
+    params: { path: { ticket_id: ticketId } },
+    parseAs: "blob",
+  });
+  if (!data) return;
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(data as Blob);
+  link.download = `ticket-${ticketId}.pdf`;
+  link.click();
+  URL.revokeObjectURL(link.href);
 }

@@ -10,7 +10,7 @@ class Order(Base):
     __tablename__ = "orders"
     __table_args__ = (
         CheckConstraint(
-            "status in ('pending','paid','cancelled','refunded','expired')", name="ck_orders_status"
+            "status in ('pending','paid','failed','cancelled','refunded','expired')", name="ck_orders_status"
         ),
     )
 
@@ -22,6 +22,7 @@ class Order(Base):
     discount_kzt: Mapped[int] = mapped_column(default=0)
     fee_kzt: Mapped[int] = mapped_column(default=0)
     total_kzt: Mapped[int] = mapped_column(default=0)
+    promo_campaign_id: Mapped[int | None] = mapped_column(ForeignKey("promo_campaigns.id"))
     idempotency_key: Mapped[str] = mapped_column(unique=True)
     expires_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

@@ -22,11 +22,13 @@ export function EventCard({
   badge,
   status,
   onClick,
+  to,
 }: {
   event: EventOut;
   badge?: string;
   status?: string;
   onClick?: () => void;
+  to?: string;
 }) {
   // The list endpoint has no prices or ticket counts, so each card loads the detail (cached, shared with the event page).
   const detail = useEvent(event.slug);
@@ -56,7 +58,7 @@ export function EventCard({
       {body}
     </button>
   ) : (
-    <Link to={`/events/${event.slug}`} className={cls}>
+    <Link to={to ?? `/events/${event.slug}`} className={cls}>
       {body}
     </Link>
   );

@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
-from app.db.models import User
+from app.db.models import Event, User
 from app.modules.events import service as events_service
+from app.modules.events.schemas import EventOut
 from app.modules.orders import service
 from app.modules.orders.schemas import AttendeeOut, OrderCreate, OrderOut
 
@@ -22,7 +23,11 @@ def _to_order_out(db: Session, order) -> OrderOut:
         discount_kzt=order.discount_kzt,
         fee_kzt=order.fee_kzt,
         total_kzt=order.total_kzt,
+        promo_campaign_id=order.promo_campaign_id,
         created_at=order.created_at,
+        expires_at=order.expires_at,
+        payment_id=service.pending_payment_id(db, order),
+        event=EventOut.model_validate(db.get(Event, order.event_id)),
         items=items,
         tickets=tickets,
     )
@@ -36,7 +41,12 @@ def create_order(
     db: Session = Depends(get_db),
 ) -> OrderOut:
     order = service.create_order(
-        db, user, body.event_id, [item.model_dump() for item in body.items], idempotency_key
+        db,
+        user,
+        body.event_id,
+        [item.model_dump() for item in body.items],
+        idempotency_key,
+        body.promo_code,
     )
     return _to_order_out(db, order)
 
@@ -62,3 +72,12 @@ def attendees(
     event = events_service.get_event_or_404(db, event_id)
     events_service.require_owner(db, user, event)
     return service.list_attendees(db, event_id)
+
+
+@router.post("/orders/{order_id}/cancel", response_model=OrderOut)
+def cancel_order(
+    order_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> OrderOut:
+    order = service.get_order_or_404(db, order_id)
+    events_service.require_owner(db, user, events_service.get_event_or_404(db, order.event_id))
+    return _to_order_out(db, service.cancel_order(db, user, order))

@@ -38,7 +38,7 @@ def update_ticket_type(
     ticket_type = service.get_ticket_type_or_404(db, ticket_type_id)
     event = events_service.get_event_or_404(db, ticket_type.event_id)
     events_service.require_owner(db, user, event)
-    return service.update_ticket_type(db, ticket_type, body.model_dump(exclude_unset=True))
+    return service.update_ticket_type(db, user, ticket_type, body.model_dump(exclude_unset=True))
 
 
 @router.get("/tickets/{ticket_id}", response_model=TicketOut)
@@ -57,3 +57,16 @@ def get_ticket_qr(
     ticket = service.get_ticket_or_404(db, ticket_id)
     service.require_ticket_access(db, ticket, user)
     return Response(content=service.qr_png(ticket), media_type="image/png")
+
+
+@router.get("/tickets/{ticket_id}/pdf")
+def get_ticket_pdf(
+    ticket_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> Response:
+    ticket = service.get_ticket_or_404(db, ticket_id)
+    service.require_ticket_access(db, ticket, user)
+    return Response(
+        content=service.ticket_pdf(db, ticket),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="ticket-{ticket.id}.pdf"'},
+    )

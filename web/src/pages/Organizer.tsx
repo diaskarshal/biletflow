@@ -1,20 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { api } from "../api/client";
 import { EventCard } from "../components/EventCard";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
+import { useOrganizerEvents } from "../hooks/useOrganizerEvents";
 import { errorMessage } from "../lib/format";
 
 export function Organizer() {
-  const events = useQuery({
-    queryKey: ["organizer-events"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/api/v1/organizer/events");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const events = useOrganizerEvents();
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-6 py-12">
@@ -30,7 +22,7 @@ export function Organizer() {
       {events.data?.length === 0 && <EmptyState title="You have no events yet" />}
       <div className="grid grid-cols-3 gap-6">
         {events.data?.map((e) => (
-          <EventCard key={e.id} event={e} status={e.status} />
+          <EventCard key={e.id} event={e} status={e.status} to={`/organizer/events/${e.id}`} />
         ))}
       </div>
     </div>

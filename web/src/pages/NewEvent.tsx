@@ -7,7 +7,7 @@ import { ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { Textarea } from "../components/Textarea";
 import { DISPLAY_TIMEZONE, eventRange } from "../lib/eventTimes";
-import { errorMessage } from "../lib/format";
+import { errorMessage, REFUND_POLICIES, type RefundPolicy } from "../lib/format";
 
 type TicketRow = { name: string; price: string; slots: string };
 
@@ -27,6 +27,7 @@ export function NewEvent() {
     dateTo: "",
     timeFrom: "",
     timeTo: "",
+    refundPolicy: "full_until_48h" as RefundPolicy,
   });
   const [tickets, setTickets] = useState<TicketRow[]>([{ ...emptyTicket }]);
   const [formError, setFormError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export function NewEvent() {
           display_timezone: DISPLAY_TIMEZONE,
           visibility: "public",
           capacity: ticket_types.reduce((n, t) => n + t.quantity_total, 0),
+          refund_policy: form.refundPolicy,
           ticket_types,
         },
       });
@@ -126,6 +128,21 @@ export function NewEvent() {
           <Label text="Time To (optional)">
             <Input type="time" className={field} value={form.timeTo} onChange={set("timeTo")} />
           </Label>
+          <div className="col-span-2">
+            <Label text="Refund policy">
+              <select
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-brand"
+                value={form.refundPolicy}
+                onChange={(e) => setForm((f) => ({ ...f, refundPolicy: e.target.value as RefundPolicy }))}
+              >
+                {Object.entries(REFUND_POLICIES).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </Label>
+          </div>
         </div>
 
         <h2 className="pt-4 font-heading text-2xl">Tickets</h2>

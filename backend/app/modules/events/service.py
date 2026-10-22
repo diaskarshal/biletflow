@@ -1,10 +1,24 @@
 import re
 import secrets
+from datetime import UTC, date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.core import audit
 from app.core.errors import APIError
-from app.db.models import Event, EventStaff, OrganizerProfile, User
+from app.db.models import (
+    AuditLog,
+    Event,
+    EventStaff,
+    Order,
+    OrganizerProfile,
+    Payment,
+    TicketType,
+    User,
+)
+from app.modules.admin import service as admin_service
 from app.modules.auth.service import get_or_create_organizer_profile
 from app.modules.tickets import service as tickets_service
 
@@ -33,6 +47,7 @@ def create_event(db: Session, user: User, data: dict) -> tuple[Event, list]:
     ticket_types = [
         tickets_service.create_ticket_type(db, event, tt_data) for tt_data in ticket_types_data
     ]
+    audit.record(db, user, "event.created", "event", event.id, event.id, f"Created event {event.title}")
 
     db.commit()
     db.refresh(event)
@@ -42,13 +57,6 @@ def create_event(db: Session, user: User, data: dict) -> tuple[Event, list]:
 def get_event_or_404(db: Session, event_id: int) -> Event:
     event = db.get(Event, event_id)
     if event is None or event.deleted_at is not None:
-        raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
-    return event
-
-
-def get_published_event_by_slug(db: Session, slug: str) -> Event:
-    event = db.query(Event).filter_by(slug=slug).one_or_none()
-    if event is None or event.deleted_at is not None or event.status not in ("published", "completed"):
         raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
     return event
 
@@ -107,34 +115,112 @@ def list_organizer_events(db: Session, user: User) -> list[Event]:
     )
 
 
-def update_event(db: Session, event: Event, data: dict) -> Event:
+def update_event(db: Session, actor: User, event: Event, data: dict) -> Event:
+    changes = {
+        field: str(value)
+        for field, value in data.items()
+        if value is not None and getattr(event, field) != value
+    }
     for field, value in data.items():
         if value is not None:
             setattr(event, field, value)
+    if changes:
+        audit.record(
+            db, actor, "event.updated", "event", event.id, event.id,
+            "Changed " + ", ".join(changes), changes,
+        )
     db.commit()
     db.refresh(event)
     return event
 
 
-def publish_event(db: Session, event: Event) -> Event:
+def publish_event(db: Session, actor: User, event: Event) -> Event:
     if event.status != "draft":
         raise APIError("INVALID_EVENT_STATUS", "Only draft events can be published", status_code=409)
     event.status = "published"
+    audit.record(db, actor, "event.published", "event", event.id, event.id, "Published the event")
     db.commit()
     db.refresh(event)
     return event
 
 
-def cancel_event(db: Session, event: Event) -> Event:
-    if event.status in ("cancelled", "completed"):
-        raise APIError("INVALID_EVENT_STATUS", "Event is already cancelled or completed", status_code=409)
-    event.status = "cancelled"
+def unpublish_event(db: Session, actor: User, event: Event) -> Event:
+    if event.status != "published":
+        raise APIError("INVALID_EVENT_STATUS", "Only published events can be unpublished", status_code=409)
+    if db.query(Order).filter(Order.event_id == event.id, Order.status.in_(("paid", "pending"))).first():
+        raise APIError(
+            "EVENT_HAS_ORDERS", "This event already has registrations. Cancel it instead.", status_code=409
+        )
+    event.status = "draft"
+    audit.record(db, actor, "event.unpublished", "event", event.id, event.id, "Unpublished the event")
     db.commit()
     db.refresh(event)
     return event
 
 
-def add_staff(db: Session, event: Event, email: str, role: str) -> EventStaff:
+COPIED_EVENT_FIELDS = (
+    "description", "category", "venue_name", "venue_address", "cover_image_url", "starts_at", "ends_at",
+    "display_timezone", "visibility", "capacity", "refund_policy",
+)
+COPIED_TYPE_FIELDS = (
+    "name", "description", "price_kzt", "quantity_total", "sales_start_at", "sales_end_at", "max_per_order",
+    "is_hidden",
+)
+
+
+def duplicate_event(db: Session, actor: User, source: Event) -> tuple[Event, list]:
+    data = {field: getattr(source, field) for field in COPIED_EVENT_FIELDS}
+    data["title"] = f"{source.title} (copy)"
+    data["ticket_types"] = [
+        {field: getattr(t, field) for field in COPIED_TYPE_FIELDS}
+        for t in tickets_service.list_ticket_types(db, source)
+    ]
+    event, ticket_types = create_event(db, actor, data)
+    audit.record(
+        db, actor, "event.duplicated", "event", event.id, event.id,
+        f"Duplicated from {source.title} (#{source.id})",
+    )
+    db.commit()
+    return event, ticket_types
+
+
+def require_event_manager(db: Session, user: User, event: Event) -> None:
+    if user.is_admin or is_owner(db, user, event):
+        return
+    if db.query(EventStaff).filter_by(event_id=event.id, user_id=user.id, role="organizer_staff").first() is None:
+        raise APIError("FORBIDDEN", "You cannot view this event's history", status_code=403)
+
+
+def list_activity(
+    db: Session, event: Event, date_from: date | None, date_to: date | None, action: str | None
+) -> list[dict]:
+    tz = ZoneInfo(event.display_timezone)
+    query = (
+        db.query(AuditLog, User.full_name)
+        .outerjoin(User, User.id == AuditLog.actor_user_id)
+        .filter(AuditLog.event_id == event.id)
+    )
+    if date_from:
+        query = query.filter(AuditLog.created_at >= datetime.combine(date_from, time.min, tz))
+    if date_to:
+        query = query.filter(AuditLog.created_at < datetime.combine(date_to + timedelta(days=1), time.min, tz))
+    if action:
+        query = query.filter(AuditLog.action_type.startswith(action))
+    return [
+        {
+            "id": entry.id,
+            "created_at": entry.created_at,
+            "actor_name": name or "System",
+            "action_type": entry.action_type,
+            "entity_type": entry.entity_type,
+            "entity_id": entry.entity_id,
+            "description": entry.description,
+        }
+        for entry, name in query.order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
+    ]
+
+
+def add_staff(db: Session, event: Event, email: str, role: str) -> dict:
     target_user = db.query(User).filter_by(email=email).one_or_none()
     if target_user is None:
         raise APIError("USER_NOT_FOUND", "No account exists with this email", status_code=404)
@@ -147,8 +233,124 @@ def add_staff(db: Session, event: Event, email: str, role: str) -> EventStaff:
     db.add(staff)
     db.commit()
     db.refresh(staff)
-    return staff
+    return _staff_out(staff, target_user)
 
 
-def list_staff(db: Session, event: Event) -> list[EventStaff]:
-    return db.query(EventStaff).filter_by(event_id=event.id).order_by(EventStaff.id).all()
+def list_staff(db: Session, event: Event) -> list[dict]:
+    rows = (
+        db.query(EventStaff, User)
+        .join(User, User.id == EventStaff.user_id)
+        .filter(EventStaff.event_id == event.id)
+        .order_by(EventStaff.id)
+        .all()
+    )
+    return [_staff_out(staff, user) for staff, user in rows]
+
+
+def _staff_out(staff: EventStaff, user: User) -> dict:
+    return {
+        "id": staff.id,
+        "event_id": staff.event_id,
+        "user_id": staff.user_id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": staff.role,
+        "created_at": staff.created_at,
+    }
+
+
+def list_checkin_events(db: Session, user: User) -> list[Event]:
+    organizer = db.query(OrganizerProfile).filter_by(user_id=user.id).one_or_none()
+    staffed = db.query(EventStaff.event_id).filter_by(user_id=user.id, role="event_admin")
+    allowed = Event.id.in_(staffed)
+    if organizer is not None:
+        allowed = or_(allowed, Event.organizer_id == organizer.id)
+    return (
+        db.query(Event)
+        .filter(allowed, Event.deleted_at.is_(None))
+        .order_by(Event.starts_at)
+        .all()
+    )
+
+
+def activation_status(db: Session, event: Event) -> dict:
+    organizer = db.get(OrganizerProfile, event.organizer_id)
+    has_paid_type = (
+        db.query(TicketType).filter(TicketType.event_id == event.id, TicketType.price_kzt > 0).first()
+        is not None
+    )
+    pending = (
+        db.query(Payment)
+        .filter_by(event_id=event.id, purpose="activation", status="pending")
+        .one_or_none()
+    )
+    return {
+        "fee_kzt": admin_service.get_activation_fee(db),
+        "has_paid_ticket_type": has_paid_type,
+        "organizer_verified": organizer.verification_status == "approved",
+        "payout_account_set": bool(organizer.payout_account),
+        "terms_accepted": event.terms_accepted_at is not None,
+        "fee_paid": event.activation_paid_at is not None,
+        "paid_sales_enabled": event.paid_sales_enabled,
+        "suspended": event.paid_sales_suspended_at is not None,
+        "pending_payment_id": pending.id if pending else None,
+    }
+
+
+def accept_terms(db: Session, event: Event) -> None:
+    event.terms_accepted_at = event.terms_accepted_at or datetime.now(UTC)
+    db.commit()
+
+
+def start_activation_payment(db: Session, user: User, event: Event) -> Payment:
+    status = activation_status(db, event)
+    if status["fee_paid"]:
+        raise APIError("ALREADY_ACTIVATED", "Paid sales are already activated for this event", status_code=409)
+    missing = [
+        key
+        for key in ("has_paid_ticket_type", "organizer_verified", "payout_account_set", "terms_accepted")
+        if not status[key]
+    ]
+    if missing:
+        raise APIError(
+            "ACTIVATION_INCOMPLETE",
+            "Complete the activation checklist before paying the fee",
+            status_code=409,
+            details={"missing": missing},
+        )
+    if status["pending_payment_id"]:
+        return db.get(Payment, status["pending_payment_id"])
+    payment = Payment(
+        purpose="activation", event_id=event.id, user_id=user.id, amount_kzt=status["fee_kzt"]
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
+def complete_activation(db: Session, event: Event) -> None:
+    event.activation_paid_at = datetime.now(UTC)
+    event.paid_sales_enabled = event.paid_sales_suspended_at is None
+
+
+def set_paid_sales_suspended(db: Session, actor: User, event: Event, suspended: bool) -> Event:
+    event.paid_sales_suspended_at = datetime.now(UTC) if suspended else None
+    event.paid_sales_enabled = not suspended and event.activation_paid_at is not None
+    audit.record(
+        db, actor, "paid_sales.suspended" if suspended else "paid_sales.resumed", "event",
+        event.id, event.id,
+        "Platform admin suspended paid sales" if suspended else "Platform admin resumed paid sales",
+    )
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def list_activations(db: Session) -> list[Event]:
+    return (
+        db.query(Event)
+        .filter(Event.activation_paid_at.is_not(None))
+        .order_by(Event.activation_paid_at.desc())
+        .all()
+    )

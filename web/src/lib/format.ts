@@ -25,3 +25,11 @@ export function errorMessage(e: unknown, fallback = "Something went wrong") {
   const err = e as { error?: { message?: string }; message?: string } | null;
   return err?.error?.message ?? err?.message ?? fallback;
 }
+
+export const REFUND_POLICIES = {
+  full_until_48h: "Full refund up to 48 hours before the event",
+  full_anytime: "Full refund any time before the event",
+  no_refunds: "No refunds",
+} as const;
+
+export type RefundPolicy = keyof typeof REFUND_POLICIES;

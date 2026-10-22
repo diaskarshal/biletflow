@@ -32,7 +32,7 @@ class Ticket(Base):
     __tablename__ = "tickets"
     __table_args__ = (
         CheckConstraint(
-            "status in ('valid','checked_in','cancelled','refunded')", name="ck_tickets_status"
+            "status in ('pending','valid','checked_in','cancelled','refunded')", name="ck_tickets_status"
         ),
     )
 

@@ -24,7 +24,7 @@ POST   /api/v1/events/{id}/cancel
 GET    /api/v1/organizer/events
 
 POST   /api/v1/events/{id}/staff        organizer only, {email, role: event_admin|organizer_staff}
-GET    /api/v1/events/{id}/staff        organizer only
+GET    /api/v1/events/{id}/staff        organizer only, each entry includes email and full_name
 
 POST   /api/v1/events/{id}/ticket-types
 GET    /api/v1/events/{id}/ticket-types
@@ -32,13 +32,14 @@ PATCH  /api/v1/ticket-types/{id}
 
 POST   /api/v1/orders                   header: Idempotency-Key
 GET    /api/v1/orders/{id}
-GET    /api/v1/me/orders
+GET    /api/v1/me/orders                each order includes its full event
 GET    /api/v1/events/{id}/attendees    organizer only
 
 GET    /api/v1/tickets/{id}
 GET    /api/v1/tickets/{id}/pdf
 POST   /api/v1/checkin                  {qr_token, event_id}  -> validates AND checks in, one call
                                          organizer OR event_staff with role=event_admin
+GET    /api/v1/checkin/events           events the user can check in for (owned + assigned as event_admin)
 ```
 
 ## Conventions
@@ -48,6 +49,8 @@ POST   /api/v1/checkin                  {qr_token, event_id}  -> validates AND c
   Implemented in `backend/app/core/errors.py`.
 - **Auth**: `Authorization: Bearer <access_token>`. Access token 30 minutes, refresh token 30 days.
 - **Pagination**: `?limit=&cursor=`.
+- **Times**: every timestamp is UTC with an offset (`2026-12-01T13:00:00Z`). Show it in the
+  event's `display_timezone`.
 - **`POST /api/v1/checkin`** is ONE call that validates and checks in. If it were split into
   "check status" then "check in", two phones could both read "valid" before either one writes —
   the DB-level partial unique index on `check_in_records` is what actually prevents the double

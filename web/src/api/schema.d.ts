@@ -124,6 +124,23 @@ export interface paths {
         patch: operations["update_organizer_profile_api_v1_organizer_profile_patch"];
         trace?: never;
     };
+    "/api/v1/organizer/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Verification */
+        post: operations["submit_verification_api_v1_organizer_verification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events": {
         parameters: {
             query?: never;
@@ -245,6 +262,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/activation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Activation */
+        get: operations["activation_api_v1_events__event_id__activation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/activation/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Terms */
+        post: operations["accept_terms_api_v1_events__event_id__activation_terms_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/activation/payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pay Activation Fee */
+        post: operations["pay_activation_fee_api_v1_events__event_id__activation_payment_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/ticket-types": {
         parameters: {
             query?: never;
@@ -306,6 +374,23 @@ export interface paths {
         };
         /** Get Ticket Qr */
         get: operations["get_ticket_qr_api_v1_tickets__ticket_id__qr_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tickets/{ticket_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ticket Pdf */
+        get: operations["get_ticket_pdf_api_v1_tickets__ticket_id__pdf_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -382,6 +467,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{order_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Order */
+        post: operations["cancel_order_api_v1_orders__order_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkin/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checkin Events */
+        get: operations["checkin_events_api_v1_checkin_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/checkin": {
         parameters: {
             query?: never;
@@ -393,6 +512,350 @@ export interface paths {
         put?: never;
         /** Checkin */
         post: operations["checkin_api_v1_checkin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkin/tickets/{ticket_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Checkin Ticket */
+        post: operations["checkin_ticket_api_v1_checkin_tickets__ticket_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkin/tickets/{ticket_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo Checkin */
+        post: operations["undo_checkin_api_v1_checkin_tickets__ticket_id__undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkin/events/{event_id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checkin Summary */
+        get: operations["checkin_summary_api_v1_checkin_events__event_id__summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkin/events/{event_id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checkin Search */
+        get: operations["checkin_search_api_v1_checkin_events__event_id__attendees_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{payment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Payment */
+        get: operations["get_payment_api_v1_payments__payment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{payment_id}/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simulate */
+        post: operations["simulate_api_v1_payments__payment_id__simulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Campaigns */
+        get: operations["list_campaigns_api_v1_events__event_id__campaigns_get"];
+        put?: never;
+        /** Create Campaign */
+        post: operations["create_campaign_api_v1_events__event_id__campaigns_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/campaigns/{campaign_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Campaign */
+        post: operations["disable_campaign_api_v1_campaigns__campaign_id__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/campaigns/{campaign_id}/qr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Campaign Qr */
+        get: operations["campaign_qr_api_v1_campaigns__campaign_id__qr_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/promo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview Promo */
+        get: operations["preview_promo_api_v1_events__event_id__promo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Cases */
+        get: operations["my_cases_api_v1_support_cases_get"];
+        put?: never;
+        /** Create Case */
+        post: operations["create_case_api_v1_support_cases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inbox */
+        get: operations["inbox_api_v1_support_inbox_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/support/cases/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Case */
+        get: operations["get_case_api_v1_support_cases__case_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Case */
+        patch: operations["update_case_api_v1_support_cases__case_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/support/cases/{case_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Message */
+        post: operations["add_message_api_v1_support_cases__case_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Event Analytics */
+        get: operations["event_analytics_api_v1_events__event_id__analytics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Organizers */
+        get: operations["organizers_api_v1_admin_organizers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizers/{organizer_id}/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Verification */
+        post: operations["decide_verification_api_v1_admin_organizers__organizer_id__verification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/activation-fee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Activation Fee */
+        get: operations["get_activation_fee_api_v1_admin_settings_activation_fee_get"];
+        /** Set Activation Fee */
+        put: operations["set_activation_fee_api_v1_admin_settings_activation_fee_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/activations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Activations */
+        get: operations["activations_api_v1_admin_activations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/events/{event_id}/paid-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suspend Paid Sales */
+        post: operations["suspend_paid_sales_api_v1_admin_events__event_id__paid_sales_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -420,6 +883,76 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActivationFee */
+        ActivationFee: {
+            /** Amount Kzt */
+            amount_kzt: number;
+        };
+        /** ActivationOut */
+        ActivationOut: {
+            /** Event Id */
+            event_id: number;
+            /** Title */
+            title: string;
+            /** Activation Paid At */
+            activation_paid_at: string | null;
+            /** Paid Sales Enabled */
+            paid_sales_enabled: boolean;
+            /** Suspended */
+            suspended: boolean;
+        };
+        /** ActivationStatus */
+        ActivationStatus: {
+            /** Fee Kzt */
+            fee_kzt: number;
+            /** Has Paid Ticket Type */
+            has_paid_ticket_type: boolean;
+            /** Organizer Verified */
+            organizer_verified: boolean;
+            /** Payout Account Set */
+            payout_account_set: boolean;
+            /** Terms Accepted */
+            terms_accepted: boolean;
+            /** Fee Paid */
+            fee_paid: boolean;
+            /** Paid Sales Enabled */
+            paid_sales_enabled: boolean;
+            /** Suspended */
+            suspended: boolean;
+            /** Pending Payment Id */
+            pending_payment_id: number | null;
+        };
+        /** Analytics */
+        Analytics: {
+            /** Capacity */
+            capacity: number;
+            /** Sold */
+            sold: number;
+            /** Remaining */
+            remaining: number;
+            /** Percent Sold */
+            percent_sold: number;
+            /** Gross Kzt */
+            gross_kzt: number;
+            /** Discount Kzt */
+            discount_kzt: number;
+            /** Refunds Kzt */
+            refunds_kzt: number;
+            /** Net Kzt */
+            net_kzt: number;
+            /** Sales By Day */
+            sales_by_day: components["schemas"]["DaySales"][];
+            /** By Ticket Type */
+            by_ticket_type: components["schemas"]["TypeSales"][];
+            /** Checked In */
+            checked_in: number;
+            /** Absent */
+            absent: number;
+            /** Checkin Percent */
+            checkin_percent: number;
+            /** Campaigns */
+            campaigns: components["schemas"]["CampaignOut"][];
+        };
         /** AttendeeInfo */
         AttendeeInfo: {
             /** Name */
@@ -434,6 +967,10 @@ export interface components {
         AttendeeOut: {
             /** Ticket Id */
             ticket_id: number;
+            /** Order Id */
+            order_id: number;
+            /** Order Total Kzt */
+            order_total_kzt: number;
             /** Attendee Name */
             attendee_name: string;
             /** Attendee Email */
@@ -442,6 +979,186 @@ export interface components {
             ticket_type_name: string;
             /** Status */
             status: string;
+        };
+        /** Body_submit_verification_api_v1_organizer_verification_post */
+        Body_submit_verification_api_v1_organizer_verification_post: {
+            /** Document */
+            document: string;
+        };
+        /** CampaignCreate */
+        CampaignCreate: {
+            /** Name */
+            name: string;
+            /** Code */
+            code?: string | null;
+            /**
+             * Discount Type
+             * @enum {string}
+             */
+            discount_type: "percent" | "fixed";
+            /** Discount Value */
+            discount_value: number;
+            /** Valid From */
+            valid_from?: string | null;
+            /** Valid Until */
+            valid_until?: string | null;
+            /** Max Redemptions */
+            max_redemptions?: number | null;
+            /** Ticket Type Ids */
+            ticket_type_ids?: number[] | null;
+        };
+        /** CampaignOut */
+        CampaignOut: {
+            /** Id */
+            id: number;
+            /** Event Id */
+            event_id: number;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string;
+            /** Link */
+            link: string;
+            /** Discount Type */
+            discount_type: string;
+            /** Discount Value */
+            discount_value: number;
+            /** Valid From */
+            valid_from: string | null;
+            /** Valid Until */
+            valid_until: string | null;
+            /** Max Redemptions */
+            max_redemptions: number | null;
+            /** Redemptions */
+            redemptions: number;
+            /** Ticket Type Ids */
+            ticket_type_ids: number[] | null;
+            /** Disabled */
+            disabled: boolean;
+            /** Orders */
+            orders: number;
+            /** Tickets Sold */
+            tickets_sold: number;
+            /** Gross Kzt */
+            gross_kzt: number;
+            /** Discount Kzt */
+            discount_kzt: number;
+            /** Net Kzt */
+            net_kzt: number;
+        };
+        /** CaseCreate */
+        CaseCreate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "attendee" | "organizer";
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "ticket_delivery" | "payment" | "refund" | "seating" | "event_information" | "check_in" | "account" | "activation" | "technical";
+            /** Subject */
+            subject: string;
+            /** Message */
+            message: string;
+            /** Event Id */
+            event_id?: number | null;
+            /** Order Id */
+            order_id?: number | null;
+            /** Ticket Id */
+            ticket_id?: number | null;
+        };
+        /** CaseDetail */
+        CaseDetail: {
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Category */
+            category: string;
+            /** Subject */
+            subject: string;
+            /** Status */
+            status: string;
+            /** Requester Name */
+            requester_name: string;
+            /** Requester Email */
+            requester_email: string;
+            /** Event Id */
+            event_id: number | null;
+            /** Event Title */
+            event_title: string | null;
+            /** Order Id */
+            order_id: number | null;
+            /** Ticket Id */
+            ticket_id: number | null;
+            /** Assignee Id */
+            assignee_id: number | null;
+            /** Assignee Name */
+            assignee_name: string | null;
+            /** Can Manage */
+            can_manage: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Messages */
+            messages: components["schemas"]["MessageOut"][];
+        };
+        /** CaseOut */
+        CaseOut: {
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Category */
+            category: string;
+            /** Subject */
+            subject: string;
+            /** Status */
+            status: string;
+            /** Requester Name */
+            requester_name: string;
+            /** Requester Email */
+            requester_email: string;
+            /** Event Id */
+            event_id: number | null;
+            /** Event Title */
+            event_title: string | null;
+            /** Order Id */
+            order_id: number | null;
+            /** Ticket Id */
+            ticket_id: number | null;
+            /** Assignee Id */
+            assignee_id: number | null;
+            /** Assignee Name */
+            assignee_name: string | null;
+            /** Can Manage */
+            can_manage: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CaseUpdate */
+        CaseUpdate: {
+            /** Status */
+            status?: ("open" | "in_progress" | "waiting_for_customer" | "resolved") | null;
+            /** Assignee Id */
+            assignee_id?: number | null;
         };
         /** CheckinRequest */
         CheckinRequest: {
@@ -462,6 +1179,25 @@ export interface components {
              */
             checked_in_at: string;
         };
+        /** CheckinSummary */
+        CheckinSummary: {
+            /** Registered */
+            registered: number;
+            /** Checked In */
+            checked_in: number;
+        };
+        /** DaySales */
+        DaySales: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Tickets */
+            tickets: number;
+            /** Revenue Kzt */
+            revenue_kzt: number;
+        };
         /** EventCreate */
         EventCreate: {
             /** Title */
@@ -474,6 +1210,8 @@ export interface components {
             venue_name?: string | null;
             /** Venue Address */
             venue_address?: string | null;
+            /** Cover Image Url */
+            cover_image_url?: string | null;
             /**
              * Starts At
              * Format: date-time
@@ -500,6 +1238,12 @@ export interface components {
             registration_opens_at?: string | null;
             /** Registration Closes At */
             registration_closes_at?: string | null;
+            /**
+             * Refund Policy
+             * @default full_until_48h
+             * @enum {string}
+             */
+            refund_policy: "full_until_48h" | "full_anytime" | "no_refunds";
             /** Ticket Types */
             ticket_types?: components["schemas"]["TicketTypeCreate"][];
         };
@@ -554,6 +1298,8 @@ export interface components {
             registration_closes_at: string | null;
             /** Paid Sales Enabled */
             paid_sales_enabled: boolean;
+            /** Refund Policy */
+            refund_policy: string;
             /**
              * Created At
              * Format: date-time
@@ -572,6 +1318,8 @@ export interface components {
             venue_name?: string | null;
             /** Venue Address */
             venue_address?: string | null;
+            /** Cover Image Url */
+            cover_image_url?: string | null;
             /** Starts At */
             starts_at?: string | null;
             /** Ends At */
@@ -584,6 +1332,8 @@ export interface components {
             registration_opens_at?: string | null;
             /** Registration Closes At */
             registration_closes_at?: string | null;
+            /** Refund Policy */
+            refund_policy?: ("full_until_48h" | "full_anytime" | "no_refunds") | null;
         };
         /** EventWithTicketTypesOut */
         EventWithTicketTypesOut: {
@@ -629,6 +1379,8 @@ export interface components {
             registration_closes_at: string | null;
             /** Paid Sales Enabled */
             paid_sales_enabled: boolean;
+            /** Refund Policy */
+            refund_policy: string;
             /**
              * Created At
              * Format: date-time
@@ -659,12 +1411,35 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** MessageCreate */
+        MessageCreate: {
+            /** Body */
+            body: string;
+        };
+        /** MessageOut */
+        MessageOut: {
+            /** Id */
+            id: number;
+            /** Author Name */
+            author_name: string;
+            /** From Requester */
+            from_requester: boolean;
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** OrderCreate */
         OrderCreate: {
             /** Event Id */
             event_id: number;
             /** Items */
             items: components["schemas"]["OrderItemCreate"][];
+            /** Promo Code */
+            promo_code?: string | null;
         };
         /** OrderItemCreate */
         OrderItemCreate: {
@@ -704,11 +1479,18 @@ export interface components {
             fee_kzt: number;
             /** Total Kzt */
             total_kzt: number;
+            /** Promo Campaign Id */
+            promo_campaign_id: number | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+            /** Expires At */
+            expires_at: string | null;
+            /** Payment Id */
+            payment_id: number | null;
+            event: components["schemas"]["EventOut"];
             /** Items */
             items: components["schemas"]["OrderItemOut"][];
             /** Tickets */
@@ -728,6 +1510,10 @@ export interface components {
             phone: string | null;
             /** Verification Status */
             verification_status: string;
+            /** Verification Document */
+            verification_document: string | null;
+            /** Payout Account */
+            payout_account: string | null;
             /**
              * Created At
              * Format: date-time
@@ -742,6 +1528,61 @@ export interface components {
             contact_email?: string | null;
             /** Phone */
             phone?: string | null;
+            /** Payout Account */
+            payout_account?: string | null;
+        };
+        /** OrganizerReviewOut */
+        OrganizerReviewOut: {
+            /** Id */
+            id: number;
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /** Verification Status */
+            verification_status: string;
+            /** Verification Document */
+            verification_document: string | null;
+            /** Payout Account */
+            payout_account: string | null;
+        };
+        /** PaymentOut */
+        PaymentOut: {
+            /** Id */
+            id: number;
+            /** Purpose */
+            purpose: string;
+            /** Status */
+            status: string;
+            /** Amount Kzt */
+            amount_kzt: number;
+            /** Event Id */
+            event_id: number;
+            /** Event Title */
+            event_title: string;
+            /** Order Id */
+            order_id: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PaymentRef */
+        PaymentRef: {
+            /** Payment Id */
+            payment_id: number;
+        };
+        /** PromoPreview */
+        PromoPreview: {
+            /** Code */
+            code: string;
+            /** Discount Type */
+            discount_type: string;
+            /** Discount Value */
+            discount_value: number;
+            /** Ticket Type Ids */
+            ticket_type_ids: number[] | null;
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -759,6 +1600,14 @@ export interface components {
             password: string;
             /** Full Name */
             full_name: string;
+        };
+        /** SimulateRequest */
+        SimulateRequest: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "success" | "failure" | "timeout";
         };
         /** StaffCreate */
         StaffCreate: {
@@ -781,6 +1630,10 @@ export interface components {
             event_id: number;
             /** User Id */
             user_id: number;
+            /** Email */
+            email: string;
+            /** Full Name */
+            full_name: string;
             /** Role */
             role: string;
             /**
@@ -788,6 +1641,16 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** SuspendRequest */
+        SuspendRequest: {
+            /** Suspended */
+            suspended: boolean;
+        };
+        /** TicketCheckinRequest */
+        TicketCheckinRequest: {
+            /** Event Id */
+            event_id: number;
         };
         /** TicketOut */
         TicketOut: {
@@ -894,6 +1757,19 @@ export interface components {
              */
             token_type: string;
         };
+        /** TypeSales */
+        TypeSales: {
+            /** Ticket Type Id */
+            ticket_type_id: number;
+            /** Name */
+            name: string;
+            /** Capacity */
+            capacity: number;
+            /** Sold */
+            sold: number;
+            /** Revenue Kzt */
+            revenue_kzt: number;
+        };
         /** UserOut */
         UserOut: {
             /** Id */
@@ -902,6 +1778,8 @@ export interface components {
             email: string;
             /** Full Name */
             full_name: string;
+            /** Is Admin */
+            is_admin: boolean;
             /** Email Verified At */
             email_verified_at: string | null;
         };
@@ -917,6 +1795,14 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VerificationDecision */
+        VerificationDecision: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "approved" | "rejected";
         };
         /** VerifyEmailRequest */
         VerifyEmailRequest: {
@@ -1132,6 +2018,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["OrganizerProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_verification_api_v1_organizer_verification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_submit_verification_api_v1_organizer_verification_post"];
             };
         };
         responses: {
@@ -1434,6 +2353,99 @@ export interface operations {
             };
         };
     };
+    activation_api_v1_events__event_id__activation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_terms_api_v1_events__event_id__activation_terms_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pay_activation_fee_api_v1_events__event_id__activation_payment_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentRef"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_ticket_types_api_v1_events__event_id__ticket_types_get: {
         parameters: {
             query?: never;
@@ -1597,6 +2609,37 @@ export interface operations {
             };
         };
     };
+    get_ticket_pdf_api_v1_tickets__ticket_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_order_api_v1_orders_post: {
         parameters: {
             query?: never;
@@ -1714,6 +2757,57 @@ export interface operations {
             };
         };
     };
+    cancel_order_api_v1_orders__order_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkin_events_api_v1_checkin_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"][];
+                };
+            };
+        };
+    };
     checkin_api_v1_checkin_post: {
         parameters: {
             query?: never;
@@ -1734,6 +2828,758 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CheckinResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkin_ticket_api_v1_checkin_tickets__ticket_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketCheckinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckinResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    undo_checkin_api_v1_checkin_tickets__ticket_id__undo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketCheckinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkin_summary_api_v1_checkin_events__event_id__summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckinSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkin_search_api_v1_checkin_events__event_id__attendees_get: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendeeOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_payment_api_v1_payments__payment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulate_api_v1_payments__payment_id__simulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_campaigns_api_v1_events__event_id__campaigns_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_campaign_api_v1_events__event_id__campaigns_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_campaign_api_v1_campaigns__campaign_id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    campaign_qr_api_v1_campaigns__campaign_id__qr_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_promo_api_v1_events__event_id__promo_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                token?: string | null;
+            };
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_cases_api_v1_support_cases_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"][];
+                };
+            };
+        };
+    };
+    create_case_api_v1_support_cases_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inbox_api_v1_support_inbox_get: {
+        parameters: {
+            query?: {
+                status?: ("open" | "in_progress" | "waiting_for_customer" | "resolved") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_case_api_v1_support_cases__case_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_case_api_v1_support_cases__case_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_message_api_v1_support_cases__case_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    event_analytics_api_v1_events__event_id__analytics_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                ticket_type_id?: number | null;
+            };
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Analytics"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    organizers_api_v1_admin_organizers_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerReviewOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_verification_api_v1_admin_organizers__organizer_id__verification_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_activation_fee_api_v1_admin_settings_activation_fee_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationFee"];
+                };
+            };
+        };
+    };
+    set_activation_fee_api_v1_admin_settings_activation_fee_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivationFee"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationFee"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activations_api_v1_admin_activations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationOut"][];
+                };
+            };
+        };
+    };
+    suspend_paid_sales_api_v1_admin_events__event_id__paid_sales_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuspendRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivationOut"];
                 };
             };
             /** @description Validation Error */

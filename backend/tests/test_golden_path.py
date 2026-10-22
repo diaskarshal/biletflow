@@ -1,9 +1,11 @@
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.modules.orders import service as orders_service
 
 client = TestClient(app)
 
@@ -28,7 +30,9 @@ def attendee_token() -> str:
     return _register_and_login("attendee")
 
 
-def test_golden_path(organizer_token: str, attendee_token: str):
+def test_golden_path(organizer_token: str, attendee_token: str, monkeypatch: pytest.MonkeyPatch):
+    sent = []
+    monkeypatch.setattr(orders_service, "send_email", lambda **kw: sent.append(kw))
     org_headers = {"Authorization": f"Bearer {organizer_token}"}
     att_headers = {"Authorization": f"Bearer {attendee_token}"}
 
@@ -43,6 +47,7 @@ def test_golden_path(organizer_token: str, attendee_token: str):
     ).json()
     event_id = event["id"]
     assert event["status"] == "draft"
+    assert datetime.fromisoformat(event["starts_at"]) == datetime(2026, 12, 1, 18, tzinfo=UTC)
 
     published = client.post(f"/api/v1/events/{event_id}/publish", headers=org_headers).json()
     assert published["status"] == "published"
@@ -70,6 +75,14 @@ def test_golden_path(organizer_token: str, attendee_token: str):
     assert order["status"] == "paid"
     ticket = order["tickets"][0]
     assert ticket["status"] == "valid"
+    assert order["event"]["id"] == event_id
+    [email] = sent
+    assert email["to"] == "attendee-ticket@test.kz"
+    assert "01 Dec 2026, 23:00" in email["body"]
+    qr, pdf = email["attachments"].values()
+    assert qr.startswith(b"\x89PNG") and pdf.startswith(b"%PDF")
+    ticket_pdf = client.get(f"/api/v1/tickets/{ticket['id']}/pdf", headers=att_headers)
+    assert ticket_pdf.headers["content-type"] == "application/pdf"
 
     overbuy = client.post(
         "/api/v1/orders",

@@ -5,6 +5,8 @@ from pydantic import BaseModel, EmailStr, Field
 
 from app.modules.tickets.schemas import TicketTypeCreate, TicketTypeOut
 
+RefundPolicy = Literal["full_until_48h", "full_anytime", "no_refunds"]
+
 
 class EventCreate(BaseModel):
     title: str = Field(min_length=1)
@@ -12,6 +14,7 @@ class EventCreate(BaseModel):
     category: str | None = None
     venue_name: str | None = None
     venue_address: str | None = None
+    cover_image_url: str | None = None
     starts_at: datetime
     ends_at: datetime
     display_timezone: str = "Asia/Almaty"
@@ -19,6 +22,7 @@ class EventCreate(BaseModel):
     capacity: int | None = None
     registration_opens_at: datetime | None = None
     registration_closes_at: datetime | None = None
+    refund_policy: RefundPolicy = "full_until_48h"
     ticket_types: list[TicketTypeCreate] = Field(default_factory=list)
 
 
@@ -28,12 +32,14 @@ class EventUpdate(BaseModel):
     category: str | None = None
     venue_name: str | None = None
     venue_address: str | None = None
+    cover_image_url: str | None = None
     starts_at: datetime | None = None
     ends_at: datetime | None = None
     visibility: str | None = None
     capacity: int | None = None
     registration_opens_at: datetime | None = None
     registration_closes_at: datetime | None = None
+    refund_policy: RefundPolicy | None = None
 
 
 class EventOut(BaseModel):
@@ -55,6 +61,7 @@ class EventOut(BaseModel):
     registration_opens_at: datetime | None
     registration_closes_at: datetime | None
     paid_sales_enabled: bool
+    refund_policy: str
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -78,7 +85,35 @@ class StaffOut(BaseModel):
     id: int
     event_id: int
     user_id: int
+    email: str
+    full_name: str
     role: str
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ActivationStatus(BaseModel):
+    fee_kzt: int
+    has_paid_ticket_type: bool
+    organizer_verified: bool
+    payout_account_set: bool
+    terms_accepted: bool
+    fee_paid: bool
+    paid_sales_enabled: bool
+    suspended: bool
+    pending_payment_id: int | None
+
+
+class PaymentRef(BaseModel):
+    payment_id: int
+
+
+class ActivityOut(BaseModel):
+    id: int
+    created_at: datetime
+    actor_name: str
+    action_type: str
+    entity_type: str
+    entity_id: int
+    description: str | None

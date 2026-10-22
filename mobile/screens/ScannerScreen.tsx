@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import type { BarcodeScanningResult } from "expo-camera";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { checkInTicket } from "../api/checkin";
+import { useFocusEffect } from "@react-navigation/native";
+import { checkInTicket, getSummary, undoCheckIn } from "../api/checkin";
+import type { CheckinSummary } from "../api/checkin";
 import type { RootStackParamList } from "../navigation/AppNavigation";
 import { classifyQrPayload } from "../utils/qr";
 import { outcomeFromError, rejectedQrOutcome } from "../utils/scanOutcome";
@@ -29,11 +31,26 @@ const OUTCOME_UI: Record<ScanOutcome["kind"], { color: string; symbol: string; l
     error: { color: "#555555", symbol: "!", label: "SCAN FAILED" },
 };
 
-export default function ScannerScreen({ route }: Props) {
+export default function ScannerScreen({ route, navigation }: Props) {
     const { eventId } = route.params;
 
     const [permission, requestPermission] = useCameraPermissions();
     const [outcome, setOutcome] = useState<ScanOutcome | null>(null);
+    const [summary, setSummary] = useState<CheckinSummary | null>(null);
+
+    const loadSummary = useCallback(() => {
+        getSummary(eventId).then(setSummary, () => undefined);
+    }, [eventId]);
+
+    useFocusEffect(loadSummary);
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <Button title="Search" onPress={() => navigation.navigate("Attendees", { eventId })} />
+            ),
+        });
+    }, [navigation, eventId]);
 
     // Refs, not state: the camera can report the same QR several times before a state update lands.
     const busy = useRef(false);
@@ -60,6 +77,7 @@ export default function ScannerScreen({ route }: Props) {
 
     function show(result: ScanOutcome) {
         setOutcome(result);
+        loadSummary();
         if (result.kind === "valid") {
             dismissTimer.current = setTimeout(dismiss, VALID_AUTO_DISMISS_MS);
         }
@@ -82,9 +100,22 @@ export default function ScannerScreen({ route }: Props) {
 
         try {
             const result = await checkInTicket(qr.token, eventId);
-            show({ kind: "valid", attendeeName: result.attendee_name });
+            show({ kind: "valid", attendeeName: result.attendee_name, ticketId: result.ticket_id });
         } catch (error) {
             show(outcomeFromError(error));
+        }
+    }
+
+    async function undo(ticketId: number) {
+        clearDismissTimer();
+        try {
+            await undoCheckIn(ticketId, eventId);
+            lastScan.current = null;
+            setOutcome(null);
+            busy.current = false;
+            loadSummary();
+        } catch (error) {
+            setOutcome(outcomeFromError(error));
         }
     }
 
@@ -118,6 +149,14 @@ export default function ScannerScreen({ route }: Props) {
                 onBarcodeScanned={outcome ? undefined : handleScan}
             />
 
+            {summary && (
+                <View style={styles.countBar} pointerEvents="none">
+                    <Text style={styles.countText}>
+                        Checked in {summary.checked_in} of {summary.registered}
+                    </Text>
+                </View>
+            )}
+
             <View style={styles.hintBar} pointerEvents="none">
                 <Text style={styles.hintText}>Point the camera at the ticket QR code</Text>
             </View>
@@ -136,6 +175,11 @@ export default function ScannerScreen({ route }: Props) {
                     <Text style={styles.resultMessage}>
                         {outcome.kind === "valid" ? outcome.attendeeName : outcome.message}
                     </Text>
+                    {outcome.kind === "valid" && (
+                        <Pressable style={styles.undoButton} onPress={() => undo(outcome.ticketId)}>
+                            <Text style={styles.undoText}>Undo check-in</Text>
+                        </Pressable>
+                    )}
                     <Text style={styles.resultHint}>Tap to scan next</Text>
                 </Pressable>
             )}
@@ -168,6 +212,36 @@ const styles = StyleSheet.create({
         bottom: 0,
         padding: 16,
         backgroundColor: "rgba(0,0,0,0.6)",
+    },
+
+    countBar: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 0,
+        padding: 12,
+        backgroundColor: "rgba(0,0,0,0.6)",
+    },
+
+    countText: {
+        color: "#fff",
+        textAlign: "center",
+        fontSize: 18,
+        fontWeight: "bold",
+    },
+
+    undoButton: {
+        marginTop: 24,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderWidth: 2,
+        borderColor: "#fff",
+    },
+
+    undoText: {
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "bold",
     },
 
     hintText: {

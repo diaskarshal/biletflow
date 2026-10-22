@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     jwt_refresh_days: int = 30
     smtp_host: str = "localhost"
     smtp_port: int = 1025
+    frontend_url: str = "http://localhost:5173"
 
 
 settings = Settings()
