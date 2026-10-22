@@ -62,6 +62,7 @@ class EventOut(BaseModel):
     registration_closes_at: datetime | None
     paid_sales_enabled: bool
     refund_policy: str
+    suspended_at: datetime | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

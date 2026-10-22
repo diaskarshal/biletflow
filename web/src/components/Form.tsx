@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from "../api/client";
+import { errorMessage } from "../lib/format";
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -17,7 +18,7 @@ export function Form() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const { mutate, isPending, isError, isSuccess } = useMutation({
+    const { mutate, isPending, isError, isSuccess, error } = useMutation({
         mutationFn: async (credentials: Creds) => {
             const { data, error } = await api.POST("/api/v1/auth/login", { body: credentials });
             if (error) throw error;
@@ -47,7 +48,7 @@ export function Form() {
 
     function handleStatus() {
         if (isPending) return "Loading";
-        if (isError) return "Login or password is incorrect";
+        if (isError) return errorMessage(error, "Login or password is incorrect");
         if (isSuccess) return "Logged in";
         return null;
     }
@@ -88,6 +89,7 @@ export function Form() {
                 </p>
             )}
             <Link to="/register" className="block text-center text-sm underline">No account? Register</Link>
+            <Link to="/forgot-password" className="block text-center text-sm underline">Forgot password?</Link>
         </form>
     );
 }

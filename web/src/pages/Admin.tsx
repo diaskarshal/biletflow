@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import type { components } from "../api/schema";
 import { Block, Table } from "../components/Block";
 import { Button } from "../components/Button";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { useAuth } from "../context/AuthContext";
-import { errorMessage } from "../lib/format";
+import { errorMessage, formatPrice } from "../lib/format";
 
 export function Admin() {
   const { user } = useAuth();
@@ -20,9 +22,14 @@ export function Admin() {
   return (
     <div className="mx-auto max-w-5xl space-y-10 px-6 py-12">
       <h1 className="text-3xl font-bold">Platform admin</h1>
+      <Search />
+      <Reports />
       <Verifications />
       <ActivationFee />
       <Activations />
+      <Payments />
+      <Promos />
+      <Exports />
     </div>
   );
 }
@@ -167,6 +174,271 @@ function Activations() {
           ))}
         </Table>
       )}
+    </Block>
+  );
+}
+
+const when = (iso: string) => new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+const kzt = (n: number) => `${formatPrice(n)} KZT`;
+
+function useSuspend(kind: "users" | "events") {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, suspended }: { id: number; suspended: boolean }) => {
+      const { error } =
+        kind === "users"
+          ? await api.POST("/api/v1/admin/users/{user_id}/suspension", { params: { path: { user_id: id } }, body: { suspended } })
+          : await api.POST("/api/v1/admin/events/{event_id}/suspension", { params: { path: { event_id: id } }, body: { suspended } });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-search"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-reports"] });
+    },
+  });
+}
+
+function Search() {
+  const [input, setInput] = useState("");
+  const [q, setQ] = useState("");
+  const result = useQuery({
+    queryKey: ["admin-search", q],
+    enabled: q !== "",
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/admin/search", { params: { query: { q } } });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const suspendUser = useSuspend("users");
+  const suspendEvent = useSuspend("events");
+  const r = result.data;
+  const failed = suspendUser.error ?? suspendEvent.error;
+
+  return (
+    <Block title="Search">
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setQ(input.trim());
+        }}
+      >
+        <Input aria-label="Search" placeholder="Email, name, event title, order or payment number" value={input} onChange={(e) => setInput(e.target.value)} />
+        <Button type="submit">Search</Button>
+      </form>
+      {result.isError && <ErrorState message={errorMessage(result.error)} />}
+      {failed && <ErrorState message={errorMessage(failed)} />}
+      {r && r.users.length + r.events.length + r.orders.length + r.payments.length === 0 && <EmptyState title="Nothing found" />}
+      {!!r?.users.length && (
+        <Table head={["User", "Email", "Status", ""]}>
+          {r.users.map((u) => (
+            <tr key={u.id} className="border-b border-slate-200">
+              <td className="py-2 pr-4">
+                {u.full_name}
+                {u.is_admin ? " (admin)" : ""}
+              </td>
+              <td className="py-2 pr-4">{u.email}</td>
+              <td className="py-2 pr-4">{u.suspended ? "Suspended" : "Active"}</td>
+              <td className="py-2 text-right">
+                <Button variant={u.suspended ? "secondary" : "danger"} onClick={() => suspendUser.mutate({ id: u.id, suspended: !u.suspended })}>
+                  {u.suspended ? "Restore" : "Suspend"}
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </Table>
+      )}
+      {!!r?.events.length && (
+        <Table head={["Event", "Status", ""]}>
+          {r.events.map((e) => (
+            <tr key={e.id} className="border-b border-slate-200">
+              <td className="py-2 pr-4">
+                <Link className="underline" to={`/events/${e.slug}`}>
+                  {e.title}
+                </Link>
+              </td>
+              <td className="py-2 pr-4">{e.suspended ? "Suspended" : e.status}</td>
+              <td className="py-2 text-right">
+                <Button variant={e.suspended ? "secondary" : "danger"} onClick={() => suspendEvent.mutate({ id: e.id, suspended: !e.suspended })}>
+                  {e.suspended ? "Restore" : "Suspend"}
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </Table>
+      )}
+      {!!r?.orders.length && (
+        <Table head={["Order", "Event", "Buyer", "Status", "Total", "Created"]}>
+          {r.orders.map((o) => (
+            <tr key={o.id} className="border-b border-slate-200">
+              <td className="py-2 pr-4">#{o.id}</td>
+              <td className="py-2 pr-4">{o.event_title}</td>
+              <td className="py-2 pr-4">{o.buyer_email}</td>
+              <td className="py-2 pr-4">{o.status}</td>
+              <td className="py-2 pr-4">{kzt(o.total_kzt)}</td>
+              <td className="py-2 pr-4">{when(o.created_at)}</td>
+            </tr>
+          ))}
+        </Table>
+      )}
+      {!!r?.payments.length && <PaymentTable rows={r.payments} />}
+    </Block>
+  );
+}
+
+function PaymentTable({ rows }: { rows: components["schemas"]["PaymentRow"][] }) {
+  return (
+    <Table head={["Payment", "For", "Event", "Payer", "Amount", "Status", "Created"]}>
+      {rows.map((p) => (
+        <tr key={p.id} className="border-b border-slate-200">
+          <td className="py-2 pr-4">#{p.id}</td>
+          <td className="py-2 pr-4">{p.purpose}</td>
+          <td className="py-2 pr-4">{p.event_title}</td>
+          <td className="py-2 pr-4">{p.user_email}</td>
+          <td className="py-2 pr-4">{kzt(p.amount_kzt)}</td>
+          <td className="py-2 pr-4">{p.status}</td>
+          <td className="py-2 pr-4">{when(p.created_at)}</td>
+        </tr>
+      ))}
+    </Table>
+  );
+}
+
+function Reports() {
+  const queryClient = useQueryClient();
+  const reports = useQuery({
+    queryKey: ["admin-reports"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/admin/reports");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const suspend = useSuspend("events");
+  const dismiss = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await api.POST("/api/v1/admin/reports/{report_id}/dismiss", { params: { path: { report_id: id } } });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-reports"] }),
+  });
+
+  return (
+    <Block title="Reported events">
+      {reports.data?.length === 0 && <EmptyState title="No open reports" />}
+      {!!reports.data?.length && (
+        <Table head={["Event", "Reported by", "Reason", "When", ""]}>
+          {reports.data.map((r) => (
+            <tr key={r.id} className="border-b border-slate-200 align-top">
+              <td className="py-2 pr-4">{r.event_title}</td>
+              <td className="py-2 pr-4">{r.reporter_email}</td>
+              <td className="py-2 pr-4 whitespace-pre-wrap">{r.reason}</td>
+              <td className="py-2 pr-4">{when(r.created_at)}</td>
+              <td className="space-x-2 py-2 text-right whitespace-nowrap">
+                {!r.event_suspended && (
+                  <Button variant="danger" onClick={() => suspend.mutate({ id: r.event_id, suspended: true })}>
+                    Suspend event
+                  </Button>
+                )}
+                <Button variant="secondary" onClick={() => dismiss.mutate(r.id)}>
+                  Dismiss
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </Table>
+      )}
+    </Block>
+  );
+}
+
+const PAYMENT_STATUSES = ["failed", "refunded", "expired", "succeeded", "pending"] as const;
+
+function Payments() {
+  const [status, setStatus] = useState<(typeof PAYMENT_STATUSES)[number]>("failed");
+  const payments = useQuery({
+    queryKey: ["admin-payments", status],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/admin/payments", { params: { query: { status } } });
+      if (error) throw error;
+      return data;
+    },
+  });
+  return (
+    <Block title="Payments">
+      <label className="block">
+        Status{" "}
+        <select className="border border-slate-400 px-2 py-1" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
+          {PAYMENT_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </label>
+      {payments.data?.length === 0 && <EmptyState title={`No ${status} payments`} />}
+      {!!payments.data?.length && <PaymentTable rows={payments.data} />}
+    </Block>
+  );
+}
+
+function Promos() {
+  const promos = useQuery({
+    queryKey: ["admin-promos"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/admin/promos");
+      if (error) throw error;
+      return data;
+    },
+  });
+  return (
+    <Block title="Promo code activity">
+      {promos.data?.length === 0 && <EmptyState title="No promo codes yet" />}
+      {!!promos.data?.length && (
+        <Table head={["Code", "Event", "Discount", "Used", "Status", "Created"]}>
+          {promos.data.map((c) => (
+            <tr key={c.id} className="border-b border-slate-200">
+              <td className="py-2 pr-4 font-semibold">{c.code}</td>
+              <td className="py-2 pr-4">{c.event_title}</td>
+              <td className="py-2 pr-4">{c.discount_type === "percent" ? `${c.discount_value}%` : kzt(c.discount_value)}</td>
+              <td className="py-2 pr-4">
+                {c.redemptions}
+                {c.max_redemptions ? ` / ${c.max_redemptions}` : ""}
+              </td>
+              <td className="py-2 pr-4">{c.disabled ? "Disabled" : "Active"}</td>
+              <td className="py-2 pr-4">{when(c.created_at)}</td>
+            </tr>
+          ))}
+        </Table>
+      )}
+    </Block>
+  );
+}
+
+function Exports() {
+  async function download(kind: "orders" | "payments") {
+    const { data } = await api.GET("/api/v1/admin/export/{kind}.csv", {
+      params: { path: { kind } },
+      parseAs: "blob",
+    });
+    if (!data) return;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(data as Blob);
+    link.download = `${kind}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+  return (
+    <Block title="Reports">
+      <div className="flex gap-3">
+        <Button variant="secondary" onClick={() => download("orders")}>
+          Download orders CSV
+        </Button>
+        <Button variant="secondary" onClick={() => download("payments")}>
+          Download payments CSV
+        </Button>
+      </div>
     </Block>
   );
 }

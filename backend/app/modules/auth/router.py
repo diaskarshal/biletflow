@@ -8,13 +8,17 @@ from app.core.security import create_access_token, create_refresh_token, decode_
 from app.db.models import User
 from app.modules.auth import service
 from app.modules.auth.schemas import (
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
     LoginRequest,
     OrganizerProfileOut,
     OrganizerProfileUpdate,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserOut,
+    UserUpdate,
     VerifyEmailRequest,
 )
 
@@ -38,6 +42,34 @@ def verify_email(body: VerifyEmailRequest, db: Session = Depends(get_db)) -> Use
     return service.verify_email(db, body.token)
 
 
+@router.post("/auth/resend-verification", status_code=204)
+def resend_verification(user: User = Depends(get_current_user)) -> None:
+    if user.email_verified_at is None:
+        service.send_verification_email(user)
+
+
+@router.post("/auth/forgot-password", status_code=204)
+def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)) -> None:
+    service.request_password_reset(db, body.email)
+
+
+@router.post("/auth/reset-password", status_code=204)
+def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)) -> None:
+    service.reset_password(db, body.token, body.password)
+
+
+@router.post("/me/password", status_code=204)
+def change_password(
+    body: ChangePasswordRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> None:
+    service.change_password(db, user, body.current_password, body.new_password)
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(body: UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> User:
+    return service.update_name(db, user, body.full_name)
+
+
 @router.post("/auth/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     user = service.authenticate(db, body.email, body.password)
@@ -54,6 +86,8 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> TokenRespons
     user = db.get(User, user_id)
     if user is None or user.deleted_at is not None:
         raise APIError("UNAUTHENTICATED", "Invalid or expired refresh token", status_code=401)
+    if user.suspended_at is not None:
+        raise APIError("ACCOUNT_SUSPENDED", "This account has been suspended", status_code=403)
     return _tokens_for(user)
 
 

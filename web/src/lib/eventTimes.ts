@@ -17,3 +17,8 @@ export function eventRange(input: { dateFrom: string; timeFrom: string; dateTo: 
       : new Date(start.getTime() + DEFAULT_DURATION_MS);
   return { starts_at: start.toISOString(), ends_at: end.toISOString(), valid: end > start };
 }
+
+export function localParts(iso: string) {
+  const local = new Date(Date.parse(iso) + 5 * 60 * 60 * 1000).toISOString();
+  return { date: local.slice(0, 10), time: local.slice(11, 16) };
+}

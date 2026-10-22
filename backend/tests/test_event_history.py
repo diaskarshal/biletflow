@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.modules.events import service as events_service
 
 client = TestClient(app)
 
@@ -29,7 +30,9 @@ def _event(org: dict) -> dict:
     ).json()
 
 
-def test_unpublish_duplicate_and_activity():
+def test_unpublish_duplicate_and_activity(monkeypatch):
+    sent = []
+    monkeypatch.setattr(events_service, "send_email", lambda to, subject, body: sent.append((to, subject, body)))
     org, _ = _login("organizer")
     buyer, _ = _login("buyer")
     helper, helper_email = _login("helper")
@@ -45,10 +48,17 @@ def test_unpublish_duplicate_and_activity():
     client.post(
         "/api/v1/orders",
         headers={**buyer, "Idempotency-Key": uuid.uuid4().hex},
-        json={"event_id": event_id, "items": [{"ticket_type_id": event["ticket_types"][0]["id"], "quantity": 1, "attendees": [{"name": "A", "email": "a@test.kz"}]}]},
+        json={"event_id": event_id, "items": [{"ticket_type_id": event["ticket_types"][0]["id"], "quantity": 2, "attendees": [{"name": "A", "email": "a@test.kz"}] * 2}]},
     )
+    shrink = client.patch(f"/api/v1/ticket-types/{event['ticket_types'][0]['id']}", headers=org, json={"quantity_total": 1})
+    assert shrink.json()["error"]["code"] == "CAPACITY_BELOW_SOLD"
     assert client.post(f"/api/v1/events/{event_id}/unpublish", headers=org).json()["error"]["code"] == "EVENT_HAS_ORDERS"
+    client.patch(f"/api/v1/events/{event_id}", headers=org, json={"description": "Bring a friend"})
+    assert sent == []
     client.patch(f"/api/v1/events/{event_id}", headers=org, json={"venue_name": "Big hall"})
+    [(to, subject, body)] = sent
+    assert (to, subject) == ("a@test.kz", f"Update: {event['title']}")
+    assert "Where: Big hall" in body and "01 Dec 2026, 18:00" in body
 
     copy = client.post(f"/api/v1/events/{event_id}/duplicate", headers=org).json()
     assert (copy["status"], copy["venue_name"], copy["title"]) == ("draft", "Big hall", f"{event['title']} (copy)")
@@ -62,7 +72,7 @@ def test_unpublish_duplicate_and_activity():
     assert client.get(url, headers=buyer).status_code == 403
     assert client.get(url, headers=door).status_code == 403
     history = client.get(url, headers=helper).json()
-    assert [h["action_type"] for h in history] == ["event.updated", "event.published", "event.created"]
+    assert [h["action_type"] for h in history] == ["event.updated", "event.updated", "event.published", "event.created"]
     assert history[0]["actor_name"] == "organizer" and history[0]["description"] == "Changed venue_name"
     assert [h["action_type"] for h in client.get(f"{url}?action=event.pub", headers=org).json()] == ["event.published"]
     tomorrow = (datetime.now(UTC) + timedelta(days=2)).date().isoformat()

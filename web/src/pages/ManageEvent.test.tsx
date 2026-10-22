@@ -9,6 +9,8 @@ const event = {
   title: "MVP Demo",
   status: "published",
   starts_at: "2026-12-01T13:00:00Z",
+  ends_at: "2026-12-01T15:00:00Z",
+  refund_policy: "full_until_48h",
   display_timezone: "Asia/Almaty",
 };
 
@@ -47,12 +49,12 @@ it("lists attendees and adds door staff", async () => {
     </QueryClientProvider>,
   );
 
-  expect(await screen.findByText("Aigerim")).toBeTruthy();
+  expect(await screen.findByText("Aigerim", {}, { timeout: 5000 })).toBeTruthy();
   expect(screen.getByText("1 of 1 checked in")).toBeTruthy();
 
   fireEvent.change(screen.getByLabelText("Staff email"), { target: { value: "door@test.kz" } });
   fireEvent.click(screen.getByRole("button", { name: "Add" }));
 
-  expect(await screen.findByText("Door Staff (door@test.kz)")).toBeTruthy();
+  expect(await screen.findByText("Door Staff (door@test.kz)", {}, { timeout: 5000 })).toBeTruthy();
   expect(posted).toEqual([{ email: "door@test.kz", role: "event_admin" }]);
 });

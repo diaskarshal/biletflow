@@ -57,7 +57,6 @@ export function NewEvent() {
         },
       });
       if (error) throw error;
-      // Unpublished events are invisible to attendees, and there is no publish control in the design yet.
       const { error: publishError } = await api.POST("/api/v1/events/{event_id}/publish", {
         params: { path: { event_id: event.id } },
       });

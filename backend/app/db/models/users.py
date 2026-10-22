@@ -15,6 +15,7 @@ class User(Base):
     full_name: Mapped[str]
     is_admin: Mapped[bool] = mapped_column(default=False, server_default=false())
     email_verified_at: Mapped[datetime | None]
+    suspended_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     deleted_at: Mapped[datetime | None]
 

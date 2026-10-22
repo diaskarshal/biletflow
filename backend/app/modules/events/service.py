@@ -7,6 +7,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core import audit
+from app.core.config import settings
+from app.core.email import send_email
 from app.core.errors import APIError
 from app.db.models import (
     AuditLog,
@@ -15,6 +17,7 @@ from app.db.models import (
     Order,
     OrganizerProfile,
     Payment,
+    Ticket,
     TicketType,
     User,
 )
@@ -70,7 +73,7 @@ def get_event_by_slug_for_viewer(db: Session, slug: str, user: User | None) -> E
     event = db.query(Event).filter_by(slug=slug).one_or_none()
     if event is None or event.deleted_at is not None:
         raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
-    if event.status in ("published", "completed"):
+    if event.status in ("published", "completed") and event.suspended_at is None:
         return event
     if user is not None and is_owner(db, user, event):
         return event
@@ -95,7 +98,9 @@ def require_event_admin(db: Session, user: User, event: Event) -> None:
 
 
 def list_published_events(db: Session, limit: int, cursor: int | None) -> tuple[list[Event], int | None]:
-    query = db.query(Event).filter(Event.status == "published", Event.deleted_at.is_(None))
+    query = db.query(Event).filter(
+        Event.status == "published", Event.deleted_at.is_(None), Event.suspended_at.is_(None)
+    )
     if cursor is not None:
         query = query.filter(Event.id > cursor)
     events = query.order_by(Event.id).limit(limit + 1).all()
@@ -131,7 +136,31 @@ def update_event(db: Session, actor: User, event: Event, data: dict) -> Event:
         )
     db.commit()
     db.refresh(event)
+    if event.status == "published" and changes.keys() & NOTIFY_FIELDS:
+        _notify_ticket_holders(db, event)
     return event
+
+
+NOTIFY_FIELDS = {"starts_at", "ends_at", "venue_name", "venue_address"}
+
+
+def _notify_ticket_holders(db: Session, event: Event) -> None:
+    starts = event.starts_at.astimezone(ZoneInfo(event.display_timezone))
+    venue = ", ".join(v for v in (event.venue_name, event.venue_address) if v) or "To be announced"
+    body = (
+        f"The organizer changed the details of {event.title}.\n\n"
+        f"When: {starts:%d %b %Y, %H:%M} ({event.display_timezone})\n"
+        f"Where: {venue}\n\n"
+        f"Your ticket is still valid. Event page: {settings.frontend_url}/events/{event.slug}\n"
+    )
+    emails = {
+        email
+        for (email,) in db.query(Ticket.attendee_email)
+        .join(TicketType, TicketType.id == Ticket.ticket_type_id)
+        .filter(TicketType.event_id == event.id, Ticket.status == "valid")
+    }
+    for email in sorted(emails):
+        send_email(email, f"Update: {event.title}", body)
 
 
 def publish_event(db: Session, actor: User, event: Event) -> Event:

@@ -43,5 +43,17 @@ class Event(Base):
     terms_accepted_at: Mapped[datetime | None]
     activation_paid_at: Mapped[datetime | None]
     paid_sales_suspended_at: Mapped[datetime | None]
+    suspended_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     deleted_at: Mapped[datetime | None]
+
+
+class EventReport(Base):
+    __tablename__ = "event_reports"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
+    reporter_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    reason: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    resolved_at: Mapped[datetime | None]

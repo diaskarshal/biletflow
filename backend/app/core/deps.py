@@ -35,6 +35,8 @@ def get_current_user(
     user = db.get(User, user_id)
     if user is None or user.deleted_at is not None:
         raise APIError("UNAUTHENTICATED", "User not found", status_code=401)
+    if user.suspended_at is not None:
+        raise APIError("ACCOUNT_SUSPENDED", "This account has been suspended", status_code=403)
     return user
 
 

@@ -2,13 +2,24 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
+import type { components } from "../api/schema";
 import { StatusBadge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { Spinner } from "../components/Spinner";
 import { useOrganizerEvents } from "../hooks/useOrganizerEvents";
-import { errorMessage, formatDate, formatPrice, formatTime } from "../lib/format";
+import { eventRange, localParts } from "../lib/eventTimes";
+import {
+  errorMessage,
+  formatDate,
+  formatPrice,
+  formatTime,
+  REFUND_POLICIES,
+  type RefundPolicy,
+} from "../lib/format";
+
+type Event = components["schemas"]["EventOut"];
 
 export function ManageEvent() {
   const id = Number(useParams().id);
@@ -31,6 +42,12 @@ export function ManageEvent() {
           Back to my events
         </Link>
         <h1 className="font-heading text-5xl">{event.title}</h1>
+        {event.suspended_at && (
+          <p className="border border-red-700 p-3 text-red-700">
+            The platform suspended this event. It is hidden and cannot take new orders. Contact platform support for
+            details.
+          </p>
+        )}
         <div className="flex items-center gap-4 text-xl">
           <StatusBadge status={event.status} />
           <span>
@@ -44,14 +61,348 @@ export function ManageEvent() {
           <Link to={`/organizer/events/${id}/analytics`} className="underline">
             Analytics
           </Link>
+          <EventActions event={event} />
           {(event.status === "published" || event.status === "draft") && <CancelEvent eventId={id} />}
         </div>
       </div>
+      {(event.status === "published" || event.status === "draft") && (
+        <>
+          <EditEvent key={event.id} event={event} />
+          <TicketTypes eventId={id} />
+        </>
+      )}
       <Attendees eventId={id} />
       <DoorStaff eventId={id} />
       <PaidSales eventId={id} />
       <Campaigns eventId={id} />
+      <Activity eventId={id} />
     </div>
+  );
+}
+
+function EventActions({ event }: { event: Event }) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["organizer-events"] });
+    queryClient.invalidateQueries({ queryKey: ["activity", event.id] });
+  };
+  const path = { params: { path: { event_id: event.id } } };
+  const publish = useMutation({
+    mutationFn: async () => {
+      const { error } = await api.POST("/api/v1/events/{event_id}/publish", path);
+      if (error) throw error;
+    },
+    onSuccess: refresh,
+  });
+  const unpublish = useMutation({
+    mutationFn: async () => {
+      const { error } = await api.POST("/api/v1/events/{event_id}/unpublish", path);
+      if (error) throw error;
+    },
+    onSuccess: refresh,
+  });
+  const duplicate = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/api/v1/events/{event_id}/duplicate", path);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (copy) => {
+      refresh();
+      navigate(`/organizer/events/${copy.id}`);
+    },
+  });
+  const failed = publish.error ?? unpublish.error ?? duplicate.error;
+
+  return (
+    <>
+      {event.status === "draft" && (
+        <Button loading={publish.isPending} onClick={() => publish.mutate()}>
+          Publish
+        </Button>
+      )}
+      {event.status === "published" && (
+        <Button variant="secondary" loading={unpublish.isPending} onClick={() => unpublish.mutate()}>
+          Unpublish
+        </Button>
+      )}
+      <Button variant="secondary" loading={duplicate.isPending} onClick={() => duplicate.mutate()}>
+        Duplicate
+      </Button>
+      {failed && <ErrorState message={errorMessage(failed)} />}
+    </>
+  );
+}
+
+function EditEvent({ event }: { event: Event }) {
+  const queryClient = useQueryClient();
+  const start = localParts(event.starts_at);
+  const end = localParts(event.ends_at);
+  const [form, setForm] = useState({
+    title: event.title,
+    description: event.description ?? "",
+    venueName: event.venue_name ?? "",
+    address: event.venue_address ?? "",
+    image: event.cover_image_url ?? "",
+    dateFrom: start.date,
+    timeFrom: start.time,
+    dateTo: end.date,
+    timeTo: end.time,
+    refundPolicy: event.refund_policy as RefundPolicy,
+  });
+  const set = (field: keyof typeof form) => (e: { target: { value: string } }) =>
+    setForm({ ...form, [field]: e.target.value });
+  const range = eventRange(form);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await api.PATCH("/api/v1/events/{event_id}", {
+        params: { path: { event_id: event.id } },
+        body: {
+          title: form.title.trim(),
+          description: form.description.trim(),
+          venue_name: form.venueName.trim(),
+          venue_address: form.address.trim(),
+          cover_image_url: form.image.trim(),
+          starts_at: range.starts_at,
+          ends_at: range.ends_at,
+          refund_policy: form.refundPolicy,
+        },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organizer-events"] });
+      queryClient.invalidateQueries({ queryKey: ["activity", event.id] });
+    },
+  });
+
+  const field = "border-slate-400!";
+  return (
+    <Section title="Event details" note="Times are in Almaty time.">
+      <form
+        className="grid max-w-3xl grid-cols-2 gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate();
+        }}
+      >
+        <label className="col-span-2 space-y-1">
+          <span className="block">Title</span>
+          <Input required className={field} value={form.title} onChange={set("title")} />
+        </label>
+        <label className="col-span-2 space-y-1">
+          <span className="block">Description</span>
+          <textarea rows={4} className="w-full border border-slate-400 px-3 py-2" value={form.description} onChange={set("description")} />
+        </label>
+        <label className="space-y-1">
+          <span className="block">Venue</span>
+          <Input className={field} value={form.venueName} onChange={set("venueName")} />
+        </label>
+        <label className="space-y-1">
+          <span className="block">Address</span>
+          <Input className={field} value={form.address} onChange={set("address")} />
+        </label>
+        <label className="space-y-1">
+          <span className="block">Start date</span>
+          <Input required type="date" className={field} value={form.dateFrom} onChange={set("dateFrom")} />
+        </label>
+        <label className="space-y-1">
+          <span className="block">Start time</span>
+          <Input required type="time" className={field} value={form.timeFrom} onChange={set("timeFrom")} />
+        </label>
+        <label className="space-y-1">
+          <span className="block">End date</span>
+          <Input required type="date" className={field} value={form.dateTo} onChange={set("dateTo")} />
+        </label>
+        <label className="space-y-1">
+          <span className="block">End time</span>
+          <Input required type="time" className={field} value={form.timeTo} onChange={set("timeTo")} />
+        </label>
+        <label className="space-y-1">
+          <span className="block">Cover image URL</span>
+          <Input className={field} value={form.image} onChange={set("image")} />
+        </label>
+        <label className="space-y-1">
+          <span className="block">Refund policy</span>
+          <select className="w-full rounded-xl border border-slate-400 bg-white px-3 py-2" value={form.refundPolicy} onChange={set("refundPolicy")}>
+            {Object.entries(REFUND_POLICIES).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="col-span-2 flex items-center gap-4">
+          <Button type="submit" disabled={!range.valid} loading={save.isPending}>
+            Save changes
+          </Button>
+          {!range.valid && <span className="text-red-700">The event must end after it starts.</span>}
+          {save.isSuccess && <span>Saved.</span>}
+        </div>
+        {save.isError && (
+          <div className="col-span-2">
+            <ErrorState message={errorMessage(save.error, "Could not save the event")} />
+          </div>
+        )}
+      </form>
+    </Section>
+  );
+}
+
+function TicketTypes({ eventId }: { eventId: number }) {
+  const types = useQuery({
+    queryKey: ["ticket-types", eventId],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/events/{event_id}/ticket-types", {
+        params: { path: { event_id: eventId } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+  return (
+    <Section title="Ticket types" note="Capacity cannot go below the tickets already sold.">
+      {types.isError && <ErrorState message={errorMessage(types.error)} />}
+      <table className="w-full max-w-3xl text-left">
+        <thead>
+          <tr className="border-b border-brand">
+            {["Name", "Sold", "Price (KZT)", "Capacity", ""].map((h) => (
+              <th key={h} className="py-2 pr-3">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {types.data?.map((t) => (
+            <TicketTypeRow key={t.id} eventId={eventId} ticketType={t} />
+          ))}
+        </tbody>
+      </table>
+    </Section>
+  );
+}
+
+function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: components["schemas"]["TicketTypeOut"] }) {
+  const queryClient = useQueryClient();
+  const [price, setPrice] = useState(String(ticketType.price_kzt));
+  const [capacity, setCapacity] = useState(String(ticketType.quantity_total));
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await api.PATCH("/api/v1/ticket-types/{ticket_type_id}", {
+        params: { path: { ticket_type_id: ticketType.id } },
+        body: { price_kzt: Number(price), quantity_total: Number(capacity) },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ticket-types", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["activity", eventId] });
+    },
+  });
+  const changed = price !== String(ticketType.price_kzt) || capacity !== String(ticketType.quantity_total);
+  return (
+    <tr className="border-b border-slate-200">
+      <td className="py-2 pr-3">{ticketType.name}</td>
+      <td className="py-2 pr-3">{ticketType.quantity_sold}</td>
+      <td className="py-2 pr-3">
+        <Input type="number" min={0} aria-label={`${ticketType.name} price`} className="w-32 border-slate-400!" value={price} onChange={(e) => setPrice(e.target.value)} />
+      </td>
+      <td className="py-2 pr-3">
+        <Input type="number" min={1} aria-label={`${ticketType.name} capacity`} className="w-28 border-slate-400!" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
+      </td>
+      <td className="py-2">
+        <Button variant="secondary" disabled={!changed} loading={save.isPending} onClick={() => save.mutate()}>
+          Save
+        </Button>
+        {save.isError && <ErrorState message={errorMessage(save.error)} />}
+      </td>
+    </tr>
+  );
+}
+
+const ACTIVITY_TYPES: Record<string, string> = {
+  "": "All",
+  event: "Event changes",
+  ticket_type: "Ticket types",
+  order: "Orders and refunds",
+  payment: "Payments",
+  promo: "Promo codes",
+  checkin: "Check-ins",
+  support: "Support cases",
+};
+
+function Activity({ eventId }: { eventId: number }) {
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [action, setAction] = useState("");
+  const activity = useQuery({
+    queryKey: ["activity", eventId, from, to, action],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/events/{event_id}/activity", {
+        params: {
+          path: { event_id: eventId },
+          query: { date_from: from || null, date_to: to || null, action: action || null },
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  return (
+    <Section title="Activity">
+      <div className="flex flex-wrap gap-4">
+        <label>
+          From{" "}
+          <input type="date" className="border border-slate-400 px-2 py-1" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </label>
+        <label>
+          To <input type="date" className="border border-slate-400 px-2 py-1" value={to} onChange={(e) => setTo(e.target.value)} />
+        </label>
+        <label>
+          Type{" "}
+          <select className="border border-slate-400 px-2 py-1" value={action} onChange={(e) => setAction(e.target.value)}>
+            {Object.entries(ACTIVITY_TYPES).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {activity.isError && <ErrorState message={errorMessage(activity.error)} />}
+      {activity.data?.length === 0 && <EmptyState title="No activity for these filters" />}
+      {!!activity.data?.length && (
+        <div className="max-h-[32rem] overflow-y-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-brand">
+                {["When", "Who", "Action", "Details"].map((h) => (
+                  <th key={h} className="py-2 pr-3">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {activity.data.map((a) => (
+                <tr key={a.id} className="border-b border-slate-200 align-top">
+                  <td className="py-2 pr-3 whitespace-nowrap">
+                    {new Date(a.created_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
+                  </td>
+                  <td className="py-2 pr-3">{a.actor_name}</td>
+                  <td className="py-2 pr-3">{a.action_type}</td>
+                  <td className="py-2 pr-3">{a.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Section>
   );
 }
 

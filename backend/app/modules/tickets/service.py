@@ -42,6 +42,11 @@ def get_ticket_type_or_404(db: Session, ticket_type_id: int) -> TicketType:
 
 
 def update_ticket_type(db: Session, actor: User, ticket_type: TicketType, data: dict) -> TicketType:
+    taken = ticket_type.quantity_sold + ticket_type.quantity_reserved
+    if data.get("quantity_total") is not None and data["quantity_total"] < taken:
+        raise APIError(
+            "CAPACITY_BELOW_SOLD", f"{taken} tickets are already sold or held for this type", status_code=409
+        )
     changes = {
         field: f"{getattr(ticket_type, field)} -> {value}"
         for field, value in data.items()

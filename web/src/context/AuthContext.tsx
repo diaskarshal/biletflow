@@ -12,6 +12,7 @@ type Tokens = {
 type AuthContextType = {
     user: User | null,
     login: (tokens: Tokens, user: User) => void,
+    updateUser: (user: User) => void,
     logout: () => void,
 }
 
@@ -29,14 +30,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener("auth:logout", onLogout);
     }, []);
 
-    function login(tokens: Tokens, newUser: User) {
-        saveTokens(tokens);
+    function updateUser(newUser: User) {
         localStorage.setItem("user", JSON.stringify(newUser));
         setUser(newUser);
     }
 
+    function login(tokens: Tokens, newUser: User) {
+        saveTokens(tokens);
+        updateUser(newUser);
+    }
+
     return (
-        <AuthContext.Provider value={{ user, login, logout: clearSession }}>
+        <AuthContext.Provider value={{ user, login, updateUser, logout: clearSession }}>
             {children}
         </AuthContext.Provider>
     );

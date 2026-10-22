@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db, get_optional_user
 from app.db.models import Event, User
+from app.modules.admin import service as admin_service
+from app.modules.admin.schemas import ReportCreate
 from app.modules.events import service
 from app.modules.events.schemas import (
     ActivationStatus,
@@ -110,6 +112,13 @@ def event_activity(
     event = service.get_event_or_404(db, event_id)
     service.require_event_manager(db, user, event)
     return service.list_activity(db, event, date_from, date_to, action)
+
+
+@router.post("/events/{event_id}/report", status_code=204)
+def report_event(
+    event_id: int, body: ReportCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> None:
+    admin_service.report_event(db, user, service.get_event_or_404(db, event_id), body.reason)
 
 
 @router.post("/events/{event_id}/cancel", response_model=EventOut)

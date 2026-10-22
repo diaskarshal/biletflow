@@ -60,6 +60,8 @@ def create_order(
     event = events_service.get_event_or_404(db, event_id)
     if event.status != "published":
         raise APIError("EVENT_NOT_PUBLISHED", "This event is not open for registration", status_code=409)
+    if event.suspended_at is not None:
+        raise APIError("EVENT_SUSPENDED", "This event has been suspended by the platform", status_code=409)
 
     lines = []
     for item in items_data:

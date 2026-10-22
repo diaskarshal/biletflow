@@ -11,6 +11,7 @@ import { EventPage } from "./pages/EventPage";
 import { MyTickets } from "./pages/MyTickets";
 import { Profile } from "./pages/Profile";
 import { Payment } from "./pages/Payment";
+import { ForgotPassword, ResetPassword, VerifyEmail } from "./pages/Account";
 import { Admin } from "./pages/Admin";
 import { Analytics } from "./pages/Analytics";
 import { NewSupportCase, Support, SupportCase } from "./pages/Support";
@@ -30,6 +31,9 @@ function App() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/events/:slug" element={<EventPage />} />
+                        <Route path="/verify-email" element={<VerifyEmail />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
                         <Route element={<RequireAuth />}>
                             <Route path="/tickets" element={<MyTickets />} />
                             <Route path="/profile" element={<Profile />} />

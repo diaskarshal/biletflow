@@ -1,5 +1,5 @@
 from app.db.models.audit import AuditLog
-from app.db.models.events import Event
+from app.db.models.events import Event, EventReport
 from app.db.models.orders import Order, OrderItem
 from app.db.models.payments import Payment, Setting
 from app.db.models.promos import PromoCampaign
@@ -12,6 +12,7 @@ __all__ = [
     "AuditLog",
     "CheckInRecord",
     "Event",
+    "EventReport",
     "EventStaff",
     "Order",
     "OrderItem",

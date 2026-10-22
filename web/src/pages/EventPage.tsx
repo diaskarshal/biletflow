@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { Button } from "../components/Button";
 import { CheckoutModal } from "../components/CheckoutModal";
 import { slotsLeft } from "../components/EventCard";
 import { EventImage } from "../components/EventImage";
@@ -114,6 +115,7 @@ export function EventPage() {
           Contact the organizer
         </Link>
       </p>
+      <ReportEvent eventId={e.id} />
       {selected && (
         <CheckoutModal event={e} ticketType={selected} promo={promo.data ?? null} onClose={() => setSelected(null)} />
       )}
@@ -127,5 +129,48 @@ function Row({ k, v }: { k: string; v: string }) {
       <dt>{k}</dt>
       <dd>{v}</dd>
     </div>
+  );
+}
+
+function ReportEvent({ eventId }: { eventId: number }) {
+  const { user } = useAuth();
+  const [reason, setReason] = useState("");
+  const report = useMutation({
+    mutationFn: async () => {
+      const { error } = await api.POST("/api/v1/events/{event_id}/report", {
+        params: { path: { event_id: eventId } },
+        body: { reason },
+      });
+      if (error) throw error;
+    },
+  });
+  if (!user) return null;
+  if (report.isSuccess) return <p className="mt-2">Thank you. The platform team will review this event.</p>;
+  return (
+    <details className="mt-2">
+      <summary className="cursor-pointer underline">Report this event</summary>
+      <form
+        className="mt-2 max-w-xl space-y-2"
+        onSubmit={(ev) => {
+          ev.preventDefault();
+          report.mutate();
+        }}
+      >
+        <textarea
+          required
+          rows={3}
+          maxLength={2000}
+          aria-label="What is wrong with this event?"
+          placeholder="What is wrong with this event?"
+          className="w-full border border-slate-400 px-3 py-2"
+          value={reason}
+          onChange={(ev) => setReason(ev.target.value)}
+        />
+        {report.isError && <ErrorState message={errorMessage(report.error, "Could not send the report")} />}
+        <Button type="submit" variant="secondary" loading={report.isPending}>
+          Send report
+        </Button>
+      </form>
+    </details>
   );
 }
