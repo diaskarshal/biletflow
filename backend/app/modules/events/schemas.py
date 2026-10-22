@@ -1,15 +1,16 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, StringConstraints
 
 from app.modules.tickets.schemas import TicketTypeCreate, TicketTypeOut
 
 RefundPolicy = Literal["full_until_48h", "full_anytime", "no_refunds"]
+Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 
 
 class EventCreate(BaseModel):
-    title: str = Field(min_length=1)
+    title: Title
     description: str | None = None
     category: str | None = None
     venue_name: str | None = None
@@ -27,7 +28,7 @@ class EventCreate(BaseModel):
 
 
 class EventUpdate(BaseModel):
-    title: str | None = None
+    title: Title | None = None
     description: str | None = None
     category: str | None = None
     venue_name: str | None = None

@@ -22,6 +22,7 @@ export function VerifyEmail() {
   const verify = useQuery({
     queryKey: ["verify-email", token],
     retry: false,
+    staleTime: Infinity,
     queryFn: async () => {
       const { data, error } = await api.POST("/api/v1/auth/verify-email", { body: { token } });
       if (error) throw error;

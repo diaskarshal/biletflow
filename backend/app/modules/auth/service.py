@@ -1,3 +1,4 @@
+import time
 from datetime import UTC, datetime
 
 import jwt
@@ -9,10 +10,10 @@ from app.core.errors import APIError
 from app.core.security import (
     create_email_verification_token,
     create_password_reset_token,
-    decode_password_reset_token,
+    decode_claims,
     decode_token,
     hash_password,
-    password_fingerprint,
+    matches_password,
     verify_password,
 )
 from app.db.models import OrganizerProfile, User
@@ -30,6 +31,23 @@ def register_user(db: Session, email: str, password: str, full_name: str) -> Use
     return user
 
 
+EMAIL_COOLDOWN_SECONDS = 60
+_last_sent: dict[tuple[str, int], float] = {}
+
+
+def _cooled_down(kind: str, user_id: int) -> bool:
+    now = time.monotonic()
+    if now - _last_sent.get((kind, user_id), -EMAIL_COOLDOWN_SECONDS) < EMAIL_COOLDOWN_SECONDS:
+        return False
+    _last_sent[(kind, user_id)] = now
+    return True
+
+
+def resend_verification(user: User) -> None:
+    if user.email_verified_at is None and _cooled_down("verify", user.id):
+        send_verification_email(user)
+
+
 def send_verification_email(user: User) -> None:
     token = create_email_verification_token(user.id)
     send_email(
@@ -41,7 +59,7 @@ def send_verification_email(user: User) -> None:
 
 def request_password_reset(db: Session, email: str) -> None:
     user = db.query(User).filter_by(email=email).one_or_none()
-    if user is None or user.deleted_at is not None:
+    if user is None or user.deleted_at is not None or not _cooled_down("reset", user.id):
         return
     token = create_password_reset_token(user.id, user.password_hash)
     send_email(
@@ -58,18 +76,18 @@ def request_password_reset(db: Session, email: str) -> None:
 def reset_password(db: Session, token: str, password: str) -> None:
     invalid = APIError("INVALID_TOKEN", "This reset link is invalid or has expired", status_code=400)
     try:
-        user_id, fingerprint = decode_password_reset_token(token)
+        claims = decode_claims(token, expected_type="password_reset")
     except jwt.PyJWTError as exc:
         raise invalid from exc
-    user = db.get(User, user_id)
-    if user is None or password_fingerprint(user.password_hash) != fingerprint:
+    user = db.get(User, int(claims["sub"]))
+    if user is None or not matches_password(claims, user.password_hash):
         raise invalid
     user.password_hash = hash_password(password)
     db.commit()
 
 
 def update_name(db: Session, user: User, full_name: str) -> User:
-    user.full_name = full_name.strip()
+    user.full_name = full_name
     db.commit()
     db.refresh(user)
     return user
@@ -92,7 +110,7 @@ def verify_email(db: Session, token: str) -> User:
     if user is None:
         raise APIError("INVALID_TOKEN", "Verification link is invalid or expired", status_code=400)
 
-    user.email_verified_at = datetime.now(UTC)
+    user.email_verified_at = user.email_verified_at or datetime.now(UTC)
     db.commit()
     db.refresh(user)
     return user

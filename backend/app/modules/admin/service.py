@@ -111,7 +111,7 @@ def payment_rows(db: Session, *filters, limit: int | None = 200) -> list[dict]:
 def search(db: Session, q: str) -> dict:
     q = q.strip()
     like = f"%{q}%"
-    number = int(q) if q.isdigit() else -1
+    number = int(q) if q.isdecimal() else -1
     users = (
         db.query(User).filter(or_(User.email.ilike(like), User.full_name.ilike(like))).order_by(User.id.desc()).limit(20)
     )
@@ -158,7 +158,11 @@ def set_event_suspended(db: Session, actor: User, event: Event, suspended: bool)
 
 
 def report_event(db: Session, user: User, event: Event, reason: str) -> None:
-    db.add(EventReport(event_id=event.id, reporter_id=user.id, reason=reason))
+    open_report = db.query(EventReport).filter_by(event_id=event.id, reporter_id=user.id, resolved_at=None).first()
+    if open_report is None:
+        db.add(EventReport(event_id=event.id, reporter_id=user.id, reason=reason))
+    else:
+        open_report.reason = reason
     db.commit()
 
 
@@ -169,6 +173,7 @@ def list_reports(db: Session) -> list[dict]:
         .join(User, User.id == EventReport.reporter_id)
         .filter(EventReport.resolved_at.is_(None))
         .order_by(EventReport.id.desc())
+        .limit(200)
     )
     return [
         {
@@ -222,5 +227,11 @@ def export_csv(db: Session, kind: str) -> str:
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=list(rows[0]) if rows else ["id"])
     writer.writeheader()
-    writer.writerows(rows)
+    writer.writerows({k: _safe_cell(v) for k, v in row.items()} for row in rows)
     return buf.getvalue()
+
+
+def _safe_cell(value: object) -> object:
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value

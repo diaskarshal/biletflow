@@ -38,7 +38,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/resend-verification": {
+    "/api/v1/me/verification-email": {
         parameters: {
             query?: never;
             header?: never;
@@ -48,7 +48,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Resend Verification */
-        post: operations["resend_verification_api_v1_auth_resend_verification_post"];
+        post: operations["resend_verification_api_v1_me_verification_email_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2334,7 +2334,7 @@ export interface operations {
             };
         };
     };
-    resend_verification_api_v1_auth_resend_verification_post: {
+    resend_verification_api_v1_me_verification_email_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2428,11 +2428,13 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

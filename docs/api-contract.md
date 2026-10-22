@@ -9,15 +9,17 @@ OpenAPI schema (`npm run generate:api`), so any change here goes together with a
 ```
 POST   /api/v1/auth/register              {email, password, full_name}, emails a verification link
 POST   /api/v1/auth/verify-email          {token}
-POST   /api/v1/auth/resend-verification   logged in, unverified users only
 POST   /api/v1/auth/login                 -> {access_token, refresh_token}
 POST   /api/v1/auth/refresh               {refresh_token}
 POST   /api/v1/auth/logout
-POST   /api/v1/auth/forgot-password       {email}, always 204, emails a reset link valid for 1 hour
+POST   /api/v1/auth/forgot-password       {email}, always 204, emails a reset link valid for 1 hour,
+                                          at most once a minute per account
 POST   /api/v1/auth/reset-password        {token, password}, the link stops working once used
 GET    /api/v1/me
 PATCH  /api/v1/me                         {full_name}
-POST   /api/v1/me/password                {current_password, new_password}
+POST   /api/v1/me/password                {current_password, new_password} -> new token pair,
+                                          every other session is logged out
+POST   /api/v1/me/verification-email      resends the confirmation link, at most once a minute
 GET    /api/v1/me/orders                  each order includes its full event
 
 GET    /api/v1/organizer/profile          auto-creates on first call
@@ -31,12 +33,14 @@ POST   /api/v1/organizer/verification     multipart, field "document"
 POST   /api/v1/events                     may include ticket_types: [...] inline
 GET    /api/v1/events                     public, published and not suspended, paginated
 GET    /api/v1/events/{slug}              published/completed: public. draft/cancelled/suspended: owner only
-PATCH  /api/v1/events/{id}                owner. Date or venue changes email every valid ticket holder
+PATCH  /api/v1/events/{id}                owner, not while suspended. Date or venue changes email
+                                          every valid ticket holder
 POST   /api/v1/events/{id}/publish        owner, draft only
 POST   /api/v1/events/{id}/unpublish      owner, published and no paid or pending orders
-POST   /api/v1/events/{id}/duplicate      owner, new draft with the same details and ticket types
+POST   /api/v1/events/{id}/duplicate      owner, not while suspended, new draft with the same details
+                                          and ticket types
 POST   /api/v1/events/{id}/cancel         owner, refunds paid orders, voids pending ones, emails holders
-POST   /api/v1/events/{id}/report         any user, {reason}, goes to platform admins
+POST   /api/v1/events/{id}/report         any user, {reason}, one open report per user and event
 GET    /api/v1/events/{id}/activity       owner, organizer_staff or admin. ?date_from&date_to&action=<prefix>
 GET    /api/v1/events/{id}/analytics      owner. ?date_from&date_to&ticket_type_id
 GET    /api/v1/organizer/events
@@ -136,6 +140,10 @@ GET    /api/v1/admin/export/{orders|payments}.csv
   The frontend switches on `code` and displays `message`. Implemented in `backend/app/core/errors.py`.
 - **Auth**: `Authorization: Bearer <access_token>`. Access token 30 minutes, refresh token 30 days.
   Suspended users get `ACCOUNT_SUSPENDED` (403) on login, refresh and every authenticated call.
+  Session tokens carry a fingerprint of the password hash, so a password change or reset ends
+  every older session.
+- **Suspended events** are hidden, cannot be edited or duplicated, and a payment that completes
+  after the suspension is recorded as failed and releases its seats.
 - **Pagination**: `?limit=&cursor=`.
 - **Times**: every timestamp is UTC with an offset (`2026-12-01T13:00:00Z`). Show it in the
   event's `display_timezone`.
@@ -156,3 +164,6 @@ GET    /api/v1/admin/export/{orders|payments}.csv
 - **Staff are added by email** and must already have an account. There is no endpoint to remove
   staff yet.
 - **Email address changes are not supported.** Only the name and password can be edited.
+- **The email cooldown lives in process memory.** It resets on restart and is per worker.
+- **Ticket-holder update emails are sent inside the request**, one by one. Fine for demo-sized
+  events; move to a background job before large events.

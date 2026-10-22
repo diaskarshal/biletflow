@@ -29,6 +29,8 @@ def test_verification_reset_and_profile(monkeypatch):
     assert client.post("/api/v1/auth/forgot-password", json={"email": "nobody@test.kz"}).status_code == 204
     assert len(sent) == 1
     assert client.post("/api/v1/auth/forgot-password", json={"email": email}).status_code == 204
+    assert client.post("/api/v1/auth/forgot-password", json={"email": email}).status_code == 204
+    assert len(sent) == 2
     reset_token = _token_from(sent[-1][1], "reset-password")
     assert client.post("/api/v1/auth/reset-password", json={"token": reset_token, "password": "short"}).status_code == 422
     assert client.post("/api/v1/auth/reset-password", json={"token": reset_token, "password": "newpassword1"}).status_code == 204
@@ -39,7 +41,13 @@ def test_verification_reset_and_profile(monkeypatch):
 
     wrong = client.post("/api/v1/me/password", headers=headers, json={"current_password": "nope", "new_password": "third12345"})
     assert wrong.json()["error"]["code"] == "WRONG_PASSWORD"
-    client.post("/api/v1/me/password", headers=headers, json={"current_password": "newpassword1", "new_password": "third12345"})
+    other_session = _login(email, "newpassword1").json()
+    changed = client.post("/api/v1/me/password", headers=headers, json={"current_password": "newpassword1", "new_password": "third12345"}).json()
+    assert client.get("/api/v1/me", headers=headers).status_code == 401
+    assert client.post("/api/v1/auth/refresh", json={"refresh_token": other_session["refresh_token"]}).status_code == 401
+    headers = {"Authorization": f"Bearer {changed['access_token']}"}
+    assert client.get("/api/v1/me", headers=headers).status_code == 200
     assert _login(email, "third12345").status_code == 200
 
     assert client.patch("/api/v1/me", headers=headers, json={"full_name": " New Name "}).json()["full_name"] == "New Name"
+    assert client.patch("/api/v1/me", headers=headers, json={"full_name": "   "}).status_code == 422

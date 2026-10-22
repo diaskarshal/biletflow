@@ -10,9 +10,12 @@ import { Input } from "../components/Input";
 import { Spinner } from "../components/Spinner";
 import { useOrganizerEvents } from "../hooks/useOrganizerEvents";
 import { eventRange, localParts } from "../lib/eventTimes";
+import { downloadBlob } from "../lib/download";
 import {
   errorMessage,
   formatDate,
+  formatDateTime,
+  formatKzt,
   formatPrice,
   formatTime,
   REFUND_POLICIES,
@@ -65,7 +68,7 @@ export function ManageEvent() {
           {(event.status === "published" || event.status === "draft") && <CancelEvent eventId={id} />}
         </div>
       </div>
-      {(event.status === "published" || event.status === "draft") && (
+      {(event.status === "published" || event.status === "draft") && !event.suspended_at && (
         <>
           <EditEvent key={event.id} event={event} />
           <TicketTypes eventId={id} />
@@ -127,9 +130,11 @@ function EventActions({ event }: { event: Event }) {
           Unpublish
         </Button>
       )}
-      <Button variant="secondary" loading={duplicate.isPending} onClick={() => duplicate.mutate()}>
-        Duplicate
-      </Button>
+      {!event.suspended_at && (
+        <Button variant="secondary" loading={duplicate.isPending} onClick={() => duplicate.mutate()}>
+          Duplicate
+        </Button>
+      )}
       {failed && <ErrorState message={errorMessage(failed)} />}
     </>
   );
@@ -139,7 +144,7 @@ function EditEvent({ event }: { event: Event }) {
   const queryClient = useQueryClient();
   const start = localParts(event.starts_at);
   const end = localParts(event.ends_at);
-  const [form, setForm] = useState({
+  const initial = {
     title: event.title,
     description: event.description ?? "",
     venueName: event.venue_name ?? "",
@@ -150,24 +155,25 @@ function EditEvent({ event }: { event: Event }) {
     dateTo: end.date,
     timeTo: end.time,
     refundPolicy: event.refund_policy as RefundPolicy,
-  });
+  };
+  const [form, setForm] = useState(initial);
   const set = (field: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm({ ...form, [field]: e.target.value });
   const range = eventRange(form);
+  const timesChanged = (["dateFrom", "timeFrom", "dateTo", "timeTo"] as const).some((k) => form[k] !== initial[k]);
 
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await api.PATCH("/api/v1/events/{event_id}", {
         params: { path: { event_id: event.id } },
         body: {
-          title: form.title.trim(),
-          description: form.description.trim(),
-          venue_name: form.venueName.trim(),
-          venue_address: form.address.trim(),
-          cover_image_url: form.image.trim(),
-          starts_at: range.starts_at,
-          ends_at: range.ends_at,
-          refund_policy: form.refundPolicy,
+          ...(form.title !== initial.title && { title: form.title.trim() }),
+          ...(form.description !== initial.description && { description: form.description.trim() }),
+          ...(form.venueName !== initial.venueName && { venue_name: form.venueName.trim() }),
+          ...(form.address !== initial.address && { venue_address: form.address.trim() }),
+          ...(form.image !== initial.image && { cover_image_url: form.image.trim() }),
+          ...(timesChanged && { starts_at: range.starts_at, ends_at: range.ends_at }),
+          ...(form.refundPolicy !== initial.refundPolicy && { refund_policy: form.refundPolicy }),
         },
       });
       if (error) throw error;
@@ -303,6 +309,7 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
     },
   });
   const changed = price !== String(ticketType.price_kzt) || capacity !== String(ticketType.quantity_total);
+  const filled = price !== "" && capacity !== "";
   return (
     <tr className="border-b border-slate-200">
       <td className="py-2 pr-3">{ticketType.name}</td>
@@ -314,7 +321,7 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
         <Input type="number" min={1} aria-label={`${ticketType.name} capacity`} className="w-28 border-slate-400!" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
       </td>
       <td className="py-2">
-        <Button variant="secondary" disabled={!changed} loading={save.isPending} onClick={() => save.mutate()}>
+        <Button variant="secondary" disabled={!changed || !filled} loading={save.isPending} onClick={() => save.mutate()}>
           Save
         </Button>
         {save.isError && <ErrorState message={errorMessage(save.error)} />}
@@ -391,7 +398,7 @@ function Activity({ eventId }: { eventId: number }) {
               {activity.data.map((a) => (
                 <tr key={a.id} className="border-b border-slate-200 align-top">
                   <td className="py-2 pr-3 whitespace-nowrap">
-                    {new Date(a.created_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
+                    {formatDateTime(a.created_at)}
                   </td>
                   <td className="py-2 pr-3">{a.actor_name}</td>
                   <td className="py-2 pr-3">{a.action_type}</td>
@@ -732,16 +739,10 @@ function Campaigns({ eventId }: { eventId: number }) {
       params: { path: { campaign_id: campaignId } },
       parseAs: "blob",
     });
-    if (!data) return;
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(data as Blob);
-    link.download = `promo-${code}.png`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    if (data) downloadBlob(data as Blob, `promo-${code}.png`);
   }
 
   const rows = campaigns.data ?? [];
-  const kzt = (n: number) => `${formatPrice(n)} KZT`;
 
   return (
     <Section title="Promo codes" note="Each code also gets a Campaign QR that opens this event with the code applied. It is not an entry ticket.">
@@ -761,16 +762,16 @@ function Campaigns({ eventId }: { eventId: number }) {
               {rows.map((c) => (
                 <tr key={c.id} className="border-b border-slate-200">
                   <td className="py-2 pr-3 font-semibold">{c.code}</td>
-                  <td className="py-2 pr-3">{c.discount_type === "percent" ? `${c.discount_value}%` : kzt(c.discount_value)}</td>
+                  <td className="py-2 pr-3">{c.discount_type === "percent" ? `${c.discount_value}%` : formatKzt(c.discount_value)}</td>
                   <td className="py-2 pr-3">
                     {c.redemptions}
                     {c.max_redemptions ? ` / ${c.max_redemptions}` : ""}
                   </td>
                   <td className="py-2 pr-3">{c.orders}</td>
                   <td className="py-2 pr-3">{c.tickets_sold}</td>
-                  <td className="py-2 pr-3">{kzt(c.gross_kzt)}</td>
-                  <td className="py-2 pr-3">{kzt(c.discount_kzt)}</td>
-                  <td className="py-2 pr-3">{kzt(c.net_kzt)}</td>
+                  <td className="py-2 pr-3">{formatKzt(c.gross_kzt)}</td>
+                  <td className="py-2 pr-3">{formatKzt(c.discount_kzt)}</td>
+                  <td className="py-2 pr-3">{formatKzt(c.net_kzt)}</td>
                   <td className="py-2 pr-3">{c.disabled ? "Disabled" : "Active"}</td>
                   <td className="space-x-2 py-2 whitespace-nowrap">
                     <button type="button" className="underline" onClick={() => downloadQr(c.id, c.code)}>

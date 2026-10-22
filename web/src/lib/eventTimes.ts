@@ -19,6 +19,6 @@ export function eventRange(input: { dateFrom: string; timeFrom: string; dateTo: 
 }
 
 export function localParts(iso: string) {
-  const local = new Date(Date.parse(iso) + 5 * 60 * 60 * 1000).toISOString();
+  const local = new Date(iso).toLocaleString("sv-SE", { timeZone: DISPLAY_TIMEZONE });
   return { date: local.slice(0, 10), time: local.slice(11, 16) };
 }

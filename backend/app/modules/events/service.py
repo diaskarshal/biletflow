@@ -104,7 +104,7 @@ def list_published_events(db: Session, limit: int, cursor: int | None) -> tuple[
     if cursor is not None:
         query = query.filter(Event.id > cursor)
     events = query.order_by(Event.id).limit(limit + 1).all()
-    next_cursor = events[limit].id if len(events) > limit else None
+    next_cursor = events[limit - 1].id if len(events) > limit else None
     return events[:limit], next_cursor
 
 
@@ -120,11 +120,17 @@ def list_organizer_events(db: Session, user: User) -> list[Event]:
     )
 
 
+def require_not_suspended(event: Event) -> None:
+    if event.suspended_at is not None:
+        raise APIError("EVENT_SUSPENDED", "This event has been suspended by the platform", status_code=409)
+
+
 def update_event(db: Session, actor: User, event: Event, data: dict) -> Event:
+    require_not_suspended(event)
     changes = {
         field: str(value)
         for field, value in data.items()
-        if value is not None and getattr(event, field) != value
+        if value is not None and (getattr(event, field) or None) != (value or None)
     }
     for field, value in data.items():
         if value is not None:
@@ -198,6 +204,7 @@ COPIED_TYPE_FIELDS = (
 
 
 def duplicate_event(db: Session, actor: User, source: Event) -> tuple[Event, list]:
+    require_not_suspended(source)
     data = {field: getattr(source, field) for field in COPIED_EVENT_FIELDS}
     data["title"] = f"{source.title} (copy)"
     data["ticket_types"] = [

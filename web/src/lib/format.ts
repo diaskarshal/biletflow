@@ -33,3 +33,11 @@ export const REFUND_POLICIES = {
 } as const;
 
 export type RefundPolicy = keyof typeof REFUND_POLICIES;
+
+export function formatKzt(kzt: number) {
+  return `${formatPrice(kzt)} KZT`;
+}
+
+export function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+}

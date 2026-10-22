@@ -7,11 +7,10 @@ import type { components } from "../api/schema";
 type EventOut = components["schemas"]["EventOut"];
 
 export function slotsLeft(
-  capacity: number | null,
   ticketTypes: { quantity_total: number; quantity_sold: number; quantity_reserved: number }[],
 ) {
   const taken = ticketTypes.reduce((n, t) => n + t.quantity_sold + t.quantity_reserved, 0);
-  const total = capacity ?? ticketTypes.reduce((n, t) => n + t.quantity_total, 0);
+  const total = ticketTypes.reduce((n, t) => n + t.quantity_total, 0);
   return { left: Math.max(total - taken, 0), total };
 }
 
@@ -33,7 +32,7 @@ export function EventCard({
   // The list endpoint has no prices or ticket counts, so each card loads the detail (cached, shared with the event page).
   const detail = useEvent(event.slug);
   const types = detail.data?.ticket_types.filter((t) => !t.is_hidden) ?? [];
-  const slots = slotsLeft(event.capacity, types);
+  const slots = slotsLeft(types);
   const price = badge ?? (detail.data ? priceLabel(types.map((t) => t.price_kzt)) : "...");
   const label = status && status !== "published" ? `${status} · ${price}` : price;
 

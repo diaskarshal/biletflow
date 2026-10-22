@@ -57,7 +57,7 @@ export function Home() {
 function Hero({ event }: { event: EventOut }) {
   const detail = useEvent(event.slug);
   const types = detail.data?.ticket_types.filter((t) => !t.is_hidden) ?? [];
-  const slots = slotsLeft(event.capacity, types);
+  const slots = slotsLeft(types);
   const rows: [string, string][] = [
     ["Date", formatDate(event.starts_at, event.display_timezone)],
     ["Time", formatTime(event.starts_at, event.display_timezone)],

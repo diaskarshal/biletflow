@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { api, saveTokens } from "../api/client";
 import { Button } from "../components/Button";
 import { ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
@@ -45,7 +45,7 @@ function EmailStatus() {
   });
   const resend = useMutation({
     mutationFn: async () => {
-      const { error } = await api.POST("/api/v1/auth/resend-verification");
+      const { error } = await api.POST("/api/v1/me/verification-email");
       if (error) throw error;
     },
   });
@@ -61,6 +61,7 @@ function EmailStatus() {
           Send the link again
         </Button>
       )}
+      {resend.isError && <ErrorState message={errorMessage(resend.error, "Could not send the link")} />}
     </div>
   );
 }
@@ -99,12 +100,14 @@ function PasswordForm() {
   const [next, setNext] = useState("");
   const change = useMutation({
     mutationFn: async () => {
-      const { error } = await api.POST("/api/v1/me/password", {
+      const { data, error } = await api.POST("/api/v1/me/password", {
         body: { current_password: current, new_password: next },
       });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (tokens) => {
+      saveTokens(tokens);
       setCurrent("");
       setNext("");
     },

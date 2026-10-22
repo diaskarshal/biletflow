@@ -20,12 +20,16 @@ def _create_token(user_id: int, token_type: str, expires_delta: timedelta, **cla
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
-def create_access_token(user_id: int) -> str:
-    return _create_token(user_id, "access", timedelta(minutes=settings.jwt_access_minutes))
+def create_access_token(user_id: int, password_hash: str) -> str:
+    return _create_token(
+        user_id, "access", timedelta(minutes=settings.jwt_access_minutes), pwd=password_fingerprint(password_hash)
+    )
 
 
-def create_refresh_token(user_id: int) -> str:
-    return _create_token(user_id, "refresh", timedelta(days=settings.jwt_refresh_days))
+def create_refresh_token(user_id: int, password_hash: str) -> str:
+    return _create_token(
+        user_id, "refresh", timedelta(days=settings.jwt_refresh_days), pwd=password_fingerprint(password_hash)
+    )
 
 
 def create_email_verification_token(user_id: int) -> str:
@@ -40,15 +44,16 @@ def create_password_reset_token(user_id: int, password_hash: str) -> str:
     return _create_token(user_id, "password_reset", timedelta(hours=1), pwd=password_fingerprint(password_hash))
 
 
-def decode_password_reset_token(token: str) -> tuple[int, str]:
-    payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
-    if payload.get("type") != "password_reset":
-        raise jwt.InvalidTokenError("unexpected token type")
-    return int(payload["sub"]), payload.get("pwd", "")
-
-
-def decode_token(token: str, expected_type: str) -> int:
+def decode_claims(token: str, expected_type: str) -> dict:
     payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
     if payload.get("type") != expected_type:
         raise jwt.InvalidTokenError("unexpected token type")
-    return int(payload["sub"])
+    return payload
+
+
+def decode_token(token: str, expected_type: str) -> int:
+    return int(decode_claims(token, expected_type)["sub"])
+
+
+def matches_password(claims: dict, password_hash: str) -> bool:
+    return claims.get("pwd") == password_fingerprint(password_hash)

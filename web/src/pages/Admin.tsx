@@ -8,7 +8,8 @@ import { Button } from "../components/Button";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { useAuth } from "../context/AuthContext";
-import { errorMessage, formatPrice } from "../lib/format";
+import { downloadBlob } from "../lib/download";
+import { errorMessage, formatDateTime, formatKzt } from "../lib/format";
 
 export function Admin() {
   const { user } = useAuth();
@@ -178,8 +179,6 @@ function Activations() {
   );
 }
 
-const when = (iso: string) => new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
-const kzt = (n: number) => `${formatPrice(n)} KZT`;
 
 function useSuspend(kind: "users" | "events") {
   const queryClient = useQueryClient();
@@ -276,8 +275,8 @@ function Search() {
               <td className="py-2 pr-4">{o.event_title}</td>
               <td className="py-2 pr-4">{o.buyer_email}</td>
               <td className="py-2 pr-4">{o.status}</td>
-              <td className="py-2 pr-4">{kzt(o.total_kzt)}</td>
-              <td className="py-2 pr-4">{when(o.created_at)}</td>
+              <td className="py-2 pr-4">{formatKzt(o.total_kzt)}</td>
+              <td className="py-2 pr-4">{formatDateTime(o.created_at)}</td>
             </tr>
           ))}
         </Table>
@@ -296,9 +295,9 @@ function PaymentTable({ rows }: { rows: components["schemas"]["PaymentRow"][] })
           <td className="py-2 pr-4">{p.purpose}</td>
           <td className="py-2 pr-4">{p.event_title}</td>
           <td className="py-2 pr-4">{p.user_email}</td>
-          <td className="py-2 pr-4">{kzt(p.amount_kzt)}</td>
+          <td className="py-2 pr-4">{formatKzt(p.amount_kzt)}</td>
           <td className="py-2 pr-4">{p.status}</td>
-          <td className="py-2 pr-4">{when(p.created_at)}</td>
+          <td className="py-2 pr-4">{formatDateTime(p.created_at)}</td>
         </tr>
       ))}
     </Table>
@@ -334,7 +333,7 @@ function Reports() {
               <td className="py-2 pr-4">{r.event_title}</td>
               <td className="py-2 pr-4">{r.reporter_email}</td>
               <td className="py-2 pr-4 whitespace-pre-wrap">{r.reason}</td>
-              <td className="py-2 pr-4">{when(r.created_at)}</td>
+              <td className="py-2 pr-4">{formatDateTime(r.created_at)}</td>
               <td className="space-x-2 py-2 text-right whitespace-nowrap">
                 {!r.event_suspended && (
                   <Button variant="danger" onClick={() => suspend.mutate({ id: r.event_id, suspended: true })}>
@@ -401,13 +400,13 @@ function Promos() {
             <tr key={c.id} className="border-b border-slate-200">
               <td className="py-2 pr-4 font-semibold">{c.code}</td>
               <td className="py-2 pr-4">{c.event_title}</td>
-              <td className="py-2 pr-4">{c.discount_type === "percent" ? `${c.discount_value}%` : kzt(c.discount_value)}</td>
+              <td className="py-2 pr-4">{c.discount_type === "percent" ? `${c.discount_value}%` : formatKzt(c.discount_value)}</td>
               <td className="py-2 pr-4">
                 {c.redemptions}
                 {c.max_redemptions ? ` / ${c.max_redemptions}` : ""}
               </td>
               <td className="py-2 pr-4">{c.disabled ? "Disabled" : "Active"}</td>
-              <td className="py-2 pr-4">{when(c.created_at)}</td>
+              <td className="py-2 pr-4">{formatDateTime(c.created_at)}</td>
             </tr>
           ))}
         </Table>
@@ -422,12 +421,7 @@ function Exports() {
       params: { path: { kind } },
       parseAs: "blob",
     });
-    if (!data) return;
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(data as Blob);
-    link.download = `${kind}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    if (data) downloadBlob(data as Blob, `${kind}.csv`);
   }
   return (
     <Block title="Reports">

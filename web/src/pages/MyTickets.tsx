@@ -8,6 +8,7 @@ import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Modal } from "../components/Modal";
 import { Spinner } from "../components/Spinner";
 import { useEvent } from "../hooks/useEvent";
+import { downloadBlob } from "../lib/download";
 import { errorMessage, formatPrice } from "../lib/format";
 import type { components } from "../api/schema";
 
@@ -106,10 +107,5 @@ async function downloadPdf(ticketId: number) {
     params: { path: { ticket_id: ticketId } },
     parseAs: "blob",
   });
-  if (!data) return;
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(data as Blob);
-  link.download = `ticket-${ticketId}.pdf`;
-  link.click();
-  URL.revokeObjectURL(link.href);
+  if (data) downloadBlob(data as Blob, `ticket-${ticketId}.pdf`);
 }

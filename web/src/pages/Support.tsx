@@ -8,7 +8,7 @@ import { Button } from "../components/Button";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { useAuth } from "../context/AuthContext";
-import { errorMessage } from "../lib/format";
+import { errorMessage, formatDateTime } from "../lib/format";
 
 type Case = components["schemas"]["CaseOut"];
 type Category = components["schemas"]["CaseCreate"]["category"];
@@ -33,10 +33,6 @@ const STATUSES: Record<Status, string> = {
   resolved: "Resolved",
 };
 
-function when(iso: string) {
-  return new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
-}
-
 function CaseTable({ cases, showRequester }: { cases: Case[]; showRequester?: boolean }) {
   return (
     <Table head={["#", "Subject", ...(showRequester ? ["From"] : []), "Event", "Status", "Updated"]}>
@@ -51,7 +47,7 @@ function CaseTable({ cases, showRequester }: { cases: Case[]; showRequester?: bo
           {showRequester && <td className="py-2 pr-4">{c.requester_name}</td>}
           <td className="py-2 pr-4">{c.event_title ?? (c.kind === "organizer" ? "Platform support" : "")}</td>
           <td className="py-2 pr-4">{STATUSES[c.status as Status]}</td>
-          <td className="py-2 pr-4">{when(c.updated_at)}</td>
+          <td className="py-2 pr-4">{formatDateTime(c.updated_at)}</td>
         </tr>
       ))}
     </Table>
@@ -310,7 +306,7 @@ export function SupportCase() {
           <li key={m.id} className={`border p-3 ${m.from_requester ? "border-slate-300" : "border-brand"}`}>
             <p className="text-sm text-slate-600">
               {m.author_name}
-              {m.from_requester ? "" : " (support)"}, {when(m.created_at)}
+              {m.from_requester ? "" : " (support)"}, {formatDateTime(m.created_at)}
             </p>
             <p className="mt-1 whitespace-pre-wrap">{m.body}</p>
           </li>

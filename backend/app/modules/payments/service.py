@@ -37,10 +37,12 @@ def apply_provider_result(db: Session, payment: Payment, outcome: str, payer: Us
     if payment.status != "pending":
         raise APIError("PAYMENT_CLOSED", "This payment is already completed or expired", status_code=409)
 
+    event = db.get(Event, payment.event_id)
     status = OUTCOME_STATUS[outcome]
+    if payment.purpose == "order" and status == "succeeded" and event.suspended_at is not None:
+        status = "failed"
     payment.status = status
     payment.completed_at = datetime.now(UTC)
-    event = db.get(Event, payment.event_id)
     tickets = []
     if payment.purpose == "activation":
         if status == "succeeded":

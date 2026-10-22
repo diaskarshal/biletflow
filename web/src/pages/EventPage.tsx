@@ -58,7 +58,7 @@ export function EventPage() {
 
   const e = event.data;
   const types = e.ticket_types.filter((t) => !t.is_hidden);
-  const slots = slotsLeft(e.capacity, types);
+  const slots = slotsLeft(types);
   const cancelled = e.status === "cancelled";
 
   function choose(t: TicketType) {

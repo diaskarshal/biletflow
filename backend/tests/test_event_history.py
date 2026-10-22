@@ -3,6 +3,8 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
+from app.db.models import Event
+from app.db.session import SessionLocal
 from app.main import app
 from app.modules.events import service as events_service
 
@@ -53,8 +55,9 @@ def test_unpublish_duplicate_and_activity(monkeypatch):
     shrink = client.patch(f"/api/v1/ticket-types/{event['ticket_types'][0]['id']}", headers=org, json={"quantity_total": 1})
     assert shrink.json()["error"]["code"] == "CAPACITY_BELOW_SOLD"
     assert client.post(f"/api/v1/events/{event_id}/unpublish", headers=org).json()["error"]["code"] == "EVENT_HAS_ORDERS"
-    client.patch(f"/api/v1/events/{event_id}", headers=org, json={"description": "Bring a friend"})
+    client.patch(f"/api/v1/events/{event_id}", headers=org, json={"description": "Bring a friend", "venue_address": ""})
     assert sent == []
+    assert client.patch(f"/api/v1/events/{event_id}", headers=org, json={"title": "   "}).status_code == 422
     client.patch(f"/api/v1/events/{event_id}", headers=org, json={"venue_name": "Big hall"})
     [(to, subject, body)] = sent
     assert (to, subject) == ("a@test.kz", f"Update: {event['title']}")
@@ -73,7 +76,24 @@ def test_unpublish_duplicate_and_activity(monkeypatch):
     assert client.get(url, headers=door).status_code == 403
     history = client.get(url, headers=helper).json()
     assert [h["action_type"] for h in history] == ["event.updated", "event.updated", "event.published", "event.created"]
+    assert history[1]["description"] == "Changed description"
     assert history[0]["actor_name"] == "organizer" and history[0]["description"] == "Changed venue_name"
     assert [h["action_type"] for h in client.get(f"{url}?action=event.pub", headers=org).json()] == ["event.published"]
     tomorrow = (datetime.now(UTC) + timedelta(days=2)).date().isoformat()
     assert client.get(f"{url}?date_from={tomorrow}", headers=org).json() == []
+
+
+def test_public_listing_pages_cover_every_event():
+    seen, cursor = [], None
+    while True:
+        page = client.get("/api/v1/events", params={"limit": 7, **({"cursor": cursor} if cursor else {})}).json()
+        seen += [e["id"] for e in page["items"]]
+        cursor = page["next_cursor"]
+        if cursor is None:
+            break
+    with SessionLocal() as db:
+        expected = [
+            e.id
+            for e in db.query(Event).filter(Event.status == "published", Event.deleted_at.is_(None), Event.suspended_at.is_(None))
+        ]
+    assert sorted(seen) == sorted(expected)

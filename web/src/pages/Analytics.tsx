@@ -6,9 +6,8 @@ import { Block, Table } from "../components/Block";
 import { ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
 import { useOrganizerEvents } from "../hooks/useOrganizerEvents";
-import { errorMessage, formatPrice } from "../lib/format";
+import { errorMessage, formatKzt } from "../lib/format";
 
-const kzt = (n: number) => `${formatPrice(n)} KZT`;
 
 function Bar({ label, value, max, text }: { label: string; value: number; max: number; text: string }) {
   return (
@@ -123,10 +122,10 @@ export function Analytics() {
           <Block title="Revenue (demonstration)">
             <Table head={["Gross", "Discounts", "Refunds", "Net"]}>
               <tr>
-                <td className="py-2 pr-4">{kzt(a.gross_kzt)}</td>
-                <td className="py-2 pr-4">{kzt(a.discount_kzt)}</td>
-                <td className="py-2 pr-4">{kzt(a.refunds_kzt)}</td>
-                <td className="py-2 pr-4 font-bold">{kzt(a.net_kzt)}</td>
+                <td className="py-2 pr-4">{formatKzt(a.gross_kzt)}</td>
+                <td className="py-2 pr-4">{formatKzt(a.discount_kzt)}</td>
+                <td className="py-2 pr-4">{formatKzt(a.refunds_kzt)}</td>
+                <td className="py-2 pr-4 font-bold">{formatKzt(a.net_kzt)}</td>
               </tr>
             </Table>
           </Block>
@@ -138,7 +137,7 @@ export function Analytics() {
                 label={new Date(`${d.day}T00:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
                 value={d.tickets}
                 max={maxDay}
-                text={`${d.tickets} tickets, ${kzt(d.revenue_kzt)}`}
+                text={`${d.tickets} tickets, ${formatKzt(d.revenue_kzt)}`}
               />
             ))}
           </Block>
@@ -149,7 +148,7 @@ export function Analytics() {
                 label={t.name}
                 value={t.sold}
                 max={maxType}
-                text={`${t.sold} of ${t.capacity}, ${kzt(t.revenue_kzt)}`}
+                text={`${t.sold} of ${t.capacity}, ${formatKzt(t.revenue_kzt)}`}
               />
             ))}
           </Block>
@@ -166,8 +165,8 @@ export function Analytics() {
                     <td className="py-2 pr-4">{c.name}</td>
                     <td className="py-2 pr-4">{c.redemptions}</td>
                     <td className="py-2 pr-4">{c.tickets_sold}</td>
-                    <td className="py-2 pr-4">{kzt(c.discount_kzt)}</td>
-                    <td className="py-2 pr-4">{kzt(c.net_kzt)}</td>
+                    <td className="py-2 pr-4">{formatKzt(c.discount_kzt)}</td>
+                    <td className="py-2 pr-4">{formatKzt(c.net_kzt)}</td>
                   </tr>
                 ))}
               </Table>

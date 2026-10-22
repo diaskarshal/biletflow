@@ -4,7 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
 from app.core.errors import APIError
-from app.core.security import create_access_token, create_refresh_token, decode_token
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_claims,
+    matches_password,
+)
 from app.db.models import User
 from app.modules.auth import service
 from app.modules.auth.schemas import (
@@ -27,8 +32,8 @@ router = APIRouter(tags=["auth"])
 
 def _tokens_for(user: User) -> TokenResponse:
     return TokenResponse(
-        access_token=create_access_token(user.id),
-        refresh_token=create_refresh_token(user.id),
+        access_token=create_access_token(user.id, user.password_hash),
+        refresh_token=create_refresh_token(user.id, user.password_hash),
     )
 
 
@@ -42,10 +47,9 @@ def verify_email(body: VerifyEmailRequest, db: Session = Depends(get_db)) -> Use
     return service.verify_email(db, body.token)
 
 
-@router.post("/auth/resend-verification", status_code=204)
+@router.post("/me/verification-email", status_code=204)
 def resend_verification(user: User = Depends(get_current_user)) -> None:
-    if user.email_verified_at is None:
-        service.send_verification_email(user)
+    service.resend_verification(user)
 
 
 @router.post("/auth/forgot-password", status_code=204)
@@ -58,11 +62,12 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)) ->
     service.reset_password(db, body.token, body.password)
 
 
-@router.post("/me/password", status_code=204)
+@router.post("/me/password", response_model=TokenResponse)
 def change_password(
     body: ChangePasswordRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)
-) -> None:
+) -> TokenResponse:
     service.change_password(db, user, body.current_password, body.new_password)
+    return _tokens_for(user)
 
 
 @router.patch("/me", response_model=UserOut)
@@ -79,12 +84,12 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
 @router.post("/auth/refresh", response_model=TokenResponse)
 def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> TokenResponse:
     try:
-        user_id = decode_token(body.refresh_token, expected_type="refresh")
+        claims = decode_claims(body.refresh_token, expected_type="refresh")
     except jwt.PyJWTError as exc:
         raise APIError("UNAUTHENTICATED", "Invalid or expired refresh token", status_code=401) from exc
 
-    user = db.get(User, user_id)
-    if user is None or user.deleted_at is not None:
+    user = db.get(User, int(claims["sub"]))
+    if user is None or user.deleted_at is not None or not matches_password(claims, user.password_hash):
         raise APIError("UNAUTHENTICATED", "Invalid or expired refresh token", status_code=401)
     if user.suspended_at is not None:
         raise APIError("ACCOUNT_SUSPENDED", "This account has been suspended", status_code=403)
