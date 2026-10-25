@@ -3,8 +3,8 @@ export function EventImage({ url, title, className = "" }: { url: string | null;
     return <img src={url} alt={title} className={`object-cover ${className}`} />;
   }
   return (
-    <div className={`flex items-center justify-center bg-sky p-4 text-center font-heading text-2xl text-brand ${className}`}>
-      {title}
+    <div className={`flex items-center justify-center overflow-hidden bg-sky p-4 text-center font-heading text-2xl text-brand ${className}`}>
+      <span className="line-clamp-6 break-words">{title}</span>
     </div>
   );
 }

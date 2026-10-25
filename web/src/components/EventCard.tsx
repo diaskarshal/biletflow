@@ -38,9 +38,9 @@ export function EventCard({
 
   const body = (
     <>
-      <EventImage url={event.cover_image_url} title={event.title} className="h-full w-2/5 shrink-0" />
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="font-heading text-xl text-brand">{event.title}</h3>
+      <EventImage url={event.cover_image_url} title={event.title} className="h-full w-2/5 shrink-0 text-lg!" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+        <h3 className="line-clamp-2 break-words font-heading text-xl text-brand">{event.title}</h3>
         <dl className="space-y-0.5 text-sm">
           <Row k="Date" v={formatDate(event.starts_at, event.display_timezone)} />
           <Row k="Time" v={formatTime(event.starts_at, event.display_timezone)} />
@@ -65,9 +65,9 @@ export function EventCard({
 
 function Row({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex justify-between">
+    <div className="flex justify-between gap-2">
       <dt>{k}</dt>
-      <dd>{v}</dd>
+      <dd className="text-right">{v}</dd>
     </div>
   );
 }

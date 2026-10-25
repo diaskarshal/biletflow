@@ -73,8 +73,8 @@ export function EventPage() {
     <div className="mx-auto max-w-6xl px-6 py-12">
       <div className="flex gap-10">
         <EventImage url={e.cover_image_url} title={e.title} className="aspect-[4/5] w-[38%] shrink-0 rounded-2xl" />
-        <div className="flex flex-1 flex-col">
-          <h1 className="font-heading text-5xl">{e.title}</h1>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <h1 className="break-words font-heading text-5xl">{e.title}</h1>
           <dl className="mt-4 space-y-1 text-2xl">
             <Row k="Date" v={formatDate(e.starts_at, e.display_timezone)} />
             <Row k="Time" v={formatTime(e.starts_at, e.display_timezone)} />
