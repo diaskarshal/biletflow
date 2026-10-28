@@ -7,8 +7,8 @@ The API is listed in [docs/api-contract.md](docs/api-contract.md).
 ## Requirements
 
 - Docker
-- uv and Node.js 22 (only for running the backend or frontend outside Docker)
-- Expo Go on a phone (for the check-in app)
+- uv and Node.js 22.13 or newer (only for running the backend or frontend outside Docker)
+- Expo Go on a phone, latest version (the app uses Expo SDK 58)
 
 ## Run locally
 
