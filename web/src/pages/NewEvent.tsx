@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { Button } from "../components/Button";
 import { ErrorState } from "../components/EmptyState";
+import { CoverUpload } from "../components/CoverUpload";
 import { Input } from "../components/Input";
 import { Textarea } from "../components/Textarea";
 import { DISPLAY_TIMEZONE, eventRange } from "../lib/eventTimes";
@@ -102,9 +103,10 @@ export function NewEvent() {
           <Label text="Event title">
             <Input required className={field} value={form.title} onChange={set("title")} />
           </Label>
-          <Label text="Event image (URL)">
-            <Input type="url" className={field} value={form.image} onChange={set("image")} />
-          </Label>
+          <div className="space-y-2">
+            <span className="block text-lg">Event image</span>
+            <CoverUpload value={form.image} onChange={(image) => setForm((f) => ({ ...f, image }))} />
+          </div>
           <div className="col-span-2">
             <Label text="Event description">
               <Textarea rows={6} className={`rounded-xl ${field}`} value={form.description} onChange={set("description")} />

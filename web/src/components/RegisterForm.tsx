@@ -4,6 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from "../api/client";
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { errorMessage } from '../lib/format';
+
+const MIN_PASSWORD = 8;
 
 export function RegisterForm() {
     type RegisterCreds = {
@@ -38,12 +41,13 @@ export function RegisterForm() {
 
     function handleStatus() {
         if (isPending) return "Loading";
-        if (isError) return (error as any)?.error?.message ?? "Something went wrong";
+        if (isError) return errorMessage(error);
         if (isSuccess) return "Registered! Redirecting to login…";
         return null;
     }
 
     const status = handleStatus();
+    const tooShort = creds.password.length > 0 && creds.password.length < MIN_PASSWORD;
 
     return (
         <form onSubmit={handleSubmit} className="mx-auto mt-16 max-w-md space-y-5 rounded-[2.5rem] bg-sky p-10">
@@ -76,10 +80,14 @@ export function RegisterForm() {
                     name="password"
                     value={creds.password}
                     onChange={handleChange}
+                    aria-describedby="password-rules"
                 />
+                <span id="password-rules" className={`text-sm ${tooShort ? "text-red-600" : "text-slate-600"}`}>
+                    At least {MIN_PASSWORD} characters{tooShort ? `, ${MIN_PASSWORD - creds.password.length} more needed` : ""}
+                </span>
             </label>
 
-            <Button type="submit" disabled={isPending} className="w-full py-3">
+            <Button type="submit" disabled={isPending || creds.password.length < MIN_PASSWORD} className="w-full py-3">
                 Register
             </Button>
 

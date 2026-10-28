@@ -14,7 +14,11 @@ class Settings(BaseSettings):
     jwt_refresh_days: int = 30
     smtp_host: str = "localhost"
     smtp_port: int = 1025
+    smtp_username: str = ""
+    smtp_password: str = ""
+    email_from: str = "no-reply@biletflow.kz"
     frontend_url: str = "http://localhost:5173"
+    uploads_dir: Path = Path(__file__).resolve().parents[2] / "uploads"
 
 
 settings = Settings()

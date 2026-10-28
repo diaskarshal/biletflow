@@ -97,3 +97,22 @@ def test_public_listing_pages_cover_every_event():
             for e in db.query(Event).filter(Event.status == "published", Event.deleted_at.is_(None), Event.suspended_at.is_(None))
         ]
     assert sorted(seen) == sorted(expected)
+
+
+def test_cover_upload():
+    import io
+
+    from PIL import Image
+
+    org, _ = _login("uploader")
+    png = io.BytesIO()
+    Image.new("RGB", (40, 50), "navy").save(png, format="PNG")
+    uploaded = client.post("/api/v1/uploads/cover", headers=org, files={"image": ("cover.png", png.getvalue(), "image/png")})
+    assert uploaded.status_code == 201
+    url = uploaded.json()["url"]
+    assert url.endswith(".png")
+    assert client.get(url).content == png.getvalue()
+
+    text = client.post("/api/v1/uploads/cover", headers=org, files={"image": ("notes.txt", b"hello", "text/plain")})
+    assert text.json()["error"]["code"] == "INVALID_IMAGE"
+    assert client.post("/api/v1/uploads/cover", files={"image": ("cover.png", png.getvalue(), "image/png")}).status_code == 401

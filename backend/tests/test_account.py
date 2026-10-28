@@ -51,3 +51,40 @@ def test_verification_reset_and_profile(monkeypatch):
 
     assert client.patch("/api/v1/me", headers=headers, json={"full_name": " New Name "}).json()["full_name"] == "New Name"
     assert client.patch("/api/v1/me", headers=headers, json={"full_name": "   "}).status_code == 422
+
+
+def test_smtp_login_only_with_credentials(monkeypatch):
+    from app.core import email
+    from app.core.config import settings
+
+    calls = []
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout):
+            calls.append(("connect", host, port))
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def starttls(self):
+            calls.append(("starttls",))
+
+        def login(self, user, password):
+            calls.append(("login", user, password))
+
+        def send_message(self, message):
+            calls.append(("send", message["From"], message["To"]))
+
+    monkeypatch.setattr(email.smtplib, "SMTP", FakeSMTP)
+    email.send_email("a@test.kz", "Hi", "Body")
+    assert [c[0] for c in calls] == ["connect", "send"]
+
+    calls.clear()
+    monkeypatch.setattr(settings, "smtp_username", "me@gmail.com")
+    monkeypatch.setattr(settings, "smtp_password", "app-password")
+    monkeypatch.setattr(settings, "email_from", "me@gmail.com")
+    email.send_email("a@test.kz", "Hi", "Body")
+    assert calls[1:] == [("starttls",), ("login", "me@gmail.com", "app-password"), ("send", "me@gmail.com", "a@test.kz")]

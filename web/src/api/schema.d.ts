@@ -296,6 +296,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/uploads/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Cover */
+        post: operations["upload_cover_api_v1_uploads_cover_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/unpublish": {
         parameters: {
             query?: never;
@@ -1278,6 +1295,11 @@ export interface components {
             /** Document */
             document: string;
         };
+        /** Body_upload_cover_api_v1_uploads_cover_post */
+        Body_upload_cover_api_v1_uploads_cover_post: {
+            /** Image */
+            image: string;
+        };
         /** CampaignCreate */
         CampaignCreate: {
             /** Name */
@@ -2202,6 +2224,11 @@ export interface components {
             /** Revenue Kzt */
             revenue_kzt: number;
         };
+        /** UploadOut */
+        UploadOut: {
+            /** Url */
+            url: string;
+        };
         /** UserOut */
         UserOut: {
             /** Id */
@@ -2839,6 +2866,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_cover_api_v1_uploads_cover_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_cover_api_v1_uploads_cover_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadOut"];
                 };
             };
             /** @description Validation Error */

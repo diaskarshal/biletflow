@@ -111,6 +111,10 @@ class PaymentRef(BaseModel):
     payment_id: int
 
 
+class UploadOut(BaseModel):
+    url: str
+
+
 class ActivityOut(BaseModel):
     id: int
     created_at: datetime

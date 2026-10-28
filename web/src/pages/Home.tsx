@@ -37,7 +37,7 @@ export function Home() {
       {events.isSuccess && items.length === 0 && <EmptyState title="No events yet" />}
       {hero && <Hero event={hero} />}
       {rest.length > 0 && (
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {rest.map((e) => (
             <EventCard key={e.id} event={e} />
           ))}
@@ -65,7 +65,7 @@ function Hero({ event }: { event: EventOut }) {
   if (detail.data) rows.push(["Slots", `${slots.left} / ${slots.total}`]);
 
   return (
-    <section className="flex items-stretch gap-12">
+    <section className="flex flex-col gap-12 md:flex-row md:items-stretch">
       <div className="flex min-w-0 flex-1 flex-col">
         <h1 className="break-words font-heading text-5xl">{event.title}</h1>
         {event.description && <p className="mt-6 line-clamp-3 text-2xl">{event.description}</p>}
@@ -88,7 +88,7 @@ function Hero({ event }: { event: EventOut }) {
       <EventImage
         url={event.cover_image_url}
         title={event.title}
-        className="aspect-[4/5] w-[40%] shrink-0 rounded-2xl"
+        className="aspect-[4/5] w-full shrink-0 rounded-2xl md:w-[40%]"
       />
     </section>
   );

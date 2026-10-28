@@ -16,3 +16,5 @@ dist/
 .expo/
 
 .DS_Store
+
+backend/uploads/

@@ -92,6 +92,49 @@ def seed() -> None:
             status="cancelled",
         )
 
+        jazz = get_or_create_event(
+            db,
+            alice_org,
+            "almaty-jazz-night",
+            title="Almaty Jazz Night",
+            description="An evening of live jazz with local bands.",
+            venue_name="Kazakh National Philharmonic",
+            venue_address="Tole Bi 35, Almaty",
+            starts_at=now + timedelta(days=10),
+            ends_at=now + timedelta(days=10, hours=3),
+            status="published",
+            paid_sales_enabled=True,
+            terms_accepted_at=now,
+            activation_paid_at=now,
+        )
+        pitch_day = get_or_create_event(
+            db,
+            bob_org,
+            "astana-startup-pitch-day",
+            title="Astana Startup Pitch Day",
+            description="Ten student teams pitch their startups to local investors.",
+            venue_name="Astana Hub",
+            venue_address="Mangilik El 55/8, Astana",
+            starts_at=now + timedelta(days=12),
+            ends_at=now + timedelta(days=12, hours=4),
+            status="published",
+        )
+        movie_night = get_or_create_event(
+            db,
+            bob_org,
+            "open-air-movie-night",
+            title="Open-Air Movie Night",
+            description="Classic Kazakh films on a big screen in the park.",
+            venue_name="Central Park",
+            venue_address="Gogol 1, Almaty",
+            starts_at=now + timedelta(days=20),
+            ends_at=now + timedelta(days=20, hours=2),
+            status="published",
+        )
+        get_or_create_ticket_type(db, jazz, "Standard", price_kzt=4000, quantity_total=120)
+        get_or_create_ticket_type(db, jazz, "VIP", price_kzt=9000, quantity_total=30)
+        get_or_create_ticket_type(db, pitch_day, "Visitor", price_kzt=0, quantity_total=80)
+        get_or_create_ticket_type(db, movie_night, "Free Entry", price_kzt=0, quantity_total=300)
         get_or_create_ticket_type(
             db, draft_event, "General Admission", price_kzt=0, quantity_total=100
         )

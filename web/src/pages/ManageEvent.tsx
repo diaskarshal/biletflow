@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import type { components } from "../api/schema";
 import { StatusBadge } from "../components/Badge";
 import { Button } from "../components/Button";
+import { CoverUpload } from "../components/CoverUpload";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { Spinner } from "../components/Spinner";
@@ -226,10 +227,10 @@ function EditEvent({ event }: { event: Event }) {
           <span className="block">End time</span>
           <Input required type="time" className={field} value={form.timeTo} onChange={set("timeTo")} />
         </label>
-        <label className="space-y-1">
-          <span className="block">Cover image URL</span>
-          <Input className={field} value={form.image} onChange={set("image")} />
-        </label>
+        <div className="space-y-1">
+          <span className="block">Cover image</span>
+          <CoverUpload value={form.image} onChange={(image) => setForm({ ...form, image })} />
+        </div>
         <label className="space-y-1">
           <span className="block">Refund policy</span>
           <select className="w-full rounded-xl border border-slate-400 bg-white px-3 py-2" value={form.refundPolicy} onChange={set("refundPolicy")}>

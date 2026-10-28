@@ -79,7 +79,29 @@ npm install
 npx expo start
 ```
 
-Set `EXPO_PUBLIC_API_URL` in `mobile/.env` to your computer's LAN IP (the phone can't reach `localhost`). Scan the QR with Expo Go on a physical phone. The camera does not work in the iOS simulator.
+Set `EXPO_PUBLIC_API_URL` in `mobile/.env` to `http://<your computer's LAN IP>:8000`. The app runs on your phone, so it needs your computer's address on the Wi-Fi network to reach the API, and `localhost` on the phone means the phone itself.
+
+To find the LAN IP (the phone and the computer must be on the same Wi-Fi):
+
+- macOS: `ipconfig getifaddr en0`
+- Windows: run `ipconfig` and take the "IPv4 Address" under your Wi-Fi adapter
+- Linux: `hostname -I` and take the first address
+
+Restart `npx expo start` after changing `.env`, then scan the QR with Expo Go on a physical phone. The camera does not work in the iOS simulator.
+
+## Email
+
+By default every email (account confirmation, tickets, password reset) goes to Mailhog at http://localhost:8025 and never reaches a real inbox. To send real email, create `infra/.env` with an SMTP account, for example Gmail:
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=you@gmail.com
+SMTP_PASSWORD=your-app-password
+EMAIL_FROM=you@gmail.com
+```
+
+For Gmail, turn on 2-Step Verification and create an app password at https://myaccount.google.com/apppasswords (your normal password will not work). Then run `docker compose up -d` in `infra/`. If an email still does not arrive, `docker compose logs api` shows why. Links in emails point to http://localhost:5173, so they only open on the computer running the app.
 
 ## Tests
 
@@ -109,4 +131,4 @@ cd mobile
 npx tsc --noEmit
 ```
 
-Backend tests need Postgres running and migrated. They write test data into the local database.
+Backend tests need Postgres running. They use a separate `biletflow_test` database that is created and migrated automatically, so your local data is not touched.

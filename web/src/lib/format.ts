@@ -21,8 +21,19 @@ export function priceLabel(prices: number[]) {
   return `from ${formatPrice(min)}`;
 }
 
+type ApiFailure = {
+  error?: { message?: string; details?: { errors?: { loc?: (string | number)[]; msg?: string }[] } };
+  message?: string;
+} | null;
+
 export function errorMessage(e: unknown, fallback = "Something went wrong") {
-  const err = e as { error?: { message?: string }; message?: string } | null;
+  const err = e as ApiFailure;
+  const first = err?.error?.details?.errors?.[0];
+  if (first?.msg) {
+    const field = first.loc?.at(-1);
+    const msg = first.msg.replace(/^Value error, /, "");
+    return typeof field === "string" && field !== "body" ? `${field.replace(/_/g, " ")}: ${msg}` : msg;
+  }
   return err?.error?.message ?? err?.message ?? fallback;
 }
 

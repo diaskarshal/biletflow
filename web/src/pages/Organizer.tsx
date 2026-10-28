@@ -50,7 +50,7 @@ export function Organizer() {
       {events.isLoading && <Spinner />}
       {events.isError && <ErrorState message={errorMessage(events.error, "Could not load your events")} />}
       {events.data && shown.length === 0 && <EmptyState title={`No ${tab.toLowerCase()} events`} />}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((e) => (
           <EventCard key={e.id} event={e} status={e.status} to={`/organizer/events/${e.id}`} />
         ))}

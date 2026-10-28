@@ -1,8 +1,11 @@
+import io
 import re
 import secrets
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
+from fastapi import UploadFile
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -390,3 +393,24 @@ def list_activations(db: Session) -> list[Event]:
         .order_by(Event.activation_paid_at.desc())
         .all()
     )
+
+
+MAX_COVER_BYTES = 5 * 1024 * 1024
+COVER_FORMATS = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}
+
+
+def save_cover(file: UploadFile) -> str:
+    data = file.file.read(MAX_COVER_BYTES + 1)
+    if len(data) > MAX_COVER_BYTES:
+        raise APIError("IMAGE_TOO_LARGE", "The image must be 5 MB or smaller", status_code=413)
+    try:
+        image = Image.open(io.BytesIO(data))
+        image.verify()
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError) as exc:
+        raise APIError("INVALID_IMAGE", "Upload a JPEG, PNG or WebP image", status_code=400) from exc
+    extension = COVER_FORMATS.get(image.format or "")
+    if extension is None:
+        raise APIError("INVALID_IMAGE", "Upload a JPEG, PNG or WebP image", status_code=400)
+    name = f"{secrets.token_hex(16)}.{extension}"
+    (settings.uploads_dir / name).write_bytes(data)
+    return name

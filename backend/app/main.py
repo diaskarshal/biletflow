@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from app.core.config import settings
 from app.core.errors import (
     APIError,
     api_error_handler,
@@ -35,6 +37,9 @@ app.middleware("http")(request_id_middleware)
 app.add_exception_handler(APIError, api_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(Exception, unhandled_error_handler)
+
+settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.uploads_dir), name="uploads")
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(events_router, prefix="/api/v1")

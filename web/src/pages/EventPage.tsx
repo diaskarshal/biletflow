@@ -71,8 +71,8 @@ export function EventPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <div className="flex gap-10">
-        <EventImage url={e.cover_image_url} title={e.title} className="aspect-[4/5] w-[38%] shrink-0 rounded-2xl" />
+      <div className="flex flex-col gap-10 md:flex-row">
+        <EventImage url={e.cover_image_url} title={e.title} className="aspect-[4/5] w-full shrink-0 rounded-2xl md:w-[38%]" />
         <div className="flex min-w-0 flex-1 flex-col">
           <h1 className="break-words font-heading text-5xl">{e.title}</h1>
           <dl className="mt-4 space-y-1 text-2xl">
