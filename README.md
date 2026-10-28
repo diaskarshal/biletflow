@@ -1,6 +1,6 @@
 # BiletFlow
 
-Event ticketing platform for Kazakhstan: event pages, free and paid tickets in KZT, QR and PDF tickets, a mobile check-in app, promo codes, support chat, analytics and admin moderation.
+Event ticketing platform for SWE course project work: event pages, free/paid tickets, QR and PDF tickets, a mobile check-in app, promo codes, support chat, analytics and admin moderation.
 
 The API is listed in [docs/api-contract.md](docs/api-contract.md).
 
@@ -38,7 +38,7 @@ Demo accounts, password `password123`:
 - `alice@biletflow.kz` organizer
 - `bob@biletflow.kz` organizer
 
-After pulling new code:
+After pulling new code run:
 
 ```bash
 cd infra
@@ -79,29 +79,29 @@ npm install
 npx expo start
 ```
 
-Set `EXPO_PUBLIC_API_URL` in `mobile/.env` to `http://<your computer's LAN IP>:8000`. The app runs on your phone, so it needs your computer's address on the Wi-Fi network to reach the API, and `localhost` on the phone means the phone itself.
+Set `EXPO_PUBLIC_API_URL` in `mobile/.env` to `http://<your computer's LAN IP>:8000`. The app runs on your phone, so it needs your computer's address on the Wi-Fi network to reach the API. (`localhost` on the phone means the phone itself.)
 
 To find the LAN IP (the phone and the computer must be on the same Wi-Fi):
 
 - macOS: `ipconfig getifaddr en0`
-- Windows: run `ipconfig` and take the "IPv4 Address" under your Wi-Fi adapter
+- Windows: `ipconfig` and take the "IPv4 Address" under your Wi-Fi adapter
 - Linux: `hostname -I` and take the first address
 
-Restart `npx expo start` after changing `.env`, then scan the QR with Expo Go on a physical phone. The camera does not work in the iOS simulator.
+Restart `npx expo start` after changing `.env`, and then scan the QR with Expo Go on phone. 
 
 ## Email
 
-By default every email (account confirmation, tickets, password reset) goes to Mailhog at http://localhost:8025 and never reaches a real inbox. To send real email, create `infra/.env` with an SMTP account, for example Gmail:
+By default, every email (for account confirmation, tickets, and password reset) goes to Mailhog at http://localhost:8025 and never reaches a real inbox. To send real email, create `infra/.env` with an SMTP account, for example Gmail:
 
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USERNAME=you@gmail.com
-SMTP_PASSWORD=your-app-password
-EMAIL_FROM=you@gmail.com
+SMTP_USERNAME=@gmail.com
+SMTP_PASSWORD=
+EMAIL_FROM=@gmail.com
 ```
 
-For Gmail, turn on 2-Step Verification and create an app password at https://myaccount.google.com/apppasswords (your normal password will not work). Then run `docker compose up -d` in `infra/`. If an email still does not arrive, `docker compose logs api` shows why. Links in emails point to http://localhost:5173, so they only open on the computer running the app.
+For Gmail, turn on 2-Step Verification and create an app password at https://myaccount.google.com/apppasswords (your normal password will not work). Then run `docker compose up -d` in `infra/`. Note: links in emails point to http://localhost:5173, so they only open on the computer running the app.
 
 ## Tests
 

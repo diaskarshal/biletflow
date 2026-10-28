@@ -18,3 +18,5 @@ dist/
 .DS_Store
 
 backend/uploads/
+
+docs/demo-guide.md
