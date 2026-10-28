@@ -74,6 +74,24 @@ def create_order(
             raise APIError(
                 "INVALID_REQUEST", "Number of attendees must match quantity", status_code=400
             )
+        if ticket_type.max_per_order is not None:
+            held = (
+                db.query(Ticket)
+                .join(OrderItem)
+                .join(Order)
+                .filter(
+                    Order.user_id == user.id,
+                    Ticket.ticket_type_id == ticket_type.id,
+                    Ticket.status.in_(("pending", "valid", "checked_in")),
+                )
+                .count()
+            )
+            if held + item["quantity"] > ticket_type.max_per_order:
+                raise APIError(
+                    "TICKET_LIMIT_REACHED",
+                    f"You can get at most {ticket_type.max_per_order} {ticket_type.name} ticket(s)",
+                    status_code=409,
+                )
         lines.append((ticket_type, item))
 
     subtotal = sum(tt.price_kzt * item["quantity"] for tt, item in lines)

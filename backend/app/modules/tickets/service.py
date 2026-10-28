@@ -50,10 +50,10 @@ def update_ticket_type(db: Session, actor: User, ticket_type: TicketType, data: 
     changes = {
         field: f"{getattr(ticket_type, field)} -> {value}"
         for field, value in data.items()
-        if value is not None and getattr(ticket_type, field) != value
+        if (value is not None or field == "max_per_order") and getattr(ticket_type, field) != value
     }
     for field, value in data.items():
-        if value is not None:
+        if value is not None or field == "max_per_order":
             setattr(ticket_type, field, value)
     if changes:
         audit.record(

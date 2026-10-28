@@ -10,9 +10,9 @@ import { Textarea } from "../components/Textarea";
 import { DISPLAY_TIMEZONE, eventRange } from "../lib/eventTimes";
 import { errorMessage, REFUND_POLICIES, type RefundPolicy } from "../lib/format";
 
-type TicketRow = { name: string; price: string; slots: string };
+type TicketRow = { name: string; price: string; slots: string; limit: string };
 
-const emptyTicket: TicketRow = { name: "", price: "0", slots: "" };
+const emptyTicket: TicketRow = { name: "", price: "0", slots: "", limit: "" };
 // Light grey fields on the blue card, per the design.
 const field = "bg-on-brand!";
 
@@ -40,6 +40,7 @@ export function NewEvent() {
         name: t.name.trim(),
         price_kzt: Number(t.price),
         quantity_total: Number(t.slots),
+        max_per_order: t.limit ? Number(t.limit) : null,
         is_hidden: false,
       }));
       const { data: event, error } = await api.POST("/api/v1/events", {
@@ -88,6 +89,10 @@ export function NewEvent() {
     }
     if (tickets.some((t) => Number(t.slots) < 1 || Number(t.price) < 0)) {
       setFormError("Each ticket type needs at least 1 slot and a price of 0 or more.");
+      return;
+    }
+    if (tickets.some((t) => t.limit && Number(t.limit) < 1)) {
+      setFormError("Max per person must be at least 1, or left empty.");
       return;
     }
     setFormError(null);
@@ -175,6 +180,18 @@ export function NewEvent() {
                   className={field}
                   value={t.slots}
                   onChange={(e) => setTicket(i, "slots", e.target.value)}
+                />
+              </Label>
+            </div>
+            <div className="flex-1">
+              <Label text="Max per person">
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="No limit"
+                  className={field}
+                  value={t.limit}
+                  onChange={(e) => setTicket(i, "limit", e.target.value)}
                 />
               </Label>
             </div>

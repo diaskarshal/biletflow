@@ -10,7 +10,7 @@ class TicketTypeCreate(BaseModel):
     quantity_total: int = Field(gt=0)
     sales_start_at: datetime | None = None
     sales_end_at: datetime | None = None
-    max_per_order: int | None = None
+    max_per_order: int | None = Field(default=None, ge=1)
     is_hidden: bool = False
 
 
@@ -21,7 +21,7 @@ class TicketTypeUpdate(BaseModel):
     quantity_total: int | None = Field(default=None, gt=0)
     sales_start_at: datetime | None = None
     sales_end_at: datetime | None = None
-    max_per_order: int | None = None
+    max_per_order: int | None = Field(default=None, ge=1)
     is_hidden: bool | None = None
 
 

@@ -275,7 +275,7 @@ function TicketTypes({ eventId }: { eventId: number }) {
       <table className="w-full max-w-3xl text-left">
         <thead>
           <tr className="border-b border-brand">
-            {["Name", "Sold", "Price (KZT)", "Capacity", ""].map((h) => (
+            {["Name", "Sold", "Price (KZT)", "Capacity", "Max per person", ""].map((h) => (
               <th key={h} className="py-2 pr-3">
                 {h}
               </th>
@@ -296,11 +296,12 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
   const queryClient = useQueryClient();
   const [price, setPrice] = useState(String(ticketType.price_kzt));
   const [capacity, setCapacity] = useState(String(ticketType.quantity_total));
+  const [limit, setLimit] = useState(ticketType.max_per_order ? String(ticketType.max_per_order) : "");
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await api.PATCH("/api/v1/ticket-types/{ticket_type_id}", {
         params: { path: { ticket_type_id: ticketType.id } },
-        body: { price_kzt: Number(price), quantity_total: Number(capacity) },
+        body: { price_kzt: Number(price), quantity_total: Number(capacity), max_per_order: limit ? Number(limit) : null },
       });
       if (error) throw error;
     },
@@ -309,8 +310,11 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
       queryClient.invalidateQueries({ queryKey: ["activity", eventId] });
     },
   });
-  const changed = price !== String(ticketType.price_kzt) || capacity !== String(ticketType.quantity_total);
-  const filled = price !== "" && capacity !== "";
+  const changed =
+    price !== String(ticketType.price_kzt) ||
+    capacity !== String(ticketType.quantity_total) ||
+    limit !== (ticketType.max_per_order ? String(ticketType.max_per_order) : "");
+  const filled = price !== "" && capacity !== "" && (limit === "" || Number(limit) >= 1);
   return (
     <tr className="border-b border-slate-200">
       <td className="py-2 pr-3">{ticketType.name}</td>
@@ -320,6 +324,17 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
       </td>
       <td className="py-2 pr-3">
         <Input type="number" min={1} aria-label={`${ticketType.name} capacity`} className="w-28 border-slate-400!" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
+      </td>
+      <td className="py-2 pr-3">
+        <Input
+          type="number"
+          min={1}
+          placeholder="No limit"
+          aria-label={`${ticketType.name} max per person`}
+          className="w-28 border-slate-400!"
+          value={limit}
+          onChange={(e) => setLimit(e.target.value)}
+        />
       </td>
       <td className="py-2">
         <Button variant="secondary" disabled={!changed || !filled} loading={save.isPending} onClick={() => save.mutate()}>
