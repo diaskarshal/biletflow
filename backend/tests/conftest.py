@@ -19,4 +19,8 @@ admin.dispose()
 
 settings.database_url = test_url.render_as_string(hide_password=False)
 settings.uploads_dir = Path(tempfile.mkdtemp())
+settings.smtp_host = "localhost"
+settings.smtp_port = 1025
+settings.smtp_username = ""
+settings.smtp_password = ""
 command.upgrade(Config(str(Path(__file__).resolve().parents[1] / "alembic.ini")), "head")

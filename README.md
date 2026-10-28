@@ -35,8 +35,8 @@ curl localhost:8000/health
 Demo accounts, password `password123`:
 
 - `admin@biletflow.kz` platform admin
-- `alice@biletflow.kz` organizer
-- `bob@biletflow.kz` organizer
+- `aru@biletflow.kz` organizer
+- `arman@biletflow.kz` organizer
 
 After pulling new code run:
 

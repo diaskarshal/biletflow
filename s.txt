@@ -1,8 +1,0 @@
-cd infra                             
-docker compose up -d --build
-docker compose exec api uv run alembic upgrade head
-docker compose exec api uv run python -m app.db.seed
-
-cd ..
-cd mobile
-npx expo start

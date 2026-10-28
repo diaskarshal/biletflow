@@ -55,14 +55,14 @@ def get_or_create_ticket_type(db, event: Event, name: str, **fields) -> TicketTy
 def seed() -> None:
     with SessionLocal() as db:
         get_or_create_user(db, "admin@biletflow.kz", "Platform Admin").is_admin = True
-        alice = get_or_create_user(db, "alice@biletflow.kz", "Alice Organizer")
-        bob = get_or_create_user(db, "bob@biletflow.kz", "Bob Organizer")
-        alice_org = get_or_create_organizer(db, alice, "Almaty Events Co")
-        bob_org = get_or_create_organizer(db, bob, "Astana Community Club")
+        aru = get_or_create_user(db, "aru@biletflow.kz", "Aru Organizer")
+        arman = get_or_create_user(db, "arman@biletflow.kz", "Arman Organizer")
+        aru_org = get_or_create_organizer(db, aru, "Almaty Events Co")
+        arman_org = get_or_create_organizer(db, arman, "Astana Community Club")
 
         draft_event = get_or_create_event(
             db,
-            alice_org,
+            aru_org,
             "draft-standup-night",
             title="Standup Comedy Night (Draft)",
             venue_name="Almaty Arena",
@@ -72,7 +72,7 @@ def seed() -> None:
         )
         published_event = get_or_create_event(
             db,
-            alice_org,
+            aru_org,
             "student-tech-meetup",
             title="Student Tech Meetup",
             venue_name="Nazarbayev University",
@@ -83,7 +83,7 @@ def seed() -> None:
         )
         cancelled_event = get_or_create_event(
             db,
-            bob_org,
+            arman_org,
             "cancelled-charity-run",
             title="Charity Run (Cancelled)",
             venue_name="Astana Central Park",
@@ -94,7 +94,7 @@ def seed() -> None:
 
         jazz = get_or_create_event(
             db,
-            alice_org,
+            aru_org,
             "almaty-jazz-night",
             title="Almaty Jazz Night",
             description="An evening of live jazz with local bands.",
@@ -109,7 +109,7 @@ def seed() -> None:
         )
         pitch_day = get_or_create_event(
             db,
-            bob_org,
+            arman_org,
             "astana-startup-pitch-day",
             title="Astana Startup Pitch Day",
             description="Ten student teams pitch their startups to local investors.",
@@ -121,7 +121,7 @@ def seed() -> None:
         )
         movie_night = get_or_create_event(
             db,
-            bob_org,
+            arman_org,
             "open-air-movie-night",
             title="Open-Air Movie Night",
             description="Classic Kazakh films on a big screen in the park.",

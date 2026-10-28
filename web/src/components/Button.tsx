@@ -13,10 +13,14 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
 };
 
+export function buttonClass(variant: Variant = "primary") {
+  return `rounded-xl px-4 py-2 font-heading transition disabled:opacity-50 ${variants[variant]}`;
+}
+
 export function Button({ variant = "primary", loading = false, className = "", disabled, children, ...rest }: Props) {
   return (
     <button
-      className={`rounded-xl px-4 py-2 font-heading transition disabled:opacity-50 ${variants[variant]} ${className}`}
+      className={`${buttonClass(variant)} ${className}`}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...rest}

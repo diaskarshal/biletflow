@@ -26,7 +26,7 @@ def _order(headers: dict, event_id: int, type_id: int, quantity: int = 1):
 
 
 def test_max_tickets_per_person():
-    org, alice, bob = _login("organizer"), _login("alice"), _login("bob")
+    org, aru, arman = _login("organizer"), _login("aru"), _login("arman")
     event = client.post(
         "/api/v1/events",
         headers=org,
@@ -41,10 +41,10 @@ def test_max_tickets_per_person():
     type_id = event["ticket_types"][0]["id"]
     assert event["ticket_types"][0]["max_per_order"] == 2
 
-    assert _order(alice, event["id"], type_id, 3).json()["error"]["code"] == "TICKET_LIMIT_REACHED"
-    assert _order(alice, event["id"], type_id, 2).status_code == 201
-    assert _order(alice, event["id"], type_id).json()["error"]["code"] == "TICKET_LIMIT_REACHED"
-    assert _order(bob, event["id"], type_id).status_code == 201
+    assert _order(aru, event["id"], type_id, 3).json()["error"]["code"] == "TICKET_LIMIT_REACHED"
+    assert _order(aru, event["id"], type_id, 2).status_code == 201
+    assert _order(aru, event["id"], type_id).json()["error"]["code"] == "TICKET_LIMIT_REACHED"
+    assert _order(arman, event["id"], type_id).status_code == 201
 
 
 def test_limit_must_be_positive():

@@ -6,7 +6,7 @@
 //   node scripts/make-test-tickets.mjs http://192.168.0.5:8000
 //
 // WARNING: this WRITES to the database it points at. It creates orders and tickets for the
-// seeded organizer alice@biletflow.kz and checks one of them in. Use it on a dev database only.
+// seeded organizer aru@biletflow.kz and checks one of them in. Use it on a dev database only.
 //
 // QR images are saved to scripts/test-qr/ (git-ignored). Each image holds a token that exists
 // only in the database it was created in, so images cannot be shared between machines;
@@ -21,7 +21,7 @@ const API = `${(process.argv[2] ?? "http://localhost:8000").replace(/\/$/, "")}/
 const OUT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-qr");
 
 // Seed account from backend/app/db/seed.py (dev only).
-const ORGANIZER = { email: "alice@biletflow.kz", password: "password123" };
+const ORGANIZER = { email: "aru@biletflow.kz", password: "password123" };
 
 async function call(method, endpoint, { body, token, headers } = {}) {
     let response;
@@ -53,12 +53,12 @@ function must(result, what) {
 
 const { access_token: token } = must(
     await call("POST", "/auth/login", { body: ORGANIZER }),
-    "Login as alice@biletflow.kz (did you run the seed command?)"
+    "Login as aru@biletflow.kz (did you run the seed command?)"
 );
 
 const events = must(await call("GET", "/organizer/events", { token }), "Listing events");
 const event = events.find((e) => e.status === "published");
-if (!event) throw new Error("Alice has no published event. Run: docker compose exec api uv run python -m app.db.seed");
+if (!event) throw new Error("Aru has no published event. Run: docker compose exec api uv run python -m app.db.seed");
 
 const ticketTypes = must(await call("GET", `/events/${event.id}/ticket-types`), "Listing ticket types");
 const freeType = ticketTypes.find((t) => t.price_kzt === 0);

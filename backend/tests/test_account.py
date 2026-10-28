@@ -79,6 +79,7 @@ def test_smtp_login_only_with_credentials(monkeypatch):
             calls.append(("send", message["From"], message["To"]))
 
     monkeypatch.setattr(email.smtplib, "SMTP", FakeSMTP)
+    monkeypatch.setattr(settings, "smtp_username", "")
     email.send_email("a@test.kz", "Hi", "Body")
     assert [c[0] for c in calls] == ["connect", "send"]
 
