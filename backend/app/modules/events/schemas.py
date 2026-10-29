@@ -64,6 +64,8 @@ class EventOut(BaseModel):
     paid_sales_enabled: bool
     refund_policy: str
     suspended_at: datetime | None
+    review_status: str
+    review_note: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

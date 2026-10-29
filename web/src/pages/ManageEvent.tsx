@@ -46,6 +46,18 @@ export function ManageEvent() {
           Back to my events
         </Link>
         <h1 className="font-heading text-5xl">{event.title}</h1>
+        {event.status === "published" && event.review_status === "pending" && (
+          <p className="border border-slate-400 p-3">
+            Waiting for platform approval. The event is hidden from the public and cannot take registrations until an
+            admin approves it.
+          </p>
+        )}
+        {event.review_status === "rejected" && (
+          <p className="border border-red-700 p-3 text-red-700">
+            Not approved by the platform: {event.review_note ?? "no reason given"}. Edit the event details below to send
+            it for review again.
+          </p>
+        )}
         {event.suspended_at && (
           <p className="border border-red-700 p-3 text-red-700">
             The platform suspended this event. It is hidden and cannot take new orders. Contact platform support for

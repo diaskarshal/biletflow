@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.modules.orders import service as orders_service
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -50,6 +51,7 @@ def test_golden_path(organizer_token: str, attendee_token: str, monkeypatch: pyt
     assert datetime.fromisoformat(event["starts_at"]) == datetime(2026, 12, 1, 18, tzinfo=UTC)
 
     published = client.post(f"/api/v1/events/{event_id}/publish", headers=org_headers).json()
+    approve(event_id)
     assert published["status"] == "published"
 
     ticket_type = client.post(

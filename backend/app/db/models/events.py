@@ -17,6 +17,9 @@ class Event(Base):
             "refund_policy in ('full_until_48h','full_anytime','no_refunds')",
             name="ck_events_refund_policy",
         ),
+        CheckConstraint(
+            "review_status in ('pending','approved','rejected')", name="ck_events_review_status"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -44,6 +47,9 @@ class Event(Base):
     activation_paid_at: Mapped[datetime | None]
     paid_sales_suspended_at: Mapped[datetime | None]
     suspended_at: Mapped[datetime | None]
+    review_status: Mapped[str] = mapped_column(default="pending", server_default="pending")
+    review_note: Mapped[str | None]
+    reviewed_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     deleted_at: Mapped[datetime | None]
 

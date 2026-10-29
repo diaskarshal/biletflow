@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.db.models import Event
 from app.db.session import SessionLocal
 from app.main import app
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -53,6 +54,7 @@ def test_promo_codes_and_campaign_reporting():
     event_id = event["id"]
     vip, student = (t["id"] for t in event["ticket_types"])
     client.post(f"/api/v1/events/{event_id}/publish", headers=org)
+    approve(event_id)
     with SessionLocal() as db:
         db.get(Event, event_id).paid_sales_enabled = True
         db.commit()

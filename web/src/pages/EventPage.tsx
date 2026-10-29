@@ -82,6 +82,9 @@ export function EventPage() {
           </dl>
           {e.venue_address && <p className="mt-1 text-2xl">{e.venue_address}</p>}
           {cancelled && <p className="mt-4 font-heading text-xl text-red-700">This event was cancelled.</p>}
+          {e.review_status !== "approved" && (
+            <p className="mt-4 border border-slate-400 p-2">Not public yet: this event is waiting for platform approval.</p>
+          )}
           {promo.data && (
             <p className="mt-4 border border-brand p-2">
               Promo {promo.data.code} applied:{" "}

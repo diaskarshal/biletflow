@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from app.db.models import AuditLog
 from app.db.session import SessionLocal
 from app.main import app
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -32,6 +33,7 @@ def test_search_manual_checkin_undo_and_counts():
     ).json()
     event_id, type_id = event["id"], event["ticket_types"][0]["id"]
     client.post(f"/api/v1/events/{event_id}/publish", headers=org)
+    approve(event_id)
     client.post(
         "/api/v1/orders",
         headers={**buyer, "Idempotency-Key": uuid.uuid4().hex},

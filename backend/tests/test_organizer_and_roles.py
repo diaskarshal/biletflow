@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -124,6 +125,7 @@ def test_staff_role_check_gates_checkin(
     ticket_type_id = event["ticket_types"][0]["id"]
 
     client.post(f"/api/v1/events/{event_id}/publish", headers=org_headers)
+    approve(event_id)
 
     order = client.post(
         "/api/v1/orders",

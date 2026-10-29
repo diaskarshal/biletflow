@@ -3,6 +3,7 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.main import app
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -38,6 +39,7 @@ def test_max_tickets_per_person():
         },
     ).json()
     client.post(f"/api/v1/events/{event['id']}/publish", headers=org)
+    approve(event['id'])
     type_id = event["ticket_types"][0]["id"]
     assert event["ticket_types"][0]["max_per_order"] == 2
 

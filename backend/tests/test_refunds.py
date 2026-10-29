@@ -8,6 +8,7 @@ from app.db.session import SessionLocal
 from app.main import app
 from app.modules.orders import service as orders_service
 from app.modules.payments import service as payments_service
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -63,6 +64,7 @@ def test_cancellations_refunds_and_event_cancellation(monkeypatch: pytest.Monkey
     free_id, paid_id = (t["id"] for t in event["ticket_types"])
     assert event["refund_policy"] == "full_anytime"
     client.post(f"/api/v1/events/{event_id}/publish", headers=org)
+    approve(event_id)
     with SessionLocal() as db:
         db.get(Event, event_id).paid_sales_enabled = True
         db.commit()

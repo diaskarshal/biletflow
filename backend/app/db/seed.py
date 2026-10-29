@@ -79,6 +79,7 @@ def seed() -> None:
             starts_at=now + timedelta(days=7),
             ends_at=now + timedelta(days=7, hours=3),
             status="published",
+            review_status="approved",
             capacity=200,
         )
         cancelled_event = get_or_create_event(
@@ -103,6 +104,7 @@ def seed() -> None:
             starts_at=now + timedelta(days=10),
             ends_at=now + timedelta(days=10, hours=3),
             status="published",
+            review_status="approved",
             paid_sales_enabled=True,
             terms_accepted_at=now,
             activation_paid_at=now,
@@ -118,6 +120,7 @@ def seed() -> None:
             starts_at=now + timedelta(days=12),
             ends_at=now + timedelta(days=12, hours=4),
             status="published",
+            review_status="approved",
         )
         movie_night = get_or_create_event(
             db,
@@ -130,6 +133,7 @@ def seed() -> None:
             starts_at=now + timedelta(days=20),
             ends_at=now + timedelta(days=20, hours=2),
             status="published",
+            review_status="approved",
         )
         get_or_create_ticket_type(db, jazz, "Standard", price_kzt=4000, quantity_total=120)
         get_or_create_ticket_type(db, jazz, "VIP", price_kzt=9000, quantity_total=30)

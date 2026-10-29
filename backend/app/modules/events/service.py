@@ -76,9 +76,9 @@ def get_event_by_slug_for_viewer(db: Session, slug: str, user: User | None) -> E
     event = db.query(Event).filter_by(slug=slug).one_or_none()
     if event is None or event.deleted_at is not None:
         raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
-    if event.status in ("published", "completed") and event.suspended_at is None:
+    if event.status in ("published", "completed") and event.review_status == "approved" and event.suspended_at is None:
         return event
-    if user is not None and is_owner(db, user, event):
+    if user is not None and (user.is_admin or is_owner(db, user, event)):
         return event
     raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
 
@@ -102,7 +102,10 @@ def require_event_admin(db: Session, user: User, event: Event) -> None:
 
 def list_published_events(db: Session, limit: int, cursor: int | None) -> tuple[list[Event], int | None]:
     query = db.query(Event).filter(
-        Event.status == "published", Event.deleted_at.is_(None), Event.suspended_at.is_(None)
+        Event.status == "published",
+        Event.review_status == "approved",
+        Event.deleted_at.is_(None),
+        Event.suspended_at.is_(None),
     )
     if cursor is not None:
         query = query.filter(Event.id > cursor)
@@ -138,6 +141,8 @@ def update_event(db: Session, actor: User, event: Event, data: dict) -> Event:
     for field, value in data.items():
         if value is not None:
             setattr(event, field, value)
+    if changes and event.review_status == "rejected":
+        event.review_status = "pending"
     if changes:
         audit.record(
             db, actor, "event.updated", "event", event.id, event.id,

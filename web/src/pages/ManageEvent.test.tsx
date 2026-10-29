@@ -11,6 +11,7 @@ const event = {
   starts_at: "2026-12-01T13:00:00Z",
   ends_at: "2026-12-01T15:00:00Z",
   refund_policy: "full_until_48h",
+  review_status: "approved",
   display_timezone: "Asia/Almaty",
 };
 

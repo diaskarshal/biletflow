@@ -9,6 +9,7 @@ from app.db.session import SessionLocal
 from app.main import app
 from app.modules.orders import service as orders_service
 from app.modules.payments import service as payments_service
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -68,6 +69,7 @@ def test_paid_sales_activation_and_checkout(monkeypatch: pytest.MonkeyPatch):
     ).json()
     event_id, vip_id = event["id"], event["ticket_types"][0]["id"]
     client.post(f"/api/v1/events/{event_id}/publish", headers=org)
+    approve(event_id)
 
     blocked = _buy(buyer, event_id, vip_id)
     assert blocked.status_code == 409

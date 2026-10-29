@@ -19,6 +19,11 @@ function eventPhase(e: Event, now = Date.now()): Tab {
   return "Upcoming";
 }
 
+function reviewLabel(e: Event) {
+  if (e.status !== "published" || e.review_status === "approved") return e.status;
+  return e.review_status === "rejected" ? "rejected" : "in review";
+}
+
 export function Organizer() {
   const events = useOrganizerEvents();
   const [tab, setTab] = useState<Tab>("Upcoming");
@@ -52,7 +57,7 @@ export function Organizer() {
       {events.data && shown.length === 0 && <EmptyState title={`No ${tab.toLowerCase()} events`} />}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((e) => (
-          <EventCard key={e.id} event={e} status={e.status} to={`/organizer/events/${e.id}`} />
+          <EventCard key={e.id} event={e} status={reviewLabel(e)} to={`/organizer/events/${e.id}`} />
         ))}
       </div>
     </div>

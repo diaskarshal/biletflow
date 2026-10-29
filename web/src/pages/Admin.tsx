@@ -23,6 +23,7 @@ export function Admin() {
   return (
     <div className="mx-auto max-w-5xl space-y-10 px-6 py-12">
       <h1 className="text-3xl font-bold">Platform admin</h1>
+      <PendingEvents />
       <Search />
       <Reports />
       <Verifications />
@@ -433,6 +434,72 @@ function Exports() {
           Download payments CSV
         </Button>
       </div>
+    </Block>
+  );
+}
+
+function PendingEvents() {
+  const queryClient = useQueryClient();
+  const pending = useQuery({
+    queryKey: ["admin-pending-events"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/admin/events/pending");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const review = useMutation({
+    mutationFn: async ({ id, status, note }: { id: number; status: "approved" | "rejected"; note?: string }) => {
+      const { error } = await api.POST("/api/v1/admin/events/{event_id}/review", {
+        params: { path: { event_id: id } },
+        body: { status, note: note ?? null },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-pending-events"] }),
+  });
+
+  return (
+    <Block title="Events waiting for approval">
+      {pending.isError && <ErrorState message={errorMessage(pending.error)} />}
+      {review.isError && <ErrorState message={errorMessage(review.error)} />}
+      {pending.data?.length === 0 && <EmptyState title="No events waiting" />}
+      {!!pending.data?.length && (
+        <Table head={["Event", "Organizer", "Starts", "Venue", ""]}>
+          {pending.data.map((e) => (
+            <tr key={e.id} className="border-b border-slate-200 align-top">
+              <td className="py-2 pr-4">
+                <Link className="underline" to={`/events/${e.slug}`}>
+                  {e.title}
+                </Link>
+                {e.description && <p className="line-clamp-2 text-sm">{e.description}</p>}
+              </td>
+              <td className="py-2 pr-4">
+                {e.organizer}
+                <br />
+                <span className="text-sm">{e.organizer_email}</span>
+              </td>
+              <td className="py-2 pr-4">{formatDateTime(e.starts_at)}</td>
+              <td className="py-2 pr-4">{e.venue_name}</td>
+              <td className="space-x-2 py-2 text-right whitespace-nowrap">
+                <Button disabled={review.isPending} onClick={() => review.mutate({ id: e.id, status: "approved" })}>
+                  Approve
+                </Button>
+                <Button
+                  variant="danger"
+                  disabled={review.isPending}
+                  onClick={() => {
+                    const note = window.prompt("Why is this event rejected? The organizer will see this.");
+                    if (note !== null) review.mutate({ id: e.id, status: "rejected", note });
+                  }}
+                >
+                  Reject
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </Table>
+      )}
     </Block>
   );
 }

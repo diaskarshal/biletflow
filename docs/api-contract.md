@@ -31,11 +31,11 @@ POST   /api/v1/organizer/verification     multipart, field "document"
 
 ```
 POST   /api/v1/events                     may include ticket_types: [...] inline
-GET    /api/v1/events                     public, published and not suspended, paginated
-GET    /api/v1/events/{slug}              published/completed: public. draft/cancelled/suspended: owner only
+GET    /api/v1/events                     public, published, approved and not suspended, paginated
+GET    /api/v1/events/{slug}              published/completed and approved: public. Otherwise owner or admin only
 PATCH  /api/v1/events/{id}                owner, not while suspended. Date or venue changes email
                                           every valid ticket holder
-POST   /api/v1/events/{id}/publish        owner, draft only
+POST   /api/v1/events/{id}/publish        owner, draft only. Submits the event for admin review (review_status pending)
 POST   /api/v1/events/{id}/unpublish      owner, published and no paid or pending orders
 POST   /api/v1/events/{id}/duplicate      owner, not while suspended, new draft with the same details
                                           and ticket types
@@ -118,6 +118,9 @@ cases are handled by platform admins only.
 ## Platform admin
 
 ```
+GET    /api/v1/admin/events/pending                  published events waiting for review
+POST   /api/v1/admin/events/{id}/review              {status: approved|rejected, note?}, emails the organizer.
+                                                     Editing a rejected event sends it back to pending
 GET    /api/v1/admin/search?q=                       users, events, orders, payments
 POST   /api/v1/admin/users/{id}/suspension           {suspended}
 POST   /api/v1/admin/events/{id}/suspension          {suspended}, also closes open reports

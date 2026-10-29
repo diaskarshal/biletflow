@@ -100,3 +100,20 @@ class PromoRow(BaseModel):
     max_redemptions: int | None
     disabled: bool
     created_at: datetime
+
+
+class PendingEventRow(BaseModel):
+    id: int
+    title: str
+    slug: str
+    organizer: str
+    organizer_email: str
+    starts_at: datetime
+    venue_name: str | None
+    description: str | None
+    submitted_at: datetime
+
+
+class ReviewDecision(BaseModel):
+    status: Literal["approved", "rejected"]
+    note: str | None = Field(default=None, max_length=1000)

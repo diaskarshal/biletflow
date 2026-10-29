@@ -7,6 +7,7 @@ from app.db.models import Event
 from app.db.session import SessionLocal
 from app.main import app
 from app.modules.events import service as events_service
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -47,6 +48,7 @@ def test_unpublish_duplicate_and_activity(monkeypatch):
     event = _event(org)
     event_id = event["id"]
     client.post(f"/api/v1/events/{event_id}/publish", headers=org)
+    approve(event_id)
     client.post(
         "/api/v1/orders",
         headers={**buyer, "Idempotency-Key": uuid.uuid4().hex},
@@ -94,7 +96,12 @@ def test_public_listing_pages_cover_every_event():
     with SessionLocal() as db:
         expected = [
             e.id
-            for e in db.query(Event).filter(Event.status == "published", Event.deleted_at.is_(None), Event.suspended_at.is_(None))
+            for e in db.query(Event).filter(
+                Event.status == "published",
+                Event.review_status == "approved",
+                Event.deleted_at.is_(None),
+                Event.suspended_at.is_(None),
+            )
         ]
     assert sorted(seen) == sorted(expected)
 

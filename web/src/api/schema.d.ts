@@ -1016,6 +1016,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/events/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pending Events */
+        get: operations["pending_events_api_v1_admin_events_pending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/events/{event_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Event */
+        post: operations["review_event_api_v1_admin_events__event_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/search": {
         parameters: {
             query?: never;
@@ -1624,6 +1658,10 @@ export interface components {
             refund_policy: string;
             /** Suspended At */
             suspended_at: string | null;
+            /** Review Status */
+            review_status: string;
+            /** Review Note */
+            review_note: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1720,6 +1758,10 @@ export interface components {
             refund_policy: string;
             /** Suspended At */
             suspended_at: string | null;
+            /** Review Status */
+            review_status: string;
+            /** Review Note */
+            review_note: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1958,6 +2000,33 @@ export interface components {
              */
             created_at: string;
         };
+        /** PendingEventRow */
+        PendingEventRow: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Slug */
+            slug: string;
+            /** Organizer */
+            organizer: string;
+            /** Organizer Email */
+            organizer_email: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Venue Name */
+            venue_name: string | null;
+            /** Description */
+            description: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
         /** PromoPreview */
         PromoPreview: {
             /** Code */
@@ -2043,6 +2112,16 @@ export interface components {
             token: string;
             /** Password */
             password: string;
+        };
+        /** ReviewDecision */
+        ReviewDecision: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "approved" | "rejected";
+            /** Note */
+            note?: string | null;
         };
         /** SearchResult */
         SearchResult: {
@@ -4367,6 +4446,59 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ActivationOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pending_events_api_v1_admin_events_pending_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingEventRow"][];
+                };
+            };
+        };
+    };
+    review_event_api_v1_admin_events__event_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

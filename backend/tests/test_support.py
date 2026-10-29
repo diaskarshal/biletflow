@@ -6,6 +6,7 @@ from app.db.models import User
 from app.db.session import SessionLocal
 from app.main import app
 from app.modules.support import service as support_service
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -38,6 +39,7 @@ def test_support_cases(monkeypatch):
         },
     ).json()
     client.post(f"/api/v1/events/{event['id']}/publish", headers=org)
+    approve(event['id'])
     order = client.post(
         "/api/v1/orders",
         headers={**buyer, "Idempotency-Key": uuid.uuid4().hex},

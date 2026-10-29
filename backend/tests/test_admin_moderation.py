@@ -6,6 +6,7 @@ from app.db.models import Event, User
 from app.db.session import SessionLocal
 from app.main import app
 from app.modules.admin import service as admin_service
+from tests.helpers import approve
 
 client = TestClient(app)
 
@@ -36,6 +37,7 @@ def test_admin_moderation():
     ).json()
     event_id, type_id = event["id"], event["ticket_types"][0]["id"]
     client.post(f"/api/v1/events/{event_id}/publish", headers=org)
+    approve(event_id)
     with SessionLocal() as db:
         db.get(Event, event_id).paid_sales_enabled = True
         db.commit()
@@ -94,3 +96,48 @@ def test_admin_moderation():
     assert login.json()["error"]["code"] == "ACCOUNT_SUSPENDED"
     client.post(f"/api/v1/admin/users/{buyer_id}/suspension", headers=admin, json={"suspended": False})
     assert client.get("/api/v1/me", headers=buyer).status_code == 200
+
+
+def test_new_events_need_admin_approval(monkeypatch):
+    sent = []
+    monkeypatch.setattr(admin_service, "send_email", lambda to, subject, body: sent.append((to, subject, body)))
+    (org, org_email), (buyer, buyer_email), (admin, _) = _login("neworganizer"), _login("buyer"), _login("admin", admin=True)
+    event = client.post(
+        "/api/v1/events",
+        headers=org,
+        json={
+            "title": f"Fresh {uuid.uuid4().hex[:6]}",
+            "starts_at": "2026-12-01T13:00:00Z",
+            "ends_at": "2026-12-01T15:00:00Z",
+            "ticket_types": [{"name": "Free", "price_kzt": 0, "quantity_total": 10}],
+        },
+    ).json()
+    event_id, slug = event["id"], event["slug"]
+    published = client.post(f"/api/v1/events/{event_id}/publish", headers=org).json()
+    assert (published["status"], published["review_status"]) == ("published", "pending")
+
+    def public_ids():
+        return [e["id"] for e in client.get("/api/v1/events?limit=100").json()["items"]]
+
+    assert event_id not in public_ids()
+    assert client.get(f"/api/v1/events/{slug}").status_code == 404
+    assert client.get(f"/api/v1/events/{slug}", headers=org).status_code == 200
+    assert client.get(f"/api/v1/events/{slug}", headers=admin).status_code == 200
+    order = {"event_id": event_id, "items": [{"ticket_type_id": event["ticket_types"][0]["id"], "quantity": 1, "attendees": [{"name": "B", "email": buyer_email}]}]}
+    register = client.post("/api/v1/orders", headers={**buyer, "Idempotency-Key": uuid.uuid4().hex}, json=order)
+    assert register.json()["error"]["code"] == "EVENT_NOT_APPROVED"
+
+    assert client.get("/api/v1/admin/events/pending", headers=org).status_code == 403
+    assert event_id in [e["id"] for e in client.get("/api/v1/admin/events/pending", headers=admin).json()]
+    client.post(f"/api/v1/admin/events/{event_id}/review", headers=admin, json={"status": "rejected", "note": "Add a venue"})
+    rejected = client.get(f"/api/v1/events/{slug}", headers=org).json()
+    assert (rejected["review_status"], rejected["review_note"]) == ("rejected", "Add a venue")
+    assert sent[-1][0] == org_email and "Add a venue" in sent[-1][2]
+    assert event_id not in [e["id"] for e in client.get("/api/v1/admin/events/pending", headers=admin).json()]
+
+    client.patch(f"/api/v1/events/{event_id}", headers=org, json={"venue_name": "Hall A"})
+    assert client.get(f"/api/v1/events/{slug}", headers=org).json()["review_status"] == "pending"
+    client.post(f"/api/v1/admin/events/{event_id}/review", headers=admin, json={"status": "approved"})
+    assert sent[-1][1].startswith("Approved")
+    assert event_id in public_ids()
+    assert client.post("/api/v1/orders", headers={**buyer, "Idempotency-Key": uuid.uuid4().hex}, json=order).status_code == 201

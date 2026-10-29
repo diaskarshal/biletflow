@@ -6,6 +6,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core import audit
+from app.core.config import settings
+from app.core.email import send_email
 from app.core.errors import APIError
 from app.db.models import (
     Event,
@@ -235,3 +237,51 @@ def _safe_cell(value: object) -> object:
     if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r"):
         return "'" + value
     return value
+
+
+def list_pending_events(db: Session) -> list[dict]:
+    rows = (
+        db.query(Event, OrganizerProfile.display_name, User.email)
+        .join(OrganizerProfile, OrganizerProfile.id == Event.organizer_id)
+        .join(User, User.id == OrganizerProfile.user_id)
+        .filter(Event.status == "published", Event.review_status == "pending", Event.deleted_at.is_(None))
+        .order_by(Event.id)
+        .limit(200)
+    )
+    return [
+        {
+            "id": e.id,
+            "title": e.title,
+            "slug": e.slug,
+            "organizer": name,
+            "organizer_email": email,
+            "starts_at": e.starts_at,
+            "venue_name": e.venue_name,
+            "description": e.description,
+            "submitted_at": e.created_at,
+        }
+        for e, name, email in rows
+    ]
+
+
+def review_event(db: Session, actor: User, event: Event, status: str, note: str | None) -> None:
+    event.review_status = status
+    event.review_note = note if status == "rejected" else None
+    event.reviewed_at = datetime.now(UTC)
+    audit.record(
+        db, actor, f"event.{status}", "event", event.id, event.id,
+        "Approved the event for public listing" if status == "approved" else f"Rejected the event: {note or 'no reason given'}",
+    )
+    db.commit()
+    organizer = db.get(OrganizerProfile, event.organizer_id)
+    owner = db.get(User, organizer.user_id)
+    link = f"{settings.frontend_url}/organizer/events/{event.id}"
+    if status == "approved":
+        send_email(owner.email, f"Approved: {event.title}", f"Your event {event.title} is approved and now public.\n\n{link}\n")
+    else:
+        send_email(
+            owner.email,
+            f"Changes needed: {event.title}",
+            f"Your event {event.title} was not approved.\n\nReason: {note or 'not given'}\n\n"
+            f"Edit the event to send it for review again: {link}\n",
+        )

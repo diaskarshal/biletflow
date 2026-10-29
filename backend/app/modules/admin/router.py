@@ -11,8 +11,10 @@ from app.modules.admin.schemas import (
     ActivationOut,
     OrganizerReviewOut,
     PaymentRow,
+    PendingEventRow,
     PromoRow,
     ReportOut,
+    ReviewDecision,
     SearchResult,
     SuspendRequest,
     VerificationDecision,
@@ -65,6 +67,18 @@ def suspend_paid_sales(
 ) -> dict:
     event = events_service.get_event_or_404(db, event_id)
     return _activation_out(events_service.set_paid_sales_suspended(db, admin, event, body.suspended))
+
+
+@router.get("/events/pending", response_model=list[PendingEventRow])
+def pending_events(_: User = Depends(get_admin_user), db: Session = Depends(get_db)) -> list[dict]:
+    return service.list_pending_events(db)
+
+
+@router.post("/events/{event_id}/review", status_code=204)
+def review_event(
+    event_id: int, body: ReviewDecision, admin: User = Depends(get_admin_user), db: Session = Depends(get_db)
+) -> None:
+    service.review_event(db, admin, events_service.get_event_or_404(db, event_id), body.status, body.note)
 
 
 @router.get("/search", response_model=SearchResult)
