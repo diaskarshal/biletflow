@@ -1,4 +1,5 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { SafeAreaProvider} from "react-native-safe-area-context";
 import { useState } from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
 import RegisterScreen from "./screens/RegisterScreen";
@@ -8,9 +9,11 @@ import { SessionProvider } from "./session/SessionContext";
 
 export default function App() {
   return (
-    <SessionProvider>
-      <AppNavigator />
-    </SessionProvider>
+    <SafeAreaProvider>
+      <SessionProvider>
+        <AppNavigator />
+      </SessionProvider>
+    </SafeAreaProvider>
   );
 
   /*

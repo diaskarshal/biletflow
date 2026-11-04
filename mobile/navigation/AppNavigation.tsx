@@ -1,18 +1,24 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
 import AttendeesScreen from "../screens/AttendeesScreen";
 import ConnectionErrorScreen from "../screens/ConnectionErrorScreen";
 import EventsScreen from "../screens/EventsScreen";
+import EventDetailsScreen from "../screens/EventDetailsScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import ScannerScreen from "../screens/ScannerScreen";
+import MainTabNavigator from "./MainTabNavigator";
+
 import { useSession } from "../session/SessionContext";
 
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
+    MainTabs: undefined;
     Events: undefined;
+    EventDetails: {slug : string};
     Scanner: { eventId: number; title: string };
     Attendees: { eventId: number };
 };
@@ -37,11 +43,21 @@ export default function AppNavigator() {
     return (
         <NavigationContainer>
             {status === "signedIn" ? (
-                <Stack.Navigator>
+                <Stack.Navigator initialRouteName = "MainTabs">
+                    <Stack.Screen
+                        name = "MainTabs"
+                        component = {MainTabNavigator}
+                        options = {{ headerShown: false }}
+                    />
                     <Stack.Screen
                         name="Events"
                         component={EventsScreen}
                         options={{ title: "My events" }}
+                    />
+                    <Stack.Screen
+                        name = "EventDetails"
+                        component = {EventDetailsScreen}
+                        options = {{title: "Event details"}}
                     />
                     <Stack.Screen
                         name="Scanner"

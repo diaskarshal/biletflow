@@ -22,6 +22,7 @@ type SessionValue = {
     user: User | null;
     signIn: (data: LoginData) => Promise<void>;
     signOut: () => Promise<void>;
+    updateUser: (user : User) => void;
     retry: () => void;
 };
 
@@ -76,9 +77,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setStatus("signedOut");
     }, []);
 
+    const updateUser = useCallback((updatedUser: User) => {
+        setUser(updatedUser);
+    }, []);
+
     const value = useMemo(
-        () => ({ status, user, signIn, signOut, retry: restoreSession }),
-        [status, user, signIn, signOut, restoreSession]
+        () => ({ status, user, signIn, signOut, updateUser, retry: restoreSession }),
+        [status, user, signIn, signOut, updateUser,restoreSession]
     );
 
     return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
