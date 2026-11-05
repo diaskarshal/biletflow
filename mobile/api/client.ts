@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.136:8000";
 const REQUEST_TIMEOUT_MS = 15000;
 
 // Backend error envelope: {"error": {"code": "...", "message": "...", "details": {}}}
