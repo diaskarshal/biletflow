@@ -18,9 +18,9 @@ const VERIFICATION: Record<string, string> = {
 export function Profile() {
   const { user, logout } = useAuth();
   return (
-    <div className="mx-auto max-w-3xl space-y-10 px-6 py-12">
+    <div className="mx-auto max-w-3xl space-y-10 px-4 py-8 sm:px-6 sm:py-12">
       <section className="space-y-3">
-        <h1 className="text-3xl font-bold">Profile</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">Profile</h1>
         <p>{user?.email}</p>
         <EmailStatus />
         <Button variant="secondary" onClick={logout}>

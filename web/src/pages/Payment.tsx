@@ -48,7 +48,7 @@ export function Payment() {
   if (payment.isLoading) return <Spinner />;
   if (!payment.data) {
     return (
-      <div className="mx-auto max-w-xl px-6 py-12">
+      <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-12">
         <ErrorState message={errorMessage(payment.error, "Payment not found")} />
       </div>
     );
@@ -61,12 +61,12 @@ export function Payment() {
       : { to: `/organizer/events/${p.event_id}`, label: "Back to the event" };
 
   return (
-    <div className="mx-auto max-w-xl space-y-6 px-6 py-12">
-      <h1 className="text-3xl font-bold">Test payment</h1>
+    <div className="mx-auto max-w-xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
+      <h1 className="text-2xl font-bold sm:text-3xl">Test payment</h1>
       <p className="border border-slate-400 p-3 text-sm font-semibold">
         This is a simulated payment provider for the BiletFlow demo. No real money is charged.
       </p>
-      <table className="w-full">
+      <table className="w-full break-words">
         <tbody>
           <Row k="For" v={p.purpose === "order" ? `Tickets for ${p.event_title}` : `Paid sales activation for ${p.event_title}`} />
           <Row k="Amount" v={`${formatPrice(p.amount_kzt)} KZT`} />

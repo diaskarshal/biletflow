@@ -9,12 +9,12 @@ export function Modal({ onClose, label, children }: { onClose: () => void; label
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-md" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 p-4 backdrop-blur-md" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="w-full max-w-lg rounded-[2.5rem] bg-sky p-10"
+        className="max-h-full w-full max-w-lg overflow-y-auto rounded-3xl bg-sky p-6 sm:rounded-[2.5rem] sm:p-10"
         onClick={(e) => e.stopPropagation()}
       >
         {children}

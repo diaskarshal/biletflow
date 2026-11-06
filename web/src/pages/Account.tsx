@@ -10,8 +10,8 @@ import { errorMessage } from "../lib/format";
 
 function Page({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="mx-auto max-w-md space-y-4 px-6 py-12">
-      <h1 className="text-3xl font-bold">{title}</h1>
+    <div className="mx-auto max-w-md space-y-4 px-4 py-8 sm:px-6 sm:py-12">
+      <h1 className="text-2xl font-bold sm:text-3xl">{title}</h1>
       {children}
     </div>
   );

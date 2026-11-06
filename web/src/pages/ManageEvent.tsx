@@ -33,19 +33,19 @@ export function ManageEvent() {
   const event = events.data?.find((e) => e.id === id);
   if (!event) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-12">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
         <ErrorState message={errorMessage(events.error, "Event not found")} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-10 px-6 py-12">
+    <div className="mx-auto max-w-6xl space-y-10 px-4 py-8 sm:px-6 sm:py-12">
       <div className="space-y-3">
         <Link to="/organizer" className="underline">
           Back to my events
         </Link>
-        <h1 className="font-heading text-5xl">{event.title}</h1>
+        <h1 className="font-heading text-3xl sm:text-5xl">{event.title}</h1>
         {event.status === "published" && event.review_status === "pending" && (
           <p className="border border-slate-400 p-3">
             Waiting for platform approval. The event is hidden from the public and cannot take registrations until an
@@ -64,7 +64,7 @@ export function ManageEvent() {
             details.
           </p>
         )}
-        <div className="flex items-center gap-4 text-xl">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-lg sm:text-xl">
           <StatusBadge status={event.status} />
           <span>
             {formatDate(event.starts_at, event.display_timezone)} at {formatTime(event.starts_at, event.display_timezone)}
@@ -201,17 +201,17 @@ function EditEvent({ event }: { event: Event }) {
   return (
     <Section title="Event details" note="Times are in Almaty time.">
       <form
-        className="grid max-w-3xl grid-cols-2 gap-3"
+        className="grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2"
         onSubmit={(e) => {
           e.preventDefault();
           save.mutate();
         }}
       >
-        <label className="col-span-2 space-y-1">
+        <label className="sm:col-span-2 space-y-1">
           <span className="block">Title</span>
           <Input required className={field} value={form.title} onChange={set("title")} />
         </label>
-        <label className="col-span-2 space-y-1">
+        <label className="sm:col-span-2 space-y-1">
           <span className="block">Description</span>
           <textarea rows={4} className="w-full border border-slate-400 px-3 py-2" value={form.description} onChange={set("description")} />
         </label>
@@ -253,7 +253,7 @@ function EditEvent({ event }: { event: Event }) {
             ))}
           </select>
         </label>
-        <div className="col-span-2 flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
           <Button type="submit" disabled={!range.valid} loading={save.isPending}>
             Save changes
           </Button>
@@ -261,7 +261,7 @@ function EditEvent({ event }: { event: Event }) {
           {save.isSuccess && <span>Saved.</span>}
         </div>
         {save.isError && (
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <ErrorState message={errorMessage(save.error, "Could not save the event")} />
           </div>
         )}
@@ -284,22 +284,24 @@ function TicketTypes({ eventId }: { eventId: number }) {
   return (
     <Section title="Ticket types" note="Capacity cannot go below the tickets already sold.">
       {types.isError && <ErrorState message={errorMessage(types.error)} />}
-      <table className="w-full max-w-3xl text-left">
-        <thead>
-          <tr className="border-b border-brand">
-            {["Name", "Sold", "Price (KZT)", "Capacity", "Max per person", ""].map((h) => (
-              <th key={h} className="py-2 pr-3">
-                {h}
-              </th>
+      <div className="overflow-x-auto">
+        <table className="w-full max-w-3xl text-left">
+          <thead>
+            <tr className="border-b border-brand">
+              {["Name", "Sold", "Price (KZT)", "Capacity", "Max per person", ""].map((h) => (
+                <th key={h} className="py-2 pr-3">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {types.data?.map((t) => (
+              <TicketTypeRow key={t.id} eventId={eventId} ticketType={t} />
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {types.data?.map((t) => (
-            <TicketTypeRow key={t.id} eventId={eventId} ticketType={t} />
-          ))}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </Section>
   );
 }
@@ -821,13 +823,13 @@ function Campaigns({ eventId }: { eventId: number }) {
         </div>
       )}
       <form
-        className="grid max-w-3xl grid-cols-2 gap-3"
+        className="grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2"
         onSubmit={(e) => {
           e.preventDefault();
           create.mutate();
         }}
       >
-        <h3 className="col-span-2 font-heading text-xl">New promo code</h3>
+        <h3 className="sm:col-span-2 font-heading text-xl">New promo code</h3>
         <label className="space-y-1">
           <span className="block">Campaign name</span>
           <Input required className="border-slate-400!" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -860,7 +862,7 @@ function Campaigns({ eventId }: { eventId: number }) {
           <Input type="date" className="border-slate-400!" value={form.until} onChange={(e) => setForm({ ...form, until: e.target.value })} />
         </label>
         {!!types.data?.length && (
-          <fieldset className="col-span-2">
+          <fieldset className="sm:col-span-2">
             <legend>Applies to (none ticked means all ticket types)</legend>
             {types.data.map((t) => (
               <label key={t.id} className="mr-4 inline-flex items-center gap-1">
@@ -879,13 +881,13 @@ function Campaigns({ eventId }: { eventId: number }) {
             ))}
           </fieldset>
         )}
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Button type="submit" loading={create.isPending}>
             Create promo code
           </Button>
         </div>
         {create.isError && (
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <ErrorState message={errorMessage(create.error, "Could not create the promo code")} />
           </div>
         )}
@@ -906,9 +908,9 @@ function Step({ done, label, action }: { done: boolean; label: string; action?: 
 
 function Section({ title, note, children }: { title: string; note?: ReactNode; children: ReactNode }) {
   return (
-    <section className="space-y-4 border border-slate-300 p-6">
+    <section className="space-y-4 border border-slate-300 p-4 sm:p-6">
       <div>
-        <h2 className="font-heading text-3xl">{title}</h2>
+        <h2 className="font-heading text-2xl sm:text-3xl">{title}</h2>
         {note && <p className="mt-1">{note}</p>}
       </div>
       {children}

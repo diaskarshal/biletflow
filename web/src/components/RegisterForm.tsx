@@ -50,7 +50,7 @@ export function RegisterForm() {
     const tooShort = creds.password.length > 0 && creds.password.length < MIN_PASSWORD;
 
     return (
-        <form onSubmit={handleSubmit} className="mx-auto mt-16 max-w-md space-y-5 rounded-[2.5rem] bg-sky p-10">
+        <form onSubmit={handleSubmit} className="mx-4 mt-8 max-w-md space-y-5 rounded-3xl bg-sky p-6 sm:mx-auto sm:mt-16 sm:rounded-[2.5rem] sm:p-10">
             <h1 className="font-heading text-2xl font-bold text-brand">Register</h1>
 
             <label className="flex flex-col gap-1">

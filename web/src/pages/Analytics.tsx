@@ -11,12 +11,12 @@ import { errorMessage, formatKzt } from "../lib/format";
 
 function Bar({ label, value, max, text }: { label: string; value: number; max: number; text: string }) {
   return (
-    <div className="grid grid-cols-[8rem_1fr_12rem] items-center gap-3">
+    <div className="grid grid-cols-[6rem_1fr] items-center gap-x-3 gap-y-1 sm:grid-cols-[8rem_1fr_12rem]">
       <span>{label}</span>
       <div className="h-5 bg-slate-200">
         <div className="h-5 bg-brand" style={{ width: `${max ? (100 * value) / max : 0}%` }} />
       </div>
-      <span className="text-sm">{text}</span>
+      <span className="col-span-2 text-sm sm:col-span-1">{text}</span>
     </div>
   );
 }
@@ -58,13 +58,13 @@ export function Analytics() {
   const maxType = Math.max(0, ...(a?.by_ticket_type.map((t) => t.capacity) ?? []));
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10 px-6 py-12">
+    <div className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 sm:py-12">
       <p>
         <Link to={`/organizer/events/${id}`} className="underline">
           Back to event
         </Link>
       </p>
-      <h1 className="text-3xl font-bold">Analytics</h1>
+      <h1 className="text-2xl font-bold sm:text-3xl">Analytics</h1>
       <div className="flex flex-wrap items-end gap-4 border border-slate-300 p-4">
         <label className="space-y-1">
           <span className="block">Event</span>
