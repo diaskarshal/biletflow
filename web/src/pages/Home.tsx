@@ -2,15 +2,12 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { Button } from "../components/Button";
-import { EventCard, slotsLeft } from "../components/EventCard";
-import { EventImage } from "../components/EventImage";
+import { EventCard } from "../components/EventCard";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
-import { useEvent } from "../hooks/useEvent";
-import { errorMessage, formatDate, formatTime, priceLabel } from "../lib/format";
-import type { components } from "../api/schema";
+import { errorMessage } from "../lib/format";
 
-type EventOut = components["schemas"]["EventOut"];
+const FEED_ID = "events";
 
 export function Home() {
   const events = useInfiniteQuery({
@@ -28,68 +25,60 @@ export function Home() {
   });
 
   const items = events.data?.pages.flatMap((p) => p.items) ?? [];
-  const [hero, ...rest] = items;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-16 px-6 py-12">
-      {events.isLoading && <Spinner />}
-      {events.isError && <ErrorState message={errorMessage(events.error, "Could not load events")} />}
-      {events.isSuccess && items.length === 0 && <EmptyState title="No events yet" />}
-      {hero && <Hero event={hero} />}
-      {rest.length > 0 && (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {rest.map((e) => (
-            <EventCard key={e.id} event={e} />
-          ))}
-        </div>
-      )}
-      {events.hasNextPage && (
-        <div className="text-center">
-          <Button variant="secondary" loading={events.isFetchingNextPage} onClick={() => events.fetchNextPage()}>
-            Load more
-          </Button>
-        </div>
-      )}
-    </div>
+    <>
+      <Hero />
+      <section id={FEED_ID} className="mx-auto max-w-6xl scroll-mt-6 space-y-16 px-6 py-12">
+        {events.isLoading && <Spinner />}
+        {events.isError && <ErrorState message={errorMessage(events.error, "Could not load events")} />}
+        {events.isSuccess && items.length === 0 && <EmptyState title="No events yet" />}
+        {items.length > 0 && (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((e) => (
+              <EventCard key={e.id} event={e} />
+            ))}
+          </div>
+        )}
+        {events.hasNextPage && (
+          <div className="text-center">
+            <Button variant="secondary" loading={events.isFetchingNextPage} onClick={() => events.fetchNextPage()}>
+              Load more
+            </Button>
+          </div>
+        )}
+      </section>
+    </>
   );
 }
 
-function Hero({ event }: { event: EventOut }) {
-  const detail = useEvent(event.slug);
-  const types = detail.data?.ticket_types.filter((t) => !t.is_hidden) ?? [];
-  const slots = slotsLeft(types);
-  const rows: [string, string][] = [
-    ["Date", formatDate(event.starts_at, event.display_timezone)],
-    ["Time", formatTime(event.starts_at, event.display_timezone)],
-  ];
-  if (detail.data) rows.push(["Slots", `${slots.left} / ${slots.total}`]);
+const linkClass = "text-accent underline underline-offset-8 hover:decoration-4";
+
+// Fills the first screen under the nav, so the feed starts below the fold.
+function Hero() {
+  function scrollToFeed(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(FEED_ID)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+  }
 
   return (
-    <section className="flex flex-col gap-12 md:flex-row md:items-stretch">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <h1 className="break-words font-heading text-5xl">{event.title}</h1>
-        {event.description && <p className="mt-6 line-clamp-3 text-2xl">{event.description}</p>}
-        <dl className="mt-8 space-y-2 text-2xl">
-          {rows.map(([k, v]) => (
-            <div key={k} className="flex justify-between">
-              <dt>{k}</dt>
-              <dd>{v}</dd>
-            </div>
-          ))}
-        </dl>
-        {event.venue_address && <p className="mt-2 text-2xl">{event.venue_address}</p>}
-        <Link
-          to={`/events/${event.slug}`}
-          className="mt-auto block rounded-2xl bg-brand py-4 text-center font-heading text-3xl text-on-brand"
-        >
-          {detail.data ? priceLabel(types.map((t) => t.price_kzt)) : "View event"}
-        </Link>
-      </div>
-      <EventImage
-        url={event.cover_image_url}
-        title={event.title}
-        className="aspect-[4/5] w-full shrink-0 rounded-2xl md:w-[40%]"
-      />
+    <section className="mx-auto flex min-h-[calc(100svh-4.5rem)] max-w-6xl flex-col justify-center px-6">
+      <h1 className="font-heading text-6xl font-bold sm:text-8xl">BiletFlow</h1>
+      <p className="mt-8 font-heading text-3xl leading-snug sm:text-5xl">
+        Start{" "}
+        <a href={`#${FEED_ID}`} onClick={scrollToFeed} className={linkClass}>
+          browsing events
+        </a>
+        ,
+        <br />
+        Or{" "}
+        {/* RequireAuth sends guests to login and back here afterwards. */}
+        <Link to="/organizer/events/new" className={linkClass}>
+          start your own event
+        </Link>{" "}
+        now
+      </p>
     </section>
   );
 }
