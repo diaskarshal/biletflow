@@ -80,7 +80,7 @@ export function CheckoutModal({
     <Modal onClose={onClose} label="Checkout">
       {order.isSuccess ? (
         <div className="space-y-6">
-          <h2 className="font-heading text-3xl">Ticket issued</h2>
+          <h2 className="font-heading text-2xl sm:text-3xl">Ticket issued</h2>
           <p>Your {ticketType.name} ticket for {event.title} is ready.</p>
           <Link to="/tickets" className="block rounded-xl bg-brand py-3 text-center font-heading text-on-brand">
             View my tickets
@@ -94,7 +94,7 @@ export function CheckoutModal({
             order.mutate();
           }}
         >
-          <h2 className="font-heading text-3xl">Checkout</h2>
+          <h2 className="font-heading text-2xl sm:text-3xl">Checkout</h2>
           <dl className="space-y-1">
             <div className="font-heading">{event.title}</div>
             <Row k="Date" v={formatDate(event.starts_at, event.display_timezone)} />

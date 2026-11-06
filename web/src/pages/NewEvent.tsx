@@ -100,11 +100,11 @@ export function NewEvent() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="font-heading text-5xl">New event</h1>
-      <form onSubmit={submit} className="mt-10 max-w-3xl space-y-6 rounded-[2.5rem] bg-sky p-12">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      <h1 className="font-heading text-3xl sm:text-5xl">New event</h1>
+      <form onSubmit={submit} className="mt-6 max-w-3xl space-y-6 rounded-3xl bg-sky p-5 sm:mt-10 sm:rounded-[2.5rem] sm:p-12">
         <h2 className="font-heading text-2xl">Event Info</h2>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
           <Label text="Event title">
             <Input required className={field} value={form.title} onChange={set("title")} />
           </Label>
@@ -112,12 +112,12 @@ export function NewEvent() {
             <span className="block text-lg">Event image</span>
             <CoverUpload value={form.image} onChange={(image) => setForm((f) => ({ ...f, image }))} />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label text="Event description">
               <Textarea rows={6} className={`rounded-xl ${field}`} value={form.description} onChange={set("description")} />
             </Label>
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label text="Address">
               <Input className={field} value={form.address} onChange={set("address")} />
             </Label>
@@ -134,7 +134,7 @@ export function NewEvent() {
           <Label text="Time To (optional)">
             <Input type="time" className={field} value={form.timeTo} onChange={set("timeTo")} />
           </Label>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label text="Refund policy">
               <select
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-brand"
@@ -153,13 +153,13 @@ export function NewEvent() {
 
         <h2 className="pt-4 font-heading text-2xl">Tickets</h2>
         {tickets.map((t, i) => (
-          <div key={i} className="flex items-end gap-4 rounded-2xl bg-brand p-5 text-on-brand">
-            <div className="flex-[2]">
+          <div key={i} className="relative grid grid-cols-2 gap-3 rounded-2xl bg-brand p-4 text-on-brand sm:flex sm:items-end sm:gap-4 sm:p-5">
+            <div className="col-span-2 pr-8 sm:flex-[2] sm:pr-0">
               <Label text="Ticket type name">
                 <Input required className={field} value={t.name} onChange={(e) => setTicket(i, "name", e.target.value)} />
               </Label>
             </div>
-            <div className="flex-1">
+            <div className="sm:flex-1">
               <Label text="Price">
                 <Input
                   required
@@ -171,7 +171,7 @@ export function NewEvent() {
                 />
               </Label>
             </div>
-            <div className="flex-1">
+            <div className="sm:flex-1">
               <Label text="Slots">
                 <Input
                   required
@@ -183,7 +183,7 @@ export function NewEvent() {
                 />
               </Label>
             </div>
-            <div className="flex-1">
+            <div className="sm:flex-1">
               <Label text="Max per person">
                 <Input
                   type="number"
@@ -199,7 +199,7 @@ export function NewEvent() {
               <button
                 type="button"
                 aria-label={`Remove ticket type ${i + 1}`}
-                className="pb-2 text-2xl"
+                className="absolute top-2 right-3 p-1 text-2xl sm:static sm:pb-2"
                 onClick={() => setTickets((rows) => rows.filter((_, j) => j !== i))}
               >
                 ×
@@ -210,7 +210,7 @@ export function NewEvent() {
         <button
           type="button"
           onClick={() => setTickets((rows) => [...rows, { ...emptyTicket }])}
-          className="w-full rounded-2xl bg-brand px-8 py-4 text-left font-heading text-xl text-on-brand"
+          className="w-full rounded-2xl bg-brand px-5 py-4 text-left font-heading text-lg text-on-brand sm:px-8 sm:text-xl"
         >
           + Add ticket type
         </button>
@@ -219,7 +219,7 @@ export function NewEvent() {
           <ErrorState message={formError ?? errorMessage(create.error, "Could not create the event")} />
         )}
         <div className="flex justify-end">
-          <Button type="submit" loading={create.isPending} className="px-8 py-4 text-xl">
+          <Button type="submit" loading={create.isPending} className="w-full px-8 py-4 text-xl sm:w-auto">
             Confirm and Create
           </Button>
         </div>

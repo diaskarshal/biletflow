@@ -50,7 +50,7 @@ export function EventPage() {
   if (event.isLoading) return <Spinner />;
   if (event.isError || !event.data) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-12">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
         <ErrorState message={errorMessage(event.error, "Event not found")} />
       </div>
     );
@@ -70,17 +70,17 @@ export function EventPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <div className="flex flex-col gap-10 md:flex-row">
-        <EventImage url={e.cover_image_url} title={e.title} className="aspect-[4/5] w-full shrink-0 rounded-2xl md:w-[38%]" />
+        <EventImage url={e.cover_image_url} title={e.title} className="mx-auto aspect-[4/5] w-full max-w-sm shrink-0 rounded-2xl md:mx-0 md:w-[38%] md:max-w-none" />
         <div className="flex min-w-0 flex-1 flex-col">
-          <h1 className="break-words font-heading text-5xl">{e.title}</h1>
-          <dl className="mt-4 space-y-1 text-2xl">
+          <h1 className="break-words font-heading text-3xl sm:text-5xl">{e.title}</h1>
+          <dl className="mt-4 space-y-1 text-lg sm:text-2xl">
             <Row k="Date" v={formatDate(e.starts_at, e.display_timezone)} />
             <Row k="Time" v={formatTime(e.starts_at, e.display_timezone)} />
             <Row k="Slots" v={`${slots.left} / ${slots.total}`} />
           </dl>
-          {e.venue_address && <p className="mt-1 text-2xl">{e.venue_address}</p>}
+          {e.venue_address && <p className="mt-1 text-lg sm:text-2xl">{e.venue_address}</p>}
           {cancelled && <p className="mt-4 font-heading text-xl text-red-700">This event was cancelled.</p>}
           {e.review_status !== "approved" && (
             <p className="mt-4 border border-slate-400 p-2">Not public yet: this event is waiting for platform approval.</p>
@@ -92,7 +92,7 @@ export function EventPage() {
             </p>
           )}
           {promo.isError && <p className="mt-4 text-red-700">{errorMessage(promo.error, "This promo link is not valid")}</p>}
-          <div className="mt-auto grid grid-cols-3 gap-5 pt-8">
+          <div className="mt-auto grid grid-cols-2 gap-3 pt-8 sm:gap-5 lg:grid-cols-3">
             {types.map((t) => {
               const reason = unavailableReason(t, cancelled, e.paid_sales_enabled);
               return (
@@ -101,7 +101,7 @@ export function EventPage() {
                   type="button"
                   disabled={reason !== null}
                   onClick={() => choose(t)}
-                  className="rounded-2xl bg-brand px-3 py-4 font-heading text-xl text-on-brand transition hover:bg-brand-dark disabled:opacity-50"
+                  className="rounded-2xl bg-brand px-3 py-4 font-heading text-lg sm:text-xl text-on-brand transition hover:bg-brand-dark disabled:opacity-50"
                 >
                   <div>{t.name}</div>
                   <div>{reason ?? (t.price_kzt === 0 ? "Free" : formatPrice(t.price_kzt))}</div>
@@ -111,7 +111,7 @@ export function EventPage() {
           </div>
         </div>
       </div>
-      {e.description && <p className="mt-8 whitespace-pre-line text-2xl">{e.description}</p>}
+      {e.description && <p className="mt-8 whitespace-pre-line text-lg sm:text-2xl">{e.description}</p>}
       <p className="mt-6">Refund policy: {REFUND_POLICIES[e.refund_policy as RefundPolicy]}</p>
       <p className="mt-2">
         <Link className="underline" to={`/support/new?event_id=${e.id}`}>

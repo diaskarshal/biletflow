@@ -35,8 +35,8 @@ export function MyTickets() {
     .flatMap((o) => o.tickets.map((t) => ({ ticket: t, event: o.event })));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-6 py-12">
-      <h1 className="font-heading text-5xl">My tickets</h1>
+    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 sm:py-12">
+      <h1 className="font-heading text-3xl sm:text-5xl">My tickets</h1>
       {orders.isError && <ErrorState message={errorMessage(orders.error, "Could not load tickets")} />}
       {awaiting.map((o) => (
         <p key={o.id} className="border border-slate-400 p-3">
@@ -47,7 +47,7 @@ export function MyTickets() {
         </p>
       ))}
       {orders.isSuccess && tickets.length === 0 && <EmptyState title="No tickets yet">Get one from the Events page.</EmptyState>}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {tickets.map(({ ticket, event }) => (
           <TicketCard key={ticket.id} ticket={ticket} event={event} onOpen={() => setShown(ticket)} />
         ))}
@@ -85,10 +85,10 @@ function QrCode({ ticket }: { ticket: Ticket }) {
 
   return (
     <div className="space-y-4 text-center">
-      <h2 className="font-heading text-3xl">{ticket.attendee_name}</h2>
+      <h2 className="font-heading text-2xl sm:text-3xl">{ticket.attendee_name}</h2>
       {qr.isLoading && <Spinner />}
       {qr.isError && <ErrorState message="Could not load the QR code" />}
-      {qr.data && <img src={qr.data} alt="Ticket QR code" className="mx-auto w-64 rounded-xl bg-white p-3" />}
+      {qr.data && <img src={qr.data} alt="Ticket QR code" className="mx-auto w-full max-w-64 rounded-xl bg-white p-3" />}
       <p className="text-sm">Show this code at the entrance.</p>
       <Button variant="secondary" onClick={() => downloadPdf(ticket.id)}>
         Download PDF

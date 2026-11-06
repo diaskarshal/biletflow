@@ -30,22 +30,22 @@ export function Organizer() {
   const shown = events.data?.filter((e) => eventPhase(e) === tab) ?? [];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-6 py-12">
-      <h1 className="font-heading text-5xl">My events</h1>
+    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 sm:py-12">
+      <h1 className="font-heading text-3xl sm:text-5xl">My events</h1>
       <Link
         to="/organizer/events/new"
-        className="block rounded-2xl bg-brand px-8 py-5 font-heading text-3xl text-on-brand"
+        className="block rounded-2xl bg-brand px-5 py-4 font-heading text-xl text-on-brand sm:px-8 sm:py-5 sm:text-3xl"
       >
         + New event
       </Link>
-      <div className="flex gap-6 border-b border-slate-300" role="tablist">
+      <div className="-mx-4 flex gap-6 overflow-x-auto border-b border-slate-300 px-4 sm:mx-0 sm:px-0" role="tablist">
         {TABS.map((t) => (
           <button
             key={t}
             type="button"
             role="tab"
             aria-selected={tab === t}
-            className={`pb-2 font-heading text-xl ${tab === t ? "border-b-2 border-brand" : ""}`}
+            className={`shrink-0 whitespace-nowrap pb-2 font-heading text-lg sm:text-xl ${tab === t ? "border-b-2 border-brand" : ""}`}
             onClick={() => setTab(t)}
           >
             {t} ({events.data?.filter((e) => eventPhase(e) === t).length ?? 0})

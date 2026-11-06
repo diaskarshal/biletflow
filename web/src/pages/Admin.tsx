@@ -15,14 +15,14 @@ export function Admin() {
   const { user } = useAuth();
   if (!user?.is_admin) {
     return (
-      <div className="mx-auto max-w-5xl px-6 py-12">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
         <ErrorState message="This page is for platform admins." />
       </div>
     );
   }
   return (
-    <div className="mx-auto max-w-5xl space-y-10 px-6 py-12">
-      <h1 className="text-3xl font-bold">Platform admin</h1>
+    <div className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 sm:py-12">
+      <h1 className="text-2xl font-bold sm:text-3xl">Platform admin</h1>
       <PendingEvents />
       <Search />
       <Reports />
@@ -114,7 +114,7 @@ function FeeForm({ initial }: { initial: number }) {
   return (
     <>
       <form
-        className="flex items-center gap-3"
+        className="flex flex-wrap items-center gap-3"
         onSubmit={(e) => {
           e.preventDefault();
           save.mutate();
@@ -426,7 +426,7 @@ function Exports() {
   }
   return (
     <Block title="Reports">
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button variant="secondary" onClick={() => download("orders")}>
           Download orders CSV
         </Button>

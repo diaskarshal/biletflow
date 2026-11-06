@@ -29,7 +29,7 @@ export function Home() {
   return (
     <>
       <Hero />
-      <section id={FEED_ID} className="mx-auto max-w-6xl scroll-mt-6 space-y-16 px-6 py-12">
+      <section id={FEED_ID} className="mx-auto max-w-6xl scroll-mt-6 space-y-16 px-4 py-8 sm:px-6 sm:py-12">
         {events.isLoading && <Spinner />}
         {events.isError && <ErrorState message={errorMessage(events.error, "Could not load events")} />}
         {events.isSuccess && items.length === 0 && <EmptyState title="No events yet" />}
@@ -63,7 +63,7 @@ function Hero() {
   }
 
   return (
-    <section className="mx-auto flex min-h-[calc(100svh-4.5rem)] max-w-6xl flex-col justify-center px-6">
+    <section className="mx-auto flex min-h-[calc(100svh-4.5rem)] max-w-6xl flex-col justify-center px-4 sm:px-6">
       <h1 className="font-heading text-6xl font-bold sm:text-8xl">BiletFlow</h1>
       <p className="mt-8 font-heading text-3xl leading-snug sm:text-5xl">
         Start{" "}
