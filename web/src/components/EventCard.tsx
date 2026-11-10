@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEvent } from "../hooks/useEvent";
 import { formatDate, formatTime, priceLabel } from "../lib/format";
+import { t, tOptional } from "../lib/i18n";
 import { EventImage } from "./EventImage";
 import type { components } from "../api/schema";
 
@@ -34,7 +35,7 @@ export function EventCard({
   const types = detail.data?.ticket_types.filter((t) => !t.is_hidden) ?? [];
   const slots = slotsLeft(types);
   const price = badge ?? (detail.data ? priceLabel(types.map((t) => t.price_kzt)) : "...");
-  const label = status && status !== "published" ? `${status} · ${price}` : price;
+  const label = status && status !== "published" ? `${tOptional(`status.${status}`) ?? status} · ${price}` : price;
 
   const body = (
     <>
@@ -42,9 +43,9 @@ export function EventCard({
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
         <h3 className="line-clamp-2 break-words font-heading text-xl text-brand">{event.title}</h3>
         <dl className="space-y-0.5 text-sm">
-          <Row k="Date" v={formatDate(event.starts_at, event.display_timezone)} />
-          <Row k="Time" v={formatTime(event.starts_at, event.display_timezone)} />
-          {detail.data && <Row k="Slots" v={`${slots.left} / ${slots.total}`} />}
+          <Row k={t("common.date")} v={formatDate(event.starts_at, event.display_timezone)} />
+          <Row k={t("common.time")} v={formatTime(event.starts_at, event.display_timezone)} />
+          {detail.data && <Row k={t("common.slots")} v={`${slots.left} / ${slots.total}`} />}
         </dl>
         {event.venue_address && <p className="truncate text-sm">{event.venue_address}</p>}
         <span className="mt-auto rounded-xl bg-brand py-1.5 text-center font-heading text-on-brand">{label}</span>

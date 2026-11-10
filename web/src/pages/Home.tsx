@@ -6,6 +6,7 @@ import { EventCard } from "../components/EventCard";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
 import { errorMessage } from "../lib/format";
+import { t } from "../lib/i18n";
 
 const FEED_ID = "events";
 
@@ -31,8 +32,8 @@ export function Home() {
       <Hero />
       <section id={FEED_ID} className="mx-auto max-w-6xl scroll-mt-6 space-y-16 px-4 py-8 sm:px-6 sm:py-12">
         {events.isLoading && <Spinner />}
-        {events.isError && <ErrorState message={errorMessage(events.error, "Could not load events")} />}
-        {events.isSuccess && items.length === 0 && <EmptyState title="No events yet" />}
+        {events.isError && <ErrorState message={errorMessage(events.error, t("home.loadFailed"))} />}
+        {events.isSuccess && items.length === 0 && <EmptyState title={t("home.empty")} />}
         {items.length > 0 && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((e) => (
@@ -43,7 +44,7 @@ export function Home() {
         {events.hasNextPage && (
           <div className="text-center">
             <Button variant="secondary" loading={events.isFetchingNextPage} onClick={() => events.fetchNextPage()}>
-              Load more
+              {t("home.loadMore")}
             </Button>
           </div>
         )}
@@ -66,18 +67,18 @@ function Hero() {
     <section className="mx-auto flex min-h-[calc(100svh-4.5rem)] max-w-6xl flex-col justify-center px-4 sm:px-6">
       <h1 className="font-heading text-6xl font-bold sm:text-8xl">BiletFlow</h1>
       <p className="mt-8 font-heading text-3xl leading-snug sm:text-5xl">
-        Start{" "}
+        {t("home.before1")}
         <a href={`#${FEED_ID}`} onClick={scrollToFeed} className={linkClass}>
-          browsing events
+          {t("home.link1")}
         </a>
-        ,
+        {t("home.after1")}
         <br />
-        Or{" "}
+        {t("home.before2")}
         {/* RequireAuth sends guests to login and back here afterwards. */}
         <Link to="/organizer/events/new" className={linkClass}>
-          start your own event
-        </Link>{" "}
-        now
+          {t("home.link2")}
+        </Link>
+        {t("home.after2")}
       </p>
     </section>
   );

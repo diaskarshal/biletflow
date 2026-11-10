@@ -176,16 +176,16 @@ export default function EventsTabScreen() {
                                 Search for something else or check back later
                             </Text>
                         </View>
-                    ) : null
+                    ) : undefined
                 }
 
                 ListFooterComponent = {
                     loadingMore ? (
                         <ActivityIndicator
-                            color = "#25563eb"
+                            color = "#2563eb"
                             style = {styles.footerLoader}
                         />
-                    ) : null
+                    ) : undefined
                 }
                 onEndReached = {loadMore}
                 onEndReachedThreshold = {0.5}

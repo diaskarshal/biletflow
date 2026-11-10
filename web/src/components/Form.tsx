@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from "../api/client";
 import { errorMessage } from "../lib/format";
+import { t } from "../lib/i18n";
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -47,9 +48,9 @@ export function Form() {
     }
 
     function handleStatus() {
-        if (isPending) return "Loading";
-        if (isError) return errorMessage(error, "Login or password is incorrect");
-        if (isSuccess) return "Logged in";
+        if (isPending) return t("common.loading");
+        if (isError) return errorMessage(error, t("login.failed"));
+        if (isSuccess) return t("login.success");
         return null;
     }
 
@@ -57,10 +58,10 @@ export function Form() {
 
     return (
         <form onSubmit={handleSubmit} className="mx-4 mt-8 max-w-md space-y-5 rounded-3xl bg-sky p-6 sm:mx-auto sm:mt-16 sm:rounded-[2.5rem] sm:p-10">
-            <h1 className="font-heading text-2xl font-bold text-brand">Log in</h1>
+            <h1 className="font-heading text-2xl font-bold text-brand">{t("login.title")}</h1>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-brand font-heading">Email</span>
+                <span className="text-sm text-brand font-heading">{t("common.email")}</span>
                 <Input
                     type="text"
                     name="email"
@@ -70,7 +71,7 @@ export function Form() {
             </label>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-brand font-heading">Password</span>
+                <span className="text-sm text-brand font-heading">{t("common.password")}</span>
                 <Input
                     type="password"
                     name="password"
@@ -80,7 +81,7 @@ export function Form() {
             </label>
 
             <Button type="submit" disabled={isPending} className="w-full py-3">
-                Log in
+                {t("login.submit")}
             </Button>
 
             {status && (
@@ -88,8 +89,8 @@ export function Form() {
                     {status}
                 </p>
             )}
-            <Link to="/register" className="block text-center text-sm underline">No account? Register</Link>
-            <Link to="/forgot-password" className="block text-center text-sm underline">Forgot password?</Link>
+            <Link to="/register" className="block text-center text-sm underline">{t("login.noAccount")}</Link>
+            <Link to="/forgot-password" className="block text-center text-sm underline">{t("login.forgot")}</Link>
         </form>
     );
 }

@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-
-const links = [
-  { to: "/", label: "Events", end: true },
-  { to: "/tickets", label: "My tickets" },
-  { to: "/organizer", label: "Organizer" },
-  { to: "/support", label: "Support" },
-  { to: "/profile", label: "Profile" },
-];
+import { LANGS, lang, setLang, t } from "../../lib/i18n";
 
 // Protected links (My tickets, Organizer, Profile) are always shown; RequireAuth sends guests to login.
 // Below md the links collapse into a menu button.
 export function Nav() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const shown = user?.is_admin ? [...links, { to: "/admin", label: "Admin" }] : links;
+  const links = [
+    { to: "/", label: t("nav.events"), end: true },
+    { to: "/tickets", label: t("nav.tickets") },
+    { to: "/organizer", label: t("nav.organizer") },
+    { to: "/support", label: t("nav.support") },
+    { to: "/profile", label: t("nav.profile") },
+  ];
+  const shown = user?.is_admin ? [...links, { to: "/admin", label: t("nav.admin") }] : links;
 
   return (
     <nav className="relative border-b border-black">
@@ -23,14 +23,28 @@ export function Nav() {
         <Link to="/" className="font-heading text-xl" onClick={() => setOpen(false)}>
           BiletFlow
         </Link>
+        <div role="group" aria-label={t("nav.language")} className="ml-auto flex gap-2 text-sm md:order-last md:ml-8">
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              lang={l.code}
+              aria-pressed={lang() === l.code}
+              className={lang() === l.code ? "font-bold underline underline-offset-4" : ""}
+              onClick={() => setLang(l.code)}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
-          className="ml-auto -my-2 p-2 font-heading md:hidden"
+          className="ml-3 -my-2 p-2 font-heading md:hidden"
           aria-expanded={open}
           aria-controls="nav-links"
           onClick={() => setOpen((o) => !o)}
         >
-          {open ? "Close" : "Menu"}
+          {open ? t("nav.close") : t("nav.menu")}
         </button>
         <div
           id="nav-links"

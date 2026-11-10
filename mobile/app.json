@@ -32,7 +32,8 @@
       ],
       "expo-secure-store",
       "expo-status-bar",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-font"
     ]
   }
 }

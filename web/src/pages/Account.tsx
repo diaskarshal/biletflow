@@ -7,6 +7,7 @@ import { ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { Spinner } from "../components/Spinner";
 import { errorMessage } from "../lib/format";
+import { t } from "../lib/i18n";
 
 function Page({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -30,12 +31,12 @@ export function VerifyEmail() {
     },
   });
   return (
-    <Page title="Email confirmation">
+    <Page title={t("verify.title")}>
       {verify.isLoading && <Spinner />}
-      {verify.isError && <ErrorState message={errorMessage(verify.error, "This link is invalid or has expired")} />}
-      {verify.isSuccess && <p>Your email address {verify.data.email} is confirmed.</p>}
+      {verify.isError && <ErrorState message={errorMessage(verify.error, t("verify.invalid"))} />}
+      {verify.isSuccess && <p>{t("verify.done", { email: verify.data.email })}</p>}
       <Link className="underline" to="/">
-        Go to events
+        {t("verify.toEvents")}
       </Link>
     </Page>
   );
@@ -50,9 +51,9 @@ export function ForgotPassword() {
     },
   });
   return (
-    <Page title="Reset your password">
+    <Page title={t("forgot.title")}>
       {send.isSuccess ? (
-        <p>If an account exists for {email}, we sent a link to reset the password. It works for one hour.</p>
+        <p>{t("forgot.sent", { email })}</p>
       ) : (
         <form
           className="space-y-3"
@@ -62,17 +63,17 @@ export function ForgotPassword() {
           }}
         >
           <label className="block space-y-1">
-            <span className="block">Email</span>
+            <span className="block">{t("common.email")}</span>
             <Input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </label>
           {send.isError && <ErrorState message={errorMessage(send.error)} />}
           <Button type="submit" loading={send.isPending}>
-            Send reset link
+            {t("forgot.send")}
           </Button>
         </form>
       )}
       <Link className="block underline" to="/login">
-        Back to log in
+        {t("forgot.back")}
       </Link>
     </Page>
   );
@@ -90,16 +91,16 @@ export function ResetPassword() {
   });
   if (reset.isSuccess) {
     return (
-      <Page title="Password changed">
-        <p>You can now log in with your new password.</p>
+      <Page title={t("reset.doneTitle")}>
+        <p>{t("reset.done")}</p>
         <Link className="underline" to="/login">
-          Log in
+          {t("login.submit")}
         </Link>
       </Page>
     );
   }
   return (
-    <Page title="Choose a new password">
+    <Page title={t("reset.title")}>
       <form
         className="space-y-3"
         onSubmit={(e) => {
@@ -108,17 +109,17 @@ export function ResetPassword() {
         }}
       >
         <label className="block space-y-1">
-          <span className="block">New password (at least 8 characters)</span>
+          <span className="block">{t("reset.new")}</span>
           <Input required type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
         <label className="block space-y-1">
-          <span className="block">Repeat new password</span>
+          <span className="block">{t("reset.repeat")}</span>
           <Input required type="password" value={repeat} onChange={(e) => setRepeat(e.target.value)} />
         </label>
-        {repeat && repeat !== password && <p className="text-red-700">The passwords do not match.</p>}
+        {repeat && repeat !== password && <p className="text-red-700">{t("reset.mismatch")}</p>}
         {reset.isError && <ErrorState message={errorMessage(reset.error)} />}
         <Button type="submit" disabled={password !== repeat} loading={reset.isPending}>
-          Save new password
+          {t("reset.save")}
         </Button>
       </form>
     </Page>

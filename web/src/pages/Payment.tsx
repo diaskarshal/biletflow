@@ -5,14 +5,9 @@ import { Button } from "../components/Button";
 import { ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
 import { errorMessage, formatPrice } from "../lib/format";
+import { t, tOptional } from "../lib/i18n";
 
 type Outcome = "success" | "failure" | "timeout";
-
-const RESULT: Record<string, string> = {
-  succeeded: "Payment completed.",
-  failed: "Payment failed. Nothing was charged.",
-  expired: "Payment timed out. Nothing was charged.",
-};
 
 export function Payment() {
   const id = Number(useParams().id);
@@ -49,7 +44,7 @@ export function Payment() {
   if (!payment.data) {
     return (
       <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-12">
-        <ErrorState message={errorMessage(payment.error, "Payment not found")} />
+        <ErrorState message={errorMessage(payment.error, t("pay.notFound"))} />
       </div>
     );
   }
@@ -57,41 +52,41 @@ export function Payment() {
   const p = payment.data;
   const back =
     p.purpose === "order"
-      ? { to: "/tickets", label: "Go to My tickets" }
-      : { to: `/organizer/events/${p.event_id}`, label: "Back to the event" };
+      ? { to: "/tickets", label: t("pay.toTickets") }
+      : { to: `/organizer/events/${p.event_id}`, label: t("pay.toEvent") };
 
   return (
     <div className="mx-auto max-w-xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
-      <h1 className="text-2xl font-bold sm:text-3xl">Test payment</h1>
+      <h1 className="text-2xl font-bold sm:text-3xl">{t("pay.title")}</h1>
       <p className="border border-slate-400 p-3 text-sm font-semibold">
-        This is a simulated payment provider for the BiletFlow demo. No real money is charged.
+        {t("pay.notice")}
       </p>
       <table className="w-full break-words">
         <tbody>
-          <Row k="For" v={p.purpose === "order" ? `Tickets for ${p.event_title}` : `Paid sales activation for ${p.event_title}`} />
-          <Row k="Amount" v={`${formatPrice(p.amount_kzt)} KZT`} />
-          <Row k="Payment" v={`#${p.id}`} />
+          <Row k={t("pay.for")} v={t(p.purpose === "order" ? "pay.forTickets" : "pay.forActivation", { event: p.event_title })} />
+          <Row k={t("pay.amount")} v={`${formatPrice(p.amount_kzt)} KZT`} />
+          <Row k={t("pay.payment")} v={`#${p.id}`} />
         </tbody>
       </table>
       {p.status === "pending" ? (
         <div className="space-y-3">
-          <p>Choose what the payment provider should answer:</p>
+          <p>{t("pay.choose")}</p>
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => simulate.mutate("success")} loading={simulate.isPending}>
-              Success
+              {t("pay.success")}
             </Button>
             <Button variant="danger" onClick={() => simulate.mutate("failure")} disabled={simulate.isPending}>
-              Failure
+              {t("pay.failure")}
             </Button>
             <Button variant="secondary" onClick={() => simulate.mutate("timeout")} disabled={simulate.isPending}>
-              Timeout
+              {t("pay.timeout")}
             </Button>
           </div>
-          {simulate.isError && <ErrorState message={errorMessage(simulate.error, "Could not complete the payment")} />}
+          {simulate.isError && <ErrorState message={errorMessage(simulate.error, t("pay.failed"))} />}
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-lg font-semibold">{RESULT[p.status] ?? `Payment ${p.status}.`}</p>
+          <p className="text-lg font-semibold">{tOptional(`pay.result.${p.status}`) ?? p.status}</p>
           <Link to={back.to} className="underline">
             {back.label}
           </Link>
