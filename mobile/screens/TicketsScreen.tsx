@@ -7,9 +7,12 @@ import {
     StyleSheet,
     Text,
     View,
+    Pressable,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigation";
 import { getMyOrders, type Order, type OrderTicket } from "../api/orders";
 
 type TicketListItem = {
@@ -22,6 +25,8 @@ export default function TicketsScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
+    
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const loadOrders = useCallback(async (refresh = false) => {
         try {
@@ -137,7 +142,7 @@ export default function TicketsScreen() {
                     const event = order.event;
 
                     return (
-                        <View style={styles.ticketCard}>
+                        <Pressable style={styles.ticketCard} onPress={() => navigation.navigate("TicketDetails", {ticket, event, orderStatus: order.status,})}>
                             <View style={styles.ticketTop}>
                                 <View style={styles.eventInfo}>
                                     <Text style={styles.eventTitle}>
@@ -189,7 +194,7 @@ export default function TicketsScreen() {
                                     Order: {order.status}
                                 </Text>
                             </View>
-                        </View>
+                        </Pressable>
                     );
                 }}
             />
