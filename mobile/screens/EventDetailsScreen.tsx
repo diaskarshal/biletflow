@@ -24,7 +24,7 @@ import {useSession} from "../session/SessionContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, "EventDetails">;
 
-export default function EventDetailsScreen({ route }: Props) {
+export default function EventDetailsScreen({ route, navigation }: Props) {
     const { slug } = route.params;
 
     const [event, setEvent] = useState<PublicEventDetails | null>(null);
@@ -168,6 +168,19 @@ export default function EventDetailsScreen({ route }: Props) {
                         </Text>
                     </View>
                 )}
+
+                <Pressable
+                    style={styles.contactButton}
+                    onPress={() =>
+                        navigation.navigate("NewSupportCase", {
+                            eventId: event.id,
+                        })
+                    }
+                >
+                    <Text style={styles.contactButtonText}>
+                        Contact Organizer
+                    </Text>
+                </Pressable>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Tickets</Text>
@@ -502,5 +515,19 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: "800",
         color: "#2563eb",
+    },
+    contactButton: {
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#2563eb",
+        borderRadius: 12,
+        paddingVertical: 14,
+        alignItems: "center",
+        marginTop: 22,
+    },
+    contactButtonText: {
+        color: "#2563eb",
+        fontSize: 15,
+        fontWeight: "700",
     },
 });
