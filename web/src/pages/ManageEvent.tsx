@@ -20,8 +20,10 @@ import {
   formatPrice,
   formatTime,
   REFUND_POLICIES,
+  refundPolicyLabel,
   type RefundPolicy,
 } from "../lib/format";
+import { t } from "../lib/i18n";
 
 type Event = components["schemas"]["EventOut"];
 
@@ -34,7 +36,7 @@ export function ManageEvent() {
   if (!event) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        <ErrorState message={errorMessage(events.error, "Event not found")} />
+        <ErrorState message={errorMessage(events.error, t("event.notFound"))} />
       </div>
     );
   }
@@ -43,39 +45,39 @@ export function ManageEvent() {
     <div className="mx-auto max-w-6xl space-y-10 px-4 py-8 sm:px-6 sm:py-12">
       <div className="space-y-3">
         <Link to="/organizer" className="underline">
-          Back to my events
+          {t("manage.back")}
         </Link>
         <h1 className="font-heading text-3xl sm:text-5xl">{event.title}</h1>
         {event.status === "published" && event.review_status === "pending" && (
           <p className="border border-slate-400 p-3">
-            Waiting for platform approval. The event is hidden from the public and cannot take registrations until an
-            admin approves it.
+            {t("manage.pending")}
           </p>
         )}
         {event.review_status === "rejected" && (
           <p className="border border-red-700 p-3 text-red-700">
-            Not approved by the platform: {event.review_note ?? "no reason given"}. Edit the event details below to send
-            it for review again.
+            {t("manage.rejected", { note: event.review_note ?? t("manage.noReason") })}
           </p>
         )}
         {event.suspended_at && (
           <p className="border border-red-700 p-3 text-red-700">
-            The platform suspended this event. It is hidden and cannot take new orders. Contact platform support for
-            details.
+            {t("manage.suspended")}
           </p>
         )}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-lg sm:text-xl">
           <StatusBadge status={event.status} />
           <span>
-            {formatDate(event.starts_at, event.display_timezone)} at {formatTime(event.starts_at, event.display_timezone)}
+            {t("manage.dateAt", {
+              date: formatDate(event.starts_at, event.display_timezone),
+              time: formatTime(event.starts_at, event.display_timezone),
+            })}
           </span>
           {event.status === "published" && (
             <Link to={`/events/${event.slug}`} className="underline">
-              Open public page
+              {t("manage.publicPage")}
             </Link>
           )}
           <Link to={`/organizer/events/${id}/analytics`} className="underline">
-            Analytics
+            {t("manage.analytics")}
           </Link>
           <EventActions event={event} />
           {(event.status === "published" || event.status === "draft") && <CancelEvent eventId={id} />}
@@ -135,17 +137,17 @@ function EventActions({ event }: { event: Event }) {
     <>
       {event.status === "draft" && (
         <Button loading={publish.isPending} onClick={() => publish.mutate()}>
-          Publish
+          {t("manage.publish")}
         </Button>
       )}
       {event.status === "published" && (
         <Button variant="secondary" loading={unpublish.isPending} onClick={() => unpublish.mutate()}>
-          Unpublish
+          {t("manage.unpublish")}
         </Button>
       )}
       {!event.suspended_at && (
         <Button variant="secondary" loading={duplicate.isPending} onClick={() => duplicate.mutate()}>
-          Duplicate
+          {t("manage.duplicate")}
         </Button>
       )}
       {failed && <ErrorState message={errorMessage(failed)} />}
@@ -199,7 +201,7 @@ function EditEvent({ event }: { event: Event }) {
 
   const field = "border-slate-400!";
   return (
-    <Section title="Event details" note="Times are in Almaty time.">
+    <Section title={t("manage.details")} note={t("manage.almatyTime")}>
       <form
         className="grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2"
         onSubmit={(e) => {
@@ -208,61 +210,61 @@ function EditEvent({ event }: { event: Event }) {
         }}
       >
         <label className="sm:col-span-2 space-y-1">
-          <span className="block">Title</span>
+          <span className="block">{t("manage.eventTitle")}</span>
           <Input required className={field} value={form.title} onChange={set("title")} />
         </label>
         <label className="sm:col-span-2 space-y-1">
-          <span className="block">Description</span>
+          <span className="block">{t("manage.description")}</span>
           <textarea rows={4} className="w-full border border-slate-400 px-3 py-2" value={form.description} onChange={set("description")} />
         </label>
         <label className="space-y-1">
-          <span className="block">Venue</span>
+          <span className="block">{t("manage.venue")}</span>
           <Input className={field} value={form.venueName} onChange={set("venueName")} />
         </label>
         <label className="space-y-1">
-          <span className="block">Address</span>
+          <span className="block">{t("form.address")}</span>
           <Input className={field} value={form.address} onChange={set("address")} />
         </label>
         <label className="space-y-1">
-          <span className="block">Start date</span>
+          <span className="block">{t("manage.startDate")}</span>
           <Input required type="date" className={field} value={form.dateFrom} onChange={set("dateFrom")} />
         </label>
         <label className="space-y-1">
-          <span className="block">Start time</span>
+          <span className="block">{t("manage.startTime")}</span>
           <Input required type="time" className={field} value={form.timeFrom} onChange={set("timeFrom")} />
         </label>
         <label className="space-y-1">
-          <span className="block">End date</span>
+          <span className="block">{t("manage.endDate")}</span>
           <Input required type="date" className={field} value={form.dateTo} onChange={set("dateTo")} />
         </label>
         <label className="space-y-1">
-          <span className="block">End time</span>
+          <span className="block">{t("manage.endTime")}</span>
           <Input required type="time" className={field} value={form.timeTo} onChange={set("timeTo")} />
         </label>
         <div className="space-y-1">
-          <span className="block">Cover image</span>
+          <span className="block">{t("manage.cover")}</span>
           <CoverUpload value={form.image} onChange={(image) => setForm({ ...form, image })} />
         </div>
         <label className="space-y-1">
-          <span className="block">Refund policy</span>
+          <span className="block">{t("form.refundPolicy")}</span>
           <select className="w-full rounded-xl border border-slate-400 bg-white px-3 py-2" value={form.refundPolicy} onChange={set("refundPolicy")}>
-            {Object.entries(REFUND_POLICIES).map(([k, v]) => (
+            {Object.keys(REFUND_POLICIES).map((k) => (
               <option key={k} value={k}>
-                {v}
+                {refundPolicyLabel(k)}
               </option>
             ))}
           </select>
         </label>
         <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
           <Button type="submit" disabled={!range.valid} loading={save.isPending}>
-            Save changes
+            {t("manage.saveChanges")}
           </Button>
-          {!range.valid && <span className="text-red-700">The event must end after it starts.</span>}
-          {save.isSuccess && <span>Saved.</span>}
+          {!range.valid && <span className="text-red-700">{t("form.endAfterStart")}</span>}
+          {save.isSuccess && <span>{t("common.saved")}</span>}
         </div>
         {save.isError && (
           <div className="sm:col-span-2">
-            <ErrorState message={errorMessage(save.error, "Could not save the event")} />
+            <ErrorState message={errorMessage(save.error, t("manage.saveFailed"))} />
           </div>
         )}
       </form>
@@ -282,13 +284,20 @@ function TicketTypes({ eventId }: { eventId: number }) {
     },
   });
   return (
-    <Section title="Ticket types" note="Capacity cannot go below the tickets already sold.">
+    <Section title={t("manage.ticketTypes")} note={t("manage.capacityNote")}>
       {types.isError && <ErrorState message={errorMessage(types.error)} />}
       <div className="overflow-x-auto">
         <table className="w-full max-w-3xl text-left">
           <thead>
             <tr className="border-b border-brand">
-              {["Name", "Sold", "Price (KZT)", "Capacity", "Max per person", ""].map((h) => (
+              {[
+                t("manage.col.name"),
+                t("manage.col.sold"),
+                t("manage.col.priceKzt"),
+                t("manage.col.capacity"),
+                t("form.maxPerPerson"),
+                "",
+              ].map((h) => (
                 <th key={h} className="py-2 pr-3">
                   {h}
                 </th>
@@ -334,17 +343,17 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
       <td className="py-2 pr-3">{ticketType.name}</td>
       <td className="py-2 pr-3">{ticketType.quantity_sold}</td>
       <td className="py-2 pr-3">
-        <Input type="number" min={0} aria-label={`${ticketType.name} price`} className="w-32 border-slate-400!" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Input type="number" min={0} aria-label={t("manage.priceOf", { name: ticketType.name })} className="w-32 border-slate-400!" value={price} onChange={(e) => setPrice(e.target.value)} />
       </td>
       <td className="py-2 pr-3">
-        <Input type="number" min={1} aria-label={`${ticketType.name} capacity`} className="w-28 border-slate-400!" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
+        <Input type="number" min={1} aria-label={t("manage.capacityOf", { name: ticketType.name })} className="w-28 border-slate-400!" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
       </td>
       <td className="py-2 pr-3">
         <Input
           type="number"
           min={1}
-          placeholder="No limit"
-          aria-label={`${ticketType.name} max per person`}
+          placeholder={t("form.noLimit")}
+          aria-label={t("manage.limitOf", { name: ticketType.name })}
           className="w-28 border-slate-400!"
           value={limit}
           onChange={(e) => setLimit(e.target.value)}
@@ -352,7 +361,7 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
       </td>
       <td className="py-2">
         <Button variant="secondary" disabled={!changed || !filled} loading={save.isPending} onClick={() => save.mutate()}>
-          Save
+          {t("common.save")}
         </Button>
         {save.isError && <ErrorState message={errorMessage(save.error)} />}
       </td>
@@ -360,16 +369,7 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
   );
 }
 
-const ACTIVITY_TYPES: Record<string, string> = {
-  "": "All",
-  event: "Event changes",
-  ticket_type: "Ticket types",
-  order: "Orders and refunds",
-  payment: "Payments",
-  promo: "Promo codes",
-  checkin: "Check-ins",
-  support: "Support cases",
-};
+const ACTIVITY_TYPES = ["event", "ticket_type", "order", "payment", "promo", "checkin", "support"] as const;
 
 function Activity({ eventId }: { eventId: number }) {
   const [from, setFrom] = useState("");
@@ -390,34 +390,35 @@ function Activity({ eventId }: { eventId: number }) {
   });
 
   return (
-    <Section title="Activity">
+    <Section title={t("manage.activity")}>
       <div className="flex flex-wrap gap-4">
         <label>
-          From{" "}
+          {t("manage.from")}{" "}
           <input type="date" className="border border-slate-400 px-2 py-1" value={from} onChange={(e) => setFrom(e.target.value)} />
         </label>
         <label>
-          To <input type="date" className="border border-slate-400 px-2 py-1" value={to} onChange={(e) => setTo(e.target.value)} />
+          {t("manage.to")} <input type="date" className="border border-slate-400 px-2 py-1" value={to} onChange={(e) => setTo(e.target.value)} />
         </label>
         <label>
-          Type{" "}
+          {t("manage.type")}{" "}
           <select className="border border-slate-400 px-2 py-1" value={action} onChange={(e) => setAction(e.target.value)}>
-            {Object.entries(ACTIVITY_TYPES).map(([k, v]) => (
+            <option value="">{t("common.all")}</option>
+            {ACTIVITY_TYPES.map((k) => (
               <option key={k} value={k}>
-                {v}
+                {t(`manage.act.${k}`)}
               </option>
             ))}
           </select>
         </label>
       </div>
       {activity.isError && <ErrorState message={errorMessage(activity.error)} />}
-      {activity.data?.length === 0 && <EmptyState title="No activity for these filters" />}
+      {activity.data?.length === 0 && <EmptyState title={t("manage.noActivity")} />}
       {!!activity.data?.length && (
         <div className="max-h-[32rem] overflow-y-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-brand">
-                {["When", "Who", "Action", "Details"].map((h) => (
+                {[t("manage.col.when"), t("manage.col.who"), t("manage.col.action"), t("manage.col.details")].map((h) => (
                   <th key={h} className="py-2 pr-3">
                     {h}
                   </th>
@@ -462,10 +463,10 @@ function CancelEvent({ eventId }: { eventId: number }) {
       variant="danger"
       loading={cancel.isPending}
       onClick={() => {
-        if (window.confirm("Cancel this event? Every ticket stops working and paid orders are refunded.")) cancel.mutate();
+        if (window.confirm(t("manage.cancelConfirm"))) cancel.mutate();
       }}
     >
-      Cancel event
+      {t("manage.cancelEvent")}
     </Button>
   );
 }
@@ -496,25 +497,28 @@ function Attendees({ eventId }: { eventId: number }) {
   const checkedIn = active.filter((a) => a.status === "checked_in").length;
 
   function cancelOrder(a: (typeof rows)[number]) {
-    const action = a.order_total_kzt > 0 ? `Refund ${formatPrice(a.order_total_kzt)} KZT for` : "Cancel";
-    if (window.confirm(`${action} order #${a.order_id}? Its tickets stop working.`)) cancel.mutate(a.order_id);
+    const question =
+      a.order_total_kzt > 0
+        ? t("manage.refundConfirm", { amount: formatPrice(a.order_total_kzt), id: a.order_id })
+        : t("manage.cancelOrderConfirm", { id: a.order_id });
+    if (window.confirm(question)) cancel.mutate(a.order_id);
   }
 
   return (
-    <Section title="Attendees" note={attendees.data && `${checkedIn} of ${active.length} checked in`}>
-      {cancel.isError && <ErrorState message={errorMessage(cancel.error, "Could not cancel the order")} />}
+    <Section title={t("manage.attendees")} note={attendees.data && t("manage.checkedIn", { n: checkedIn, total: active.length })}>
+      {cancel.isError && <ErrorState message={errorMessage(cancel.error, t("manage.cancelFailed"))} />}
       {attendees.isLoading && <Spinner />}
-      {attendees.isError && <ErrorState message={errorMessage(attendees.error, "Could not load attendees")} />}
-      {attendees.isSuccess && rows.length === 0 && <EmptyState title="No registrations yet" />}
+      {attendees.isError && <ErrorState message={errorMessage(attendees.error, t("manage.attendeesFailed"))} />}
+      {attendees.isSuccess && rows.length === 0 && <EmptyState title={t("manage.noRegistrations")} />}
       {rows.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-brand font-heading">
-                <th className="py-2 pr-4">Name</th>
-                <th className="py-2 pr-4">Email</th>
-                <th className="py-2 pr-4">Ticket</th>
-                <th className="py-2 pr-4">Status</th>
+                <th className="py-2 pr-4">{t("manage.col.person")}</th>
+                <th className="py-2 pr-4">{t("common.email")}</th>
+                <th className="py-2 pr-4">{t("manage.col.ticket")}</th>
+                <th className="py-2 pr-4">{t("manage.col.status")}</th>
                 <th className="py-2" />
               </tr>
             </thead>
@@ -530,7 +534,7 @@ function Attendees({ eventId }: { eventId: number }) {
                   <td className="py-2 text-right">
                     {a.status === "valid" && (
                       <Button variant="secondary" disabled={cancel.isPending} onClick={() => cancelOrder(a)}>
-                        {a.order_total_kzt > 0 ? "Refund" : "Cancel"}
+                        {a.order_total_kzt > 0 ? t("manage.refund") : t("manage.cancel")}
                       </Button>
                     )}
                   </td>
@@ -575,10 +579,10 @@ function DoorStaff({ eventId }: { eventId: number }) {
 
   return (
     <Section
-      title="Door staff"
-      note="They can scan tickets for this event in the BiletFlow Check-in app. They need a BiletFlow account first."
+      title={t("manage.staff")}
+      note={t("manage.staffNote")}
     >
-      {staff.isError && <ErrorState message={errorMessage(staff.error, "Could not load door staff")} />}
+      {staff.isError && <ErrorState message={errorMessage(staff.error, t("manage.staffFailed"))} />}
       {staff.data && staff.data.length > 0 && (
         <ul className="space-y-1">
           {staff.data.map((s) => (
@@ -596,7 +600,7 @@ function DoorStaff({ eventId }: { eventId: number }) {
         }}
       >
         <label htmlFor="staff-email" className="sr-only">
-          Staff email
+          {t("manage.staffEmail")}
         </label>
         <Input
           id="staff-email"
@@ -608,10 +612,10 @@ function DoorStaff({ eventId }: { eventId: number }) {
           onChange={(e) => setEmail(e.target.value)}
         />
         <Button type="submit" loading={add.isPending} className="shrink-0">
-          Add
+          {t("manage.add")}
         </Button>
       </form>
-      {add.isError && <ErrorState message={errorMessage(add.error, "Could not add this person")} />}
+      {add.isError && <ErrorState message={errorMessage(add.error, t("manage.addFailed"))} />}
     </Section>
   );
 }
@@ -657,8 +661,8 @@ function PaidSales({ eventId }: { eventId: number }) {
 
   if (a.paid_sales_enabled || a.suspended) {
     return (
-      <Section title="Paid sales">
-        <p>{a.suspended ? "Paid sales were suspended by a platform admin." : "Paid sales are active for this event."}</p>
+      <Section title={t("manage.paid")}>
+        <p>{a.suspended ? t("manage.paidSuspended") : t("manage.paidActive")}</p>
       </Section>
     );
   }
@@ -666,41 +670,41 @@ function PaidSales({ eventId }: { eventId: number }) {
   const ready = a.has_paid_ticket_type && a.organizer_verified && a.payout_account_set && a.terms_accepted;
   const profileLink = (
     <Link to="/profile" className="underline">
-      Profile
+      {t("nav.profile")}
     </Link>
   );
 
   return (
-    <Section title="Paid sales" note="Free tickets need nothing. To sell paid tickets, complete every step below.">
+    <Section title={t("manage.paid")} note={t("manage.paidNote")}>
       <table className="w-full text-left">
         <tbody>
-          <Step done={a.has_paid_ticket_type} label="The event has a paid ticket type" />
-          <Step done={a.organizer_verified} label="Identity verification approved" action={profileLink} />
-          <Step done={a.payout_account_set} label="Payout account added" action={profileLink} />
+          <Step done={a.has_paid_ticket_type} label={t("manage.stepPaidType")} />
+          <Step done={a.organizer_verified} label={t("manage.stepVerified")} action={profileLink} />
+          <Step done={a.payout_account_set} label={t("manage.stepPayout")} action={profileLink} />
           <Step
             done={a.terms_accepted}
-            label="Paid-event terms accepted: BiletFlow keeps payment processing charges, refunds follow your refund policy."
+            label={t("manage.stepTerms")}
             action={
               <Button variant="secondary" loading={terms.isPending} onClick={() => terms.mutate()}>
-                Accept terms
+                {t("manage.acceptTerms")}
               </Button>
             }
           />
           <Step
             done={a.fee_paid}
-            label={`Activation fee paid (${formatPrice(a.fee_kzt)} KZT, once per event)`}
+            label={t("manage.stepFee", { amount: formatPrice(a.fee_kzt) })}
             action={
               <Button disabled={!ready} loading={pay.isPending} onClick={() => pay.mutate()}>
-                {a.pending_payment_id ? "Continue payment" : "Pay activation fee"}
+                {a.pending_payment_id ? t("manage.continuePayment") : t("manage.payFee")}
               </Button>
             }
           />
         </tbody>
       </table>
-      {pay.isError && <ErrorState message={errorMessage(pay.error, "Could not start the payment")} />}
+      {pay.isError && <ErrorState message={errorMessage(pay.error, t("manage.payFailed"))} />}
       <p>
         <Link className="underline" to={`/support/new?kind=organizer&event_id=${eventId}`}>
-          Problem with activation? Contact platform support
+          {t("manage.activationHelp")}
         </Link>
       </p>
     </Section>
@@ -775,13 +779,24 @@ function Campaigns({ eventId }: { eventId: number }) {
   const rows = campaigns.data ?? [];
 
   return (
-    <Section title="Promo codes" note="Each code also gets a Campaign QR that opens this event with the code applied. It is not an entry ticket.">
+    <Section title={t("manage.promos")} note={t("manage.promosNote")}>
       {rows.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-brand">
-                {["Code", "Discount", "Used", "Orders", "Tickets", "Gross", "Discounts", "Net", "Status", ""].map((h) => (
+                {[
+                  t("manage.col.code"),
+                  t("manage.col.discount"),
+                  t("manage.col.used"),
+                  t("manage.col.orders"),
+                  t("common.tickets"),
+                  t("manage.col.gross"),
+                  t("manage.col.discounts"),
+                  t("manage.col.net"),
+                  t("manage.col.status"),
+                  "",
+                ].map((h) => (
                   <th key={h} className="py-2 pr-3">
                     {h}
                   </th>
@@ -802,17 +817,17 @@ function Campaigns({ eventId }: { eventId: number }) {
                   <td className="py-2 pr-3">{formatKzt(c.gross_kzt)}</td>
                   <td className="py-2 pr-3">{formatKzt(c.discount_kzt)}</td>
                   <td className="py-2 pr-3">{formatKzt(c.net_kzt)}</td>
-                  <td className="py-2 pr-3">{c.disabled ? "Disabled" : "Active"}</td>
+                  <td className="py-2 pr-3">{c.disabled ? t("manage.disabled") : t("manage.active")}</td>
                   <td className="space-x-2 py-2 whitespace-nowrap">
                     <button type="button" className="underline" onClick={() => downloadQr(c.id, c.code)}>
-                      QR image
+                      {t("manage.qr")}
                     </button>
                     <button type="button" className="underline" onClick={() => navigator.clipboard.writeText(c.link)}>
-                      Copy link
+                      {t("manage.copyLink")}
                     </button>
                     {!c.disabled && (
                       <button type="button" className="underline" onClick={() => disable.mutate(c.id)}>
-                        Disable
+                        {t("manage.disable")}
                       </button>
                     )}
                   </td>
@@ -829,41 +844,41 @@ function Campaigns({ eventId }: { eventId: number }) {
           create.mutate();
         }}
       >
-        <h3 className="sm:col-span-2 font-heading text-xl">New promo code</h3>
+        <h3 className="sm:col-span-2 font-heading text-xl">{t("manage.newPromo")}</h3>
         <label className="space-y-1">
-          <span className="block">Campaign name</span>
+          <span className="block">{t("manage.campaignName")}</span>
           <Input required className="border-slate-400!" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </label>
         <label className="space-y-1">
-          <span className="block">Code (leave empty to generate)</span>
+          <span className="block">{t("manage.codeHint")}</span>
           <Input className="border-slate-400!" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
         </label>
         <label className="space-y-1">
-          <span className="block">Discount type</span>
+          <span className="block">{t("manage.discountType")}</span>
           <select
             className="w-full rounded-xl border border-slate-400 bg-white px-3 py-2"
             value={form.type}
             onChange={(e) => setForm({ ...form, type: e.target.value as "percent" | "fixed" })}
           >
-            <option value="percent">Percent</option>
-            <option value="fixed">Fixed amount (KZT)</option>
+            <option value="percent">{t("manage.percent")}</option>
+            <option value="fixed">{t("manage.fixed")}</option>
           </select>
         </label>
         <label className="space-y-1">
-          <span className="block">{form.type === "percent" ? "Percent off" : "KZT off"}</span>
+          <span className="block">{form.type === "percent" ? t("manage.percentOff") : t("manage.kztOff")}</span>
           <Input required type="number" min={1} max={form.type === "percent" ? 100 : undefined} className="border-slate-400!" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
         </label>
         <label className="space-y-1">
-          <span className="block">Maximum uses (optional)</span>
+          <span className="block">{t("manage.maxUses")}</span>
           <Input type="number" min={1} className="border-slate-400!" value={form.max} onChange={(e) => setForm({ ...form, max: e.target.value })} />
         </label>
         <label className="space-y-1">
-          <span className="block">Valid until (optional)</span>
+          <span className="block">{t("manage.validUntil")}</span>
           <Input type="date" className="border-slate-400!" value={form.until} onChange={(e) => setForm({ ...form, until: e.target.value })} />
         </label>
         {!!types.data?.length && (
           <fieldset className="sm:col-span-2">
-            <legend>Applies to (none ticked means all ticket types)</legend>
+            <legend>{t("manage.appliesTo")}</legend>
             {types.data.map((t) => (
               <label key={t.id} className="mr-4 inline-flex items-center gap-1">
                 <input
@@ -883,12 +898,12 @@ function Campaigns({ eventId }: { eventId: number }) {
         )}
         <div className="sm:col-span-2">
           <Button type="submit" loading={create.isPending}>
-            Create promo code
+            {t("manage.createPromo")}
           </Button>
         </div>
         {create.isError && (
           <div className="sm:col-span-2">
-            <ErrorState message={errorMessage(create.error, "Could not create the promo code")} />
+            <ErrorState message={errorMessage(create.error, t("manage.promoFailed"))} />
           </div>
         )}
       </form>
@@ -899,7 +914,7 @@ function Campaigns({ eventId }: { eventId: number }) {
 function Step({ done, label, action }: { done: boolean; label: string; action?: ReactNode }) {
   return (
     <tr className="border-b border-slate-200">
-      <td className="w-24 py-2 pr-4 font-semibold">{done ? "Done" : "Missing"}</td>
+      <td className="w-24 py-2 pr-4 font-semibold">{done ? t("manage.done") : t("manage.missing")}</td>
       <td className="py-2 pr-4">{label}</td>
       <td className="py-2 text-right">{!done && action}</td>
     </tr>

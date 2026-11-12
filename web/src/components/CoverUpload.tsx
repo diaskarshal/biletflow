@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { errorMessage } from "../lib/format";
+import { t } from "../lib/i18n";
 import { buttonClass } from "./Button";
 import { ErrorState } from "./EmptyState";
 
@@ -24,7 +25,7 @@ export function CoverUpload({ value, onChange }: { value: string; onChange: (url
   return (
     <div className="space-y-2">
       <label className={`${buttonClass("secondary")} inline-block cursor-pointer focus-within:ring-2 focus-within:ring-brand`}>
-        {upload.isPending ? "Uploading..." : value ? "Change image" : "Choose image"}
+        {upload.isPending ? t("cover.uploading") : value ? t("cover.change") : t("cover.choose")}
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
@@ -37,13 +38,13 @@ export function CoverUpload({ value, onChange }: { value: string; onChange: (url
           }}
         />
       </label>
-      <p className="text-sm">JPEG, PNG or WebP, up to 5 MB.</p>
-      {upload.isError && <ErrorState message={errorMessage(upload.error, "Could not upload the image")} />}
+      <p className="text-sm">{t("cover.hint")}</p>
+      {upload.isError && <ErrorState message={errorMessage(upload.error, t("cover.failed"))} />}
       {value && (
         <div className="flex items-center gap-3">
-          <img src={value} alt="Cover preview" className="h-24 w-20 border border-slate-300 object-cover" />
+          <img src={value} alt={t("cover.preview")} className="h-24 w-20 border border-slate-300 object-cover" />
           <button type="button" className="underline" onClick={() => onChange("")}>
-            Remove
+            {t("cover.remove")}
           </button>
         </div>
       )}
