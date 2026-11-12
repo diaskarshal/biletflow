@@ -6,25 +6,19 @@ import { ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { useAuth } from "../context/AuthContext";
 import { errorMessage } from "../lib/format";
+import { t, tOptional } from "../lib/i18n";
 import type { components } from "../api/schema";
-
-const VERIFICATION: Record<string, string> = {
-  none: "Not submitted",
-  pending: "Waiting for admin review",
-  approved: "Approved",
-  rejected: "Rejected, upload a new document",
-};
 
 export function Profile() {
   const { user, logout } = useAuth();
   return (
     <div className="mx-auto max-w-3xl space-y-10 px-4 py-8 sm:px-6 sm:py-12">
       <section className="space-y-3">
-        <h1 className="text-2xl font-bold sm:text-3xl">Profile</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">{t("nav.profile")}</h1>
         <p>{user?.email}</p>
         <EmailStatus />
         <Button variant="secondary" onClick={logout}>
-          Log out
+          {t("profile.logout")}
         </Button>
       </section>
       {user && <NameForm key={user.full_name} name={user.full_name} />}
@@ -50,18 +44,18 @@ function EmailStatus() {
     },
   });
   if (!me.data) return null;
-  if (me.data.email_verified_at) return <p>Email confirmed.</p>;
+  if (me.data.email_verified_at) return <p>{t("profile.emailConfirmed")}</p>;
   return (
     <div className="space-y-2 border border-slate-400 p-3">
-      <p>Your email address is not confirmed yet. Check your inbox for the confirmation link.</p>
+      <p>{t("profile.emailNotConfirmed")}</p>
       {resend.isSuccess ? (
-        <p>We sent a new link.</p>
+        <p>{t("profile.linkSent")}</p>
       ) : (
         <Button variant="secondary" loading={resend.isPending} onClick={() => resend.mutate()}>
-          Send the link again
+          {t("profile.resend")}
         </Button>
       )}
-      {resend.isError && <ErrorState message={errorMessage(resend.error, "Could not send the link")} />}
+      {resend.isError && <ErrorState message={errorMessage(resend.error, t("profile.resendFailed"))} />}
     </div>
   );
 }
@@ -85,11 +79,11 @@ function NameForm({ name }: { name: string }) {
         save.mutate();
       }}
     >
-      <h2 className="text-xl font-bold">Your name</h2>
-      <Input required aria-label="Full name" value={value} onChange={(e) => setValue(e.target.value)} />
+      <h2 className="text-xl font-bold">{t("profile.yourName")}</h2>
+      <Input required aria-label={t("common.fullName")} value={value} onChange={(e) => setValue(e.target.value)} />
       {save.isError && <ErrorState message={errorMessage(save.error)} />}
       <Button type="submit" disabled={value.trim() === name} loading={save.isPending}>
-        Save name
+        {t("profile.saveName")}
       </Button>
     </form>
   );
@@ -120,19 +114,19 @@ function PasswordForm() {
         change.mutate();
       }}
     >
-      <h2 className="text-xl font-bold">Change password</h2>
+      <h2 className="text-xl font-bold">{t("profile.changePassword")}</h2>
       <label className="block space-y-1">
-        <span className="block">Current password</span>
+        <span className="block">{t("profile.currentPassword")}</span>
         <Input required type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
       </label>
       <label className="block space-y-1">
-        <span className="block">New password (at least 8 characters)</span>
+        <span className="block">{t("reset.new")}</span>
         <Input required type="password" minLength={8} value={next} onChange={(e) => setNext(e.target.value)} />
       </label>
       {change.isError && <ErrorState message={errorMessage(change.error)} />}
-      {change.isSuccess && <p>Password changed.</p>}
+      {change.isSuccess && <p>{t("profile.passwordChanged")}</p>}
       <Button type="submit" loading={change.isPending}>
-        Change password
+        {t("profile.changePassword")}
       </Button>
     </form>
   );
@@ -199,7 +193,7 @@ function OrganizerForm({ profile }: { profile: components["schemas"]["OrganizerP
 
   return (
     <section className="space-y-6">
-      <h2 className="text-2xl font-bold">Organizer profile</h2>
+      <h2 className="text-2xl font-bold">{t("org.title")}</h2>
       <form
         className="grid max-w-xl gap-4"
         onSubmit={(e) => {
@@ -207,34 +201,34 @@ function OrganizerForm({ profile }: { profile: components["schemas"]["OrganizerP
           save.mutate();
         }}
       >
-        <Field label="Display name" id="display_name">
+        <Field label={t("org.displayName")} id="display_name">
           <Input id="display_name" required value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
         </Field>
-        <Field label="Contact email" id="contact_email">
+        <Field label={t("org.contactEmail")} id="contact_email">
           <Input id="contact_email" type="email" required value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
         </Field>
-        <Field label="Phone" id="phone">
+        <Field label={t("org.phone")} id="phone">
           <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
         </Field>
-        <Field label="Payout account (IBAN, test data only)" id="payout_account">
+        <Field label={t("org.payout")} id="payout_account">
           <Input id="payout_account" value={form.payout_account} onChange={(e) => setForm({ ...form, payout_account: e.target.value })} />
         </Field>
         <div>
           <Button type="submit" loading={save.isPending}>
-            Save
+            {t("common.save")}
           </Button>
-          {save.isSuccess && <span className="ml-3">Saved.</span>}
+          {save.isSuccess && <span className="ml-3">{t("common.saved")}</span>}
         </div>
-        {save.isError && <ErrorState message={errorMessage(save.error, "Could not save the profile")} />}
+        {save.isError && <ErrorState message={errorMessage(save.error, t("org.saveFailed"))} />}
       </form>
 
       <div className="space-y-3">
-        <h3 className="text-xl font-bold">Identity verification</h3>
+        <h3 className="text-xl font-bold">{t("org.verification")}</h3>
         <p>
-          Status: <strong>{VERIFICATION[status] ?? status}</strong>
+          {t("org.status")}: <strong>{tOptional(`verification.${status}`) ?? status}</strong>
           {profile.verification_document && ` (${profile.verification_document})`}
         </p>
-        <p className="text-sm">Needed only to sell paid tickets. Upload any ID document; an admin reviews it.</p>
+        <p className="text-sm">{t("org.verificationHint")}</p>
         {status !== "approved" && (
           <form
             className="flex flex-wrap items-center gap-3"
@@ -244,15 +238,15 @@ function OrganizerForm({ profile }: { profile: components["schemas"]["OrganizerP
             }}
           >
             <label htmlFor="document" className="sr-only">
-              Verification document
+              {t("org.document")}
             </label>
             <input id="document" type="file" required onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             <Button type="submit" loading={upload.isPending} disabled={!file}>
-              Upload
+              {t("org.upload")}
             </Button>
           </form>
         )}
-        {upload.isError && <ErrorState message={errorMessage(upload.error, "Could not upload the document")} />}
+        {upload.isError && <ErrorState message={errorMessage(upload.error, t("org.uploadFailed"))} />}
       </div>
     </section>
   );

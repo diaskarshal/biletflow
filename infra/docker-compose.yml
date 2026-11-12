@@ -26,6 +26,7 @@ services:
       context: ../backend
     environment:
       DATABASE_URL: postgresql+psycopg://biletflow:biletflow@postgres:5432/biletflow
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       SMTP_HOST: ${SMTP_HOST:-mailhog}
       SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_USERNAME: ${SMTP_USERNAME:-}

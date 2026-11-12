@@ -10,19 +10,20 @@ import { ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
 import { useEvent } from "../hooks/useEvent";
-import { errorMessage, formatDate, formatPrice, formatTime, REFUND_POLICIES, type RefundPolicy } from "../lib/format";
+import { errorMessage, formatDate, formatPrice, formatTime, refundPolicyLabel } from "../lib/format";
+import { t } from "../lib/i18n";
 import type { components } from "../api/schema";
 
 type TicketType = components["schemas"]["TicketTypeOut"];
 
 // Why a ticket type can't be bought right now, or null if it can.
-function unavailableReason(t: TicketType, eventCancelled: boolean, paidSalesEnabled: boolean) {
-  if (eventCancelled) return "Cancelled";
-  if (t.price_kzt > 0 && !paidSalesEnabled) return "Not on sale yet";
-  if (t.quantity_total - t.quantity_sold - t.quantity_reserved <= 0) return "Sold out";
+function unavailableReason(ticket: TicketType, eventCancelled: boolean, paidSalesEnabled: boolean) {
+  if (eventCancelled) return t("event.reasonCancelled");
+  if (ticket.price_kzt > 0 && !paidSalesEnabled) return t("event.reasonNotOnSale");
+  if (ticket.quantity_total - ticket.quantity_sold - ticket.quantity_reserved <= 0) return t("event.reasonSoldOut");
   const now = Date.now();
-  if (t.sales_start_at && new Date(t.sales_start_at).getTime() > now) return "Not on sale yet";
-  if (t.sales_end_at && new Date(t.sales_end_at).getTime() < now) return "Sales closed";
+  if (ticket.sales_start_at && new Date(ticket.sales_start_at).getTime() > now) return t("event.reasonNotOnSale");
+  if (ticket.sales_end_at && new Date(ticket.sales_end_at).getTime() < now) return t("event.reasonClosed");
   return null;
 }
 
@@ -51,7 +52,7 @@ export function EventPage() {
   if (event.isError || !event.data) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        <ErrorState message={errorMessage(event.error, "Event not found")} />
+        <ErrorState message={errorMessage(event.error, t("event.notFound"))} />
       </div>
     );
   }
@@ -76,35 +77,40 @@ export function EventPage() {
         <div className="flex min-w-0 flex-1 flex-col">
           <h1 className="break-words font-heading text-3xl sm:text-5xl">{e.title}</h1>
           <dl className="mt-4 space-y-1 text-lg sm:text-2xl">
-            <Row k="Date" v={formatDate(e.starts_at, e.display_timezone)} />
-            <Row k="Time" v={formatTime(e.starts_at, e.display_timezone)} />
-            <Row k="Slots" v={`${slots.left} / ${slots.total}`} />
+            <Row k={t("common.date")} v={formatDate(e.starts_at, e.display_timezone)} />
+            <Row k={t("common.time")} v={formatTime(e.starts_at, e.display_timezone)} />
+            <Row k={t("common.slots")} v={`${slots.left} / ${slots.total}`} />
           </dl>
           {e.venue_address && <p className="mt-1 text-lg sm:text-2xl">{e.venue_address}</p>}
-          {cancelled && <p className="mt-4 font-heading text-xl text-red-700">This event was cancelled.</p>}
+          {cancelled && <p className="mt-4 font-heading text-xl text-red-700">{t("event.cancelled")}</p>}
           {e.review_status !== "approved" && (
-            <p className="mt-4 border border-slate-400 p-2">Not public yet: this event is waiting for platform approval.</p>
+            <p className="mt-4 border border-slate-400 p-2">{t("event.notPublic")}</p>
           )}
           {promo.data && (
             <p className="mt-4 border border-brand p-2">
-              Promo {promo.data.code} applied:{" "}
-              {promo.data.discount_type === "percent" ? `${promo.data.discount_value}% off` : `${formatPrice(promo.data.discount_value)} KZT off`}
+              {t("event.promoApplied", {
+                code: promo.data.code,
+                discount:
+                  promo.data.discount_type === "percent"
+                    ? t("event.percentOff", { value: promo.data.discount_value })
+                    : t("event.amountOff", { value: formatPrice(promo.data.discount_value) }),
+              })}
             </p>
           )}
-          {promo.isError && <p className="mt-4 text-red-700">{errorMessage(promo.error, "This promo link is not valid")}</p>}
+          {promo.isError && <p className="mt-4 text-red-700">{errorMessage(promo.error, t("event.promoInvalid"))}</p>}
           <div className="mt-auto grid grid-cols-2 gap-3 pt-8 sm:gap-5 lg:grid-cols-3">
-            {types.map((t) => {
-              const reason = unavailableReason(t, cancelled, e.paid_sales_enabled);
+            {types.map((tt) => {
+              const reason = unavailableReason(tt, cancelled, e.paid_sales_enabled);
               return (
                 <button
-                  key={t.id}
+                  key={tt.id}
                   type="button"
                   disabled={reason !== null}
-                  onClick={() => choose(t)}
+                  onClick={() => choose(tt)}
                   className="rounded-2xl bg-brand px-3 py-4 font-heading text-lg sm:text-xl text-on-brand transition hover:bg-brand-dark disabled:opacity-50"
                 >
-                  <div>{t.name}</div>
-                  <div>{reason ?? (t.price_kzt === 0 ? "Free" : formatPrice(t.price_kzt))}</div>
+                  <div>{tt.name}</div>
+                  <div>{reason ?? (tt.price_kzt === 0 ? t("common.free") : formatPrice(tt.price_kzt))}</div>
                 </button>
               );
             })}
@@ -112,10 +118,10 @@ export function EventPage() {
         </div>
       </div>
       {e.description && <p className="mt-8 whitespace-pre-line text-lg sm:text-2xl">{e.description}</p>}
-      <p className="mt-6">Refund policy: {REFUND_POLICIES[e.refund_policy as RefundPolicy]}</p>
+      <p className="mt-6">{t("event.refundPolicy", { policy: refundPolicyLabel(e.refund_policy) })}</p>
       <p className="mt-2">
         <Link className="underline" to={`/support/new?event_id=${e.id}`}>
-          Contact the organizer
+          {t("event.contact")}
         </Link>
       </p>
       <ReportEvent eventId={e.id} />
@@ -148,10 +154,10 @@ function ReportEvent({ eventId }: { eventId: number }) {
     },
   });
   if (!user) return null;
-  if (report.isSuccess) return <p className="mt-2">Thank you. The platform team will review this event.</p>;
+  if (report.isSuccess) return <p className="mt-2">{t("report.thanks")}</p>;
   return (
     <details className="mt-2">
-      <summary className="cursor-pointer underline">Report this event</summary>
+      <summary className="cursor-pointer underline">{t("report.open")}</summary>
       <form
         className="mt-2 max-w-xl space-y-2"
         onSubmit={(ev) => {
@@ -163,15 +169,15 @@ function ReportEvent({ eventId }: { eventId: number }) {
           required
           rows={3}
           maxLength={2000}
-          aria-label="What is wrong with this event?"
-          placeholder="What is wrong with this event?"
+          aria-label={t("report.placeholder")}
+          placeholder={t("report.placeholder")}
           className="w-full border border-slate-400 px-3 py-2"
           value={reason}
           onChange={(ev) => setReason(ev.target.value)}
         />
-        {report.isError && <ErrorState message={errorMessage(report.error, "Could not send the report")} />}
+        {report.isError && <ErrorState message={errorMessage(report.error, t("report.failed"))} />}
         <Button type="submit" variant="secondary" loading={report.isPending}>
-          Send report
+          {t("report.send")}
         </Button>
       </form>
     </details>

@@ -10,7 +10,10 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import ScannerScreen from "../screens/ScannerScreen";
 import MainTabNavigator from "./MainTabNavigator";
+import TicketDetailsScreen from "../screens/TicketDetailsScreen";
+import NewSupportCaseScreen from "../screens/NewSupportCaseScreen";
 
+import type {OrderTicket, OrderEvent} from "../api/orders";
 import { useSession } from "../session/SessionContext";
 
 export type RootStackParamList = {
@@ -21,6 +24,8 @@ export type RootStackParamList = {
     EventDetails: {slug : string};
     Scanner: { eventId: number; title: string };
     Attendees: { eventId: number };
+    TicketDetails: {ticket: OrderTicket; event: OrderEvent; orderStatus: string};
+    NewSupportCase: {ticketId: number, eventId: number };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -68,6 +73,16 @@ export default function AppNavigator() {
                         name="Attendees"
                         component={AttendeesScreen}
                         options={{ title: "Attendees" }}
+                    />
+                    <Stack.Screen
+                        name = "TicketDetails"
+                        component = {TicketDetailsScreen}
+                        options = {{ title: "Your ticket"}}
+                    />
+                    <Stack.Screen
+                        name = "NewSupportCase"
+                        component = {NewSupportCaseScreen}
+                        options = {{title : "Contact the organizer"}}
                     />
                 </Stack.Navigator>
             ) : (

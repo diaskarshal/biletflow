@@ -32,6 +32,8 @@ curl localhost:8000/health
 - API docs: http://localhost:8000/docs
 - Mailhog (all outgoing email): http://localhost:8025
 
+The customer-facing site is in Kazakh (default) and Russian, with English as an extra option. Switch with Қаз / Рус / Eng in the top bar; the choice is remembered. Organizer and admin pages are in English.
+
 Demo accounts, password `password123`:
 
 - `admin@biletflow.kz` platform admin
@@ -91,17 +93,9 @@ Restart `npx expo start` after changing `.env`, and then scan the QR with Expo G
 
 ## Email
 
-By default, every email (for account confirmation, tickets, and password reset) goes to Mailhog at http://localhost:8025 and never reaches a real inbox. To send real email, create `infra/.env` with an SMTP account, for example Gmail:
+By default, every email (for account confirmation, tickets, and password reset) goes to Mailhog at http://localhost:8025 and never reaches a real inbox. To send real email, create `infra/.env` with an SMTP account.
 
-```
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=@gmail.com
-SMTP_PASSWORD=
-EMAIL_FROM=@gmail.com
-```
-
-For Gmail, turn on 2-Step Verification and create an app password at https://myaccount.google.com/apppasswords (your normal password will not work). Then run `docker compose up -d` in `infra/`. Note: links in emails point to http://localhost:5173, so they only open on the computer running the app.
+For Gmail, turn on 2-Step Verification and create an app password at https://myaccount.google.com/apppasswords (your normal password will not work). Then run `docker compose up -d` in `infra/`. Links in emails point to http://localhost:5173 by default, so they only open on the computer running the app. To open them on a phone (same Wi-Fi), also add `FRONTEND_URL=http://<your computer's LAN IP>:5173` to `infra/.env` and run `docker compose up -d` again.
 
 ## Tests
 

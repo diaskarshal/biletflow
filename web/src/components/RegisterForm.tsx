@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { errorMessage } from '../lib/format';
+import { t } from '../lib/i18n';
 
 const MIN_PASSWORD = 8;
 
@@ -40,9 +41,9 @@ export function RegisterForm() {
     }
 
     function handleStatus() {
-        if (isPending) return "Loading";
+        if (isPending) return t("common.loading");
         if (isError) return errorMessage(error);
-        if (isSuccess) return "Registered! Redirecting to login…";
+        if (isSuccess) return t("register.success");
         return null;
     }
 
@@ -51,10 +52,10 @@ export function RegisterForm() {
 
     return (
         <form onSubmit={handleSubmit} className="mx-4 mt-8 max-w-md space-y-5 rounded-3xl bg-sky p-6 sm:mx-auto sm:mt-16 sm:rounded-[2.5rem] sm:p-10">
-            <h1 className="font-heading text-2xl font-bold text-brand">Register</h1>
+            <h1 className="font-heading text-2xl font-bold text-brand">{t("register.title")}</h1>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-brand font-heading">Full name</span>
+                <span className="text-sm text-brand font-heading">{t("common.fullName")}</span>
                 <Input
                     type="text"
                     name="full_name"
@@ -64,7 +65,7 @@ export function RegisterForm() {
             </label>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-brand font-heading">Email</span>
+                <span className="text-sm text-brand font-heading">{t("common.email")}</span>
                 <Input
                     type="text"
                     name="email"
@@ -74,7 +75,7 @@ export function RegisterForm() {
             </label>
 
             <label className="flex flex-col gap-1">
-                <span className="text-sm text-brand font-heading">Password</span>
+                <span className="text-sm text-brand font-heading">{t("common.password")}</span>
                 <Input
                     type="password"
                     name="password"
@@ -83,12 +84,13 @@ export function RegisterForm() {
                     aria-describedby="password-rules"
                 />
                 <span id="password-rules" className={`text-sm ${tooShort ? "text-red-600" : "text-slate-600"}`}>
-                    At least {MIN_PASSWORD} characters{tooShort ? `, ${MIN_PASSWORD - creds.password.length} more needed` : ""}
+                    {t("register.passwordRule", { min: MIN_PASSWORD })}
+                    {tooShort ? t("register.moreNeeded", { n: MIN_PASSWORD - creds.password.length }) : ""}
                 </span>
             </label>
 
             <Button type="submit" disabled={isPending || creds.password.length < MIN_PASSWORD} className="w-full py-3">
-                Register
+                {t("register.submit")}
             </Button>
 
             {status && (
@@ -96,7 +98,7 @@ export function RegisterForm() {
                     {status}
                 </p>
             )}
-            <Link to="/login" className="block text-center text-sm underline">Have an account? Log in</Link>
+            <Link to="/login" className="block text-center text-sm underline">{t("register.haveAccount")}</Link>
         </form>
     );
 }

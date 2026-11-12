@@ -3,39 +3,38 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { components } from "../api/schema";
+import type { MessageKey } from "../lib/messages";
 import { Block, Table } from "../components/Block";
 import { Button } from "../components/Button";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { useAuth } from "../context/AuthContext";
 import { errorMessage, formatDateTime } from "../lib/format";
+import { t } from "../lib/i18n";
 
 type Case = components["schemas"]["CaseOut"];
 type Category = components["schemas"]["CaseCreate"]["category"];
 type Status = components["schemas"]["CaseUpdate"]["status"] & string;
 
-const CATEGORIES: Record<Category, string> = {
-  ticket_delivery: "Ticket delivery",
-  payment: "Payment",
-  refund: "Refund",
-  seating: "Seating",
-  event_information: "Event information",
-  check_in: "Check-in",
-  account: "Account",
-  activation: "Paid-sales activation",
-  technical: "Technical problem",
-};
+const CATEGORIES: Category[] = [
+  "ticket_delivery",
+  "payment",
+  "refund",
+  "seating",
+  "event_information",
+  "check_in",
+  "account",
+  "activation",
+  "technical",
+];
 const ORGANIZER_CATEGORIES: Category[] = ["account", "activation", "payment", "technical"];
-const STATUSES: Record<Status, string> = {
-  open: "Open",
-  in_progress: "In progress",
-  waiting_for_customer: "Waiting for customer",
-  resolved: "Resolved",
-};
+const STATUSES: Status[] = ["open", "in_progress", "waiting_for_customer", "resolved"];
+const categoryLabel = (c: string) => t(`cat.${c}` as MessageKey);
+const statusLabel = (s: string) => t(`case.${s}` as MessageKey);
 
 function CaseTable({ cases, showRequester }: { cases: Case[]; showRequester?: boolean }) {
   return (
-    <Table head={["#", "Subject", ...(showRequester ? ["From"] : []), "Event", "Status", "Updated"]}>
+    <Table head={["#", t("support.subject"), ...(showRequester ? [t("support.from")] : []), t("support.event"), t("support.status"), t("support.updated")]}>
       {cases.map((c) => (
         <tr key={c.id} className="border-b border-slate-200">
           <td className="py-2 pr-4">{c.id}</td>
@@ -45,8 +44,8 @@ function CaseTable({ cases, showRequester }: { cases: Case[]; showRequester?: bo
             </Link>
           </td>
           {showRequester && <td className="py-2 pr-4">{c.requester_name}</td>}
-          <td className="py-2 pr-4">{c.event_title ?? (c.kind === "organizer" ? "Platform support" : "")}</td>
-          <td className="py-2 pr-4">{STATUSES[c.status as Status]}</td>
+          <td className="py-2 pr-4">{c.event_title ?? (c.kind === "organizer" ? t("support.platform") : "")}</td>
+          <td className="py-2 pr-4">{statusLabel(c.status)}</td>
           <td className="py-2 pr-4">{formatDateTime(c.updated_at)}</td>
         </tr>
       ))}
@@ -78,34 +77,32 @@ export function Support() {
   return (
     <div className="mx-auto max-w-5xl space-y-10 px-4 py-8 sm:px-6 sm:py-12">
       <div className="flex flex-wrap items-center gap-4">
-        <h1 className="text-2xl font-bold sm:text-3xl">Support</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">{t("nav.support")}</h1>
         <Link className="ml-auto underline" to="/support/new?kind=organizer">
-          Contact platform support
+          {t("support.contactPlatform")}
         </Link>
       </div>
-      <Block title="My requests">
+      <Block title={t("support.mine")}>
         {mine.isError && <ErrorState message={errorMessage(mine.error)} />}
         {mine.data?.length === 0 && (
-          <EmptyState title="No requests yet">
-            To ask about a ticket or order, use "Get help" on the My tickets page.
-          </EmptyState>
+          <EmptyState title={t("support.noneYet")}>{t("support.noneHint")}</EmptyState>
         )}
         {!!mine.data?.length && <CaseTable cases={mine.data} />}
       </Block>
       {(!!inbox.data?.length || status) && (
-        <Block title="Requests to handle">
+        <Block title={t("support.toHandle")}>
           <label className="block">
-            Status{" "}
+            {t("support.status")}{" "}
             <select className="border border-slate-400 px-2 py-1" value={status} onChange={(e) => setStatus(e.target.value as Status | "")}>
-              <option value="">All</option>
-              {Object.entries(STATUSES).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
+              <option value="">{t("support.all")}</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {statusLabel(s)}
                 </option>
               ))}
             </select>
           </label>
-          {inbox.data?.length === 0 && <EmptyState title="Nothing with this status" />}
+          {inbox.data?.length === 0 && <EmptyState title={t("support.noneWithStatus")} />}
           {!!inbox.data?.length && <CaseTable cases={inbox.data} showRequester />}
         </Block>
       )}
@@ -124,7 +121,7 @@ export function NewSupportCase() {
   };
   const categories = organizer
     ? ORGANIZER_CATEGORIES
-    : (Object.keys(CATEGORIES) as Category[]).filter((c) => c !== "activation");
+    : CATEGORIES.filter((c) => c !== "activation");
   const [category, setCategory] = useState<Category>(categories[0]);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -141,21 +138,24 @@ export function NewSupportCase() {
   });
 
   const about = context.ticket_id
-    ? `Ticket #${context.ticket_id}`
+    ? t("support.aboutTicket", { id: context.ticket_id })
     : context.order_id
-      ? `Order #${context.order_id}`
+      ? t("support.aboutOrder", { id: context.order_id })
       : context.event_id
-        ? "This event"
+        ? t("support.aboutEvent")
         : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
-      <h1 className="text-2xl font-bold sm:text-3xl">{organizer ? "Contact platform support" : "Contact the organizer"}</h1>
-      {about && <p className="mt-2">About: {about}</p>}
+      <h1 className="text-2xl font-bold sm:text-3xl">{organizer ? t("support.contactPlatform") : t("event.contact")}</h1>
+      {about && <p className="mt-2">{t("support.about", { what: about })}</p>}
       {!organizer && !about && (
         <p className="mt-4">
-          Open a request from the event page or from <Link className="underline" to="/tickets">My tickets</Link> so the
-          organizer knows which event it is about.
+          {t("support.openFromBefore")}
+          <Link className="underline" to="/tickets">
+            {t("nav.tickets")}
+          </Link>
+          {t("support.openFromAfter")}
         </p>
       )}
       {(organizer || about) && (
@@ -167,26 +167,26 @@ export function NewSupportCase() {
           }}
         >
           <label className="block space-y-1">
-            <span className="block">Category</span>
+            <span className="block">{t("support.category")}</span>
             <select className="w-full border border-slate-400 px-3 py-2" value={category} onChange={(e) => setCategory(e.target.value as Category)}>
               {categories.map((c) => (
                 <option key={c} value={c}>
-                  {CATEGORIES[c]}
+                  {categoryLabel(c)}
                 </option>
               ))}
             </select>
           </label>
           <label className="block space-y-1">
-            <span className="block">Subject</span>
+            <span className="block">{t("support.subject")}</span>
             <Input required maxLength={200} value={subject} onChange={(e) => setSubject(e.target.value)} />
           </label>
           <label className="block space-y-1">
-            <span className="block">Message</span>
+            <span className="block">{t("support.message")}</span>
             <textarea required rows={6} maxLength={5000} className="w-full border border-slate-400 px-3 py-2" value={message} onChange={(e) => setMessage(e.target.value)} />
           </label>
-          {create.isError && <ErrorState message={errorMessage(create.error, "Could not send the request")} />}
+          {create.isError && <ErrorState message={errorMessage(create.error, t("support.sendFailed"))} />}
           <Button type="submit" loading={create.isPending}>
-            Send request
+            {t("support.send")}
           </Button>
         </form>
       )}
@@ -251,7 +251,7 @@ export function SupportCase() {
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
       <p>
         <Link className="underline" to="/support">
-          All requests
+          {t("support.allRequests")}
         </Link>
       </p>
       <h1 className="text-2xl font-bold sm:text-3xl">
@@ -260,13 +260,13 @@ export function SupportCase() {
       <table className="text-left">
         <tbody>
           {[
-            ["Status", STATUSES[c.status as Status]],
-            ["Category", CATEGORIES[c.category as Category]],
-            ["From", `${c.requester_name} (${c.requester_email})`],
-            ["Event", c.event_title ?? (c.kind === "organizer" ? "Platform support" : "")],
-            ["Order", c.order_id ? `#${c.order_id}` : ""],
-            ["Ticket", c.ticket_id ? `#${c.ticket_id}` : ""],
-            ["Assigned to", c.assignee_name ?? "Nobody"],
+            [t("support.status"), statusLabel(c.status)],
+            [t("support.category"), categoryLabel(c.category)],
+            [t("support.from"), `${c.requester_name} (${c.requester_email})`],
+            [t("support.event"), c.event_title ?? (c.kind === "organizer" ? t("support.platform") : "")],
+            [t("support.order"), c.order_id ? `#${c.order_id}` : ""],
+            [t("support.ticket"), c.ticket_id ? `#${c.ticket_id}` : ""],
+            [t("support.assigned"), c.assignee_name ?? t("support.nobody")],
           ]
             .filter(([, v]) => v)
             .map(([k, v]) => (
@@ -280,22 +280,22 @@ export function SupportCase() {
       {c.can_manage && (
         <div className="flex flex-wrap items-center gap-3 border border-slate-300 p-4">
           <label>
-            Status{" "}
+            {t("support.status")}{" "}
             <select
               className="border border-slate-400 px-2 py-1"
               value={c.status}
               onChange={(e) => update.mutate({ status: e.target.value as Status })}
             >
-              {Object.entries(STATUSES).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {statusLabel(s)}
                 </option>
               ))}
             </select>
           </label>
           {user && c.assignee_id !== user.id && (
             <Button variant="secondary" onClick={() => update.mutate({ assignee_id: user.id })}>
-              Assign to me
+              {t("support.assignMe")}
             </Button>
           )}
           {update.isError && <ErrorState message={errorMessage(update.error)} />}
@@ -306,7 +306,7 @@ export function SupportCase() {
           <li key={m.id} className={`border p-3 ${m.from_requester ? "border-slate-300" : "border-brand"}`}>
             <p className="text-sm text-slate-600">
               {m.author_name}
-              {m.from_requester ? "" : " (support)"}, {formatDateTime(m.created_at)}
+              {m.from_requester ? "" : t("support.staffSuffix")}, {formatDateTime(m.created_at)}
             </p>
             <p className="mt-1 whitespace-pre-wrap">{m.body}</p>
           </li>
@@ -323,14 +323,14 @@ export function SupportCase() {
           required
           rows={4}
           maxLength={5000}
-          aria-label="Reply"
+          aria-label={t("support.reply")}
           className="w-full border border-slate-400 px-3 py-2"
           value={reply}
           onChange={(e) => setReply(e.target.value)}
         />
-        {send.isError && <ErrorState message={errorMessage(send.error, "Could not send the reply")} />}
+        {send.isError && <ErrorState message={errorMessage(send.error, t("support.replyFailed"))} />}
         <Button type="submit" loading={send.isPending}>
-          Send reply
+          {t("support.sendReply")}
         </Button>
       </form>
     </div>

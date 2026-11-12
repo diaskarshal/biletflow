@@ -10,6 +10,7 @@ import { Spinner } from "../components/Spinner";
 import { useEvent } from "../hooks/useEvent";
 import { downloadBlob } from "../lib/download";
 import { errorMessage, formatPrice } from "../lib/format";
+import { t, tOptional } from "../lib/i18n";
 import type { components } from "../api/schema";
 
 type Ticket = components["schemas"]["TicketOut"];
@@ -36,24 +37,24 @@ export function MyTickets() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 sm:py-12">
-      <h1 className="font-heading text-3xl sm:text-5xl">My tickets</h1>
-      {orders.isError && <ErrorState message={errorMessage(orders.error, "Could not load tickets")} />}
+      <h1 className="font-heading text-3xl sm:text-5xl">{t("nav.tickets")}</h1>
+      {orders.isError && <ErrorState message={errorMessage(orders.error, t("tickets.loadFailed"))} />}
       {awaiting.map((o) => (
         <p key={o.id} className="border border-slate-400 p-3">
-          Order #{o.id} for {o.event.title} ({formatPrice(o.total_kzt)} KZT) is waiting for payment.{" "}
+          {t("tickets.awaiting", { id: o.id, event: o.event.title, amount: formatPrice(o.total_kzt) })}{" "}
           <Link to={`/pay/${o.payment_id}`} className="font-semibold underline">
-            Complete payment
+            {t("tickets.completePayment")}
           </Link>
         </p>
       ))}
-      {orders.isSuccess && tickets.length === 0 && <EmptyState title="No tickets yet">Get one from the Events page.</EmptyState>}
+      {orders.isSuccess && tickets.length === 0 && <EmptyState title={t("tickets.empty")}>{t("tickets.emptyHint")}</EmptyState>}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {tickets.map(({ ticket, event }) => (
           <TicketCard key={ticket.id} ticket={ticket} event={event} onOpen={() => setShown(ticket)} />
         ))}
       </div>
       {shown && (
-        <Modal onClose={() => setShown(null)} label="Ticket QR code">
+        <Modal onClose={() => setShown(null)} label={t("tickets.qrLabel")}>
           <QrCode ticket={shown} />
         </Modal>
       )}
@@ -63,8 +64,9 @@ export function MyTickets() {
 
 function TicketCard({ ticket, event, onOpen }: { ticket: Ticket; event: EventOut; onOpen: () => void }) {
   const detail = useEvent(event.slug);
-  const type = detail.data?.ticket_types.find((t) => t.id === ticket.ticket_type_id)?.name ?? "Ticket";
-  const badge = ticket.status === "valid" ? type : `${type} · ${ticket.status.replace(/_/g, " ")}`;
+  const type = detail.data?.ticket_types.find((t) => t.id === ticket.ticket_type_id)?.name ?? t("tickets.ticket");
+  const status = tOptional(`tickets.status.${ticket.status}`) ?? ticket.status.replace(/_/g, " ");
+  const badge = ticket.status === "valid" ? type : `${type} · ${status}`;
   return <EventCard event={event} badge={badge} status={event.status} onClick={onOpen} />;
 }
 
@@ -87,15 +89,15 @@ function QrCode({ ticket }: { ticket: Ticket }) {
     <div className="space-y-4 text-center">
       <h2 className="font-heading text-2xl sm:text-3xl">{ticket.attendee_name}</h2>
       {qr.isLoading && <Spinner />}
-      {qr.isError && <ErrorState message="Could not load the QR code" />}
-      {qr.data && <img src={qr.data} alt="Ticket QR code" className="mx-auto w-full max-w-64 rounded-xl bg-white p-3" />}
-      <p className="text-sm">Show this code at the entrance.</p>
+      {qr.isError && <ErrorState message={t("tickets.qrFailed")} />}
+      {qr.data && <img src={qr.data} alt={t("tickets.qrLabel")} className="mx-auto w-full max-w-64 rounded-xl bg-white p-3" />}
+      <p className="text-sm">{t("tickets.showAtEntrance")}</p>
       <Button variant="secondary" onClick={() => downloadPdf(ticket.id)}>
-        Download PDF
+        {t("tickets.downloadPdf")}
       </Button>
       <p>
         <Link className="underline" to={`/support/new?ticket_id=${ticket.id}`}>
-          Get help with this ticket
+          {t("tickets.help")}
         </Link>
       </p>
     </div>

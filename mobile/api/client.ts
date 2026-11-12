@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import * as FileSystem from "expo-file-system/legacy";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.136:8000";
 const REQUEST_TIMEOUT_MS = 15000;
@@ -157,4 +158,53 @@ export async function apiRequest<T>(
     }
 
     return data as T;
+}
+
+export async function downloadAuthenticatedFile(
+    endpoint: string,
+    destinationUri: string
+): Promise<string> {
+    async function download() {
+        const accessToken = await SecureStore.getItemAsync("access_token");
+
+        return FileSystem.downloadAsync(
+            `${API_URL}${endpoint}`,
+            destinationUri,
+            {
+                headers: accessToken
+                    ? { Authorization: `Bearer ${accessToken}` }
+                    : {},
+            }
+        );
+    }
+
+    let result = await download();
+
+    if (result.status === 401 && (await refreshTokens())) {
+        await FileSystem.deleteAsync(destinationUri, { idempotent: true });
+        result = await download();
+    }
+
+    if (result.status < 200 || result.status >= 300) {
+        await FileSystem.deleteAsync(destinationUri, { idempotent: true });
+
+        throw new ApiError(
+            `HTTP_${result.status}`,
+            `Could not download the ticket PDF (${result.status}).`,
+            result.status
+        );
+    }
+
+    return result.uri;
+}
+
+export async function getAuthenticatedImageUrl(endpoint: string) {
+    const accessToken = await SecureStore.getItemAsync("access_token");
+
+    return {
+        uri: `${API_URL}${endpoint}`,
+        headers: accessToken
+            ? { Authorization: `Bearer ${accessToken}` }
+            : {},
+    };
 }
