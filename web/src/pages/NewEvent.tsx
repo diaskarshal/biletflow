@@ -8,7 +8,8 @@ import { CoverUpload } from "../components/CoverUpload";
 import { Input } from "../components/Input";
 import { Textarea } from "../components/Textarea";
 import { DISPLAY_TIMEZONE, eventRange } from "../lib/eventTimes";
-import { errorMessage, REFUND_POLICIES, type RefundPolicy } from "../lib/format";
+import { errorMessage, REFUND_POLICIES, refundPolicyLabel, type RefundPolicy } from "../lib/format";
+import { t } from "../lib/i18n";
 
 type TicketRow = { name: string; price: string; slots: string; limit: string };
 
@@ -84,15 +85,15 @@ export function NewEvent() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!eventRange(form).valid) {
-      setFormError("The event must end after it starts.");
+      setFormError(t("form.endAfterStart"));
       return;
     }
     if (tickets.some((t) => Number(t.slots) < 1 || Number(t.price) < 0)) {
-      setFormError("Each ticket type needs at least 1 slot and a price of 0 or more.");
+      setFormError(t("newEvent.ticketRules"));
       return;
     }
     if (tickets.some((t) => t.limit && Number(t.limit) < 1)) {
-      setFormError("Max per person must be at least 1, or left empty.");
+      setFormError(t("newEvent.limitRule"));
       return;
     }
     setFormError(null);
@@ -101,49 +102,49 @@ export function NewEvent() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-      <h1 className="font-heading text-3xl sm:text-5xl">New event</h1>
+      <h1 className="font-heading text-3xl sm:text-5xl">{t("newEvent.title")}</h1>
       <form onSubmit={submit} className="mt-6 max-w-3xl space-y-6 rounded-3xl bg-sky p-5 sm:mt-10 sm:rounded-[2.5rem] sm:p-12">
-        <h2 className="font-heading text-2xl">Event Info</h2>
+        <h2 className="font-heading text-2xl">{t("newEvent.info")}</h2>
         <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
-          <Label text="Event title">
+          <Label text={t("newEvent.eventTitle")}>
             <Input required className={field} value={form.title} onChange={set("title")} />
           </Label>
           <div className="space-y-2">
-            <span className="block text-lg">Event image</span>
+            <span className="block text-lg">{t("newEvent.image")}</span>
             <CoverUpload value={form.image} onChange={(image) => setForm((f) => ({ ...f, image }))} />
           </div>
           <div className="sm:col-span-2">
-            <Label text="Event description">
+            <Label text={t("newEvent.description")}>
               <Textarea rows={6} className={`rounded-xl ${field}`} value={form.description} onChange={set("description")} />
             </Label>
           </div>
           <div className="sm:col-span-2">
-            <Label text="Address">
+            <Label text={t("form.address")}>
               <Input className={field} value={form.address} onChange={set("address")} />
             </Label>
           </div>
-          <Label text="Date From">
+          <Label text={t("newEvent.dateFrom")}>
             <Input required type="date" className={field} value={form.dateFrom} onChange={set("dateFrom")} />
           </Label>
-          <Label text="Date To (optional)">
+          <Label text={t("newEvent.dateTo")}>
             <Input type="date" className={field} value={form.dateTo} onChange={set("dateTo")} />
           </Label>
-          <Label text="Time From">
+          <Label text={t("newEvent.timeFrom")}>
             <Input required type="time" className={field} value={form.timeFrom} onChange={set("timeFrom")} />
           </Label>
-          <Label text="Time To (optional)">
+          <Label text={t("newEvent.timeTo")}>
             <Input type="time" className={field} value={form.timeTo} onChange={set("timeTo")} />
           </Label>
           <div className="sm:col-span-2">
-            <Label text="Refund policy">
+            <Label text={t("form.refundPolicy")}>
               <select
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-brand"
                 value={form.refundPolicy}
                 onChange={(e) => setForm((f) => ({ ...f, refundPolicy: e.target.value as RefundPolicy }))}
               >
-                {Object.entries(REFUND_POLICIES).map(([value, label]) => (
+                {Object.keys(REFUND_POLICIES).map((value) => (
                   <option key={value} value={value}>
-                    {label}
+                    {refundPolicyLabel(value)}
                   </option>
                 ))}
               </select>
@@ -151,46 +152,46 @@ export function NewEvent() {
           </div>
         </div>
 
-        <h2 className="pt-4 font-heading text-2xl">Tickets</h2>
-        {tickets.map((t, i) => (
+        <h2 className="pt-4 font-heading text-2xl">{t("common.tickets")}</h2>
+        {tickets.map((ticket, i) => (
           <div key={i} className="relative grid grid-cols-2 gap-3 rounded-2xl bg-brand p-4 text-on-brand sm:flex sm:items-end sm:gap-4 sm:p-5">
             <div className="col-span-2 pr-8 sm:flex-[2] sm:pr-0">
-              <Label text="Ticket type name">
-                <Input required className={field} value={t.name} onChange={(e) => setTicket(i, "name", e.target.value)} />
+              <Label text={t("newEvent.typeName")}>
+                <Input required className={field} value={ticket.name} onChange={(e) => setTicket(i, "name", e.target.value)} />
               </Label>
             </div>
             <div className="sm:flex-1">
-              <Label text="Price">
+              <Label text={t("form.price")}>
                 <Input
                   required
                   type="number"
                   min={0}
                   className={field}
-                  value={t.price}
+                  value={ticket.price}
                   onChange={(e) => setTicket(i, "price", e.target.value)}
                 />
               </Label>
             </div>
             <div className="sm:flex-1">
-              <Label text="Slots">
+              <Label text={t("common.slots")}>
                 <Input
                   required
                   type="number"
                   min={1}
                   className={field}
-                  value={t.slots}
+                  value={ticket.slots}
                   onChange={(e) => setTicket(i, "slots", e.target.value)}
                 />
               </Label>
             </div>
             <div className="sm:flex-1">
-              <Label text="Max per person">
+              <Label text={t("form.maxPerPerson")}>
                 <Input
                   type="number"
                   min={1}
-                  placeholder="No limit"
+                  placeholder={t("form.noLimit")}
                   className={field}
-                  value={t.limit}
+                  value={ticket.limit}
                   onChange={(e) => setTicket(i, "limit", e.target.value)}
                 />
               </Label>
@@ -198,7 +199,7 @@ export function NewEvent() {
             {tickets.length > 1 && (
               <button
                 type="button"
-                aria-label={`Remove ticket type ${i + 1}`}
+                aria-label={t("newEvent.removeType", { n: i + 1 })}
                 className="absolute top-2 right-3 p-1 text-2xl sm:static sm:pb-2"
                 onClick={() => setTickets((rows) => rows.filter((_, j) => j !== i))}
               >
@@ -212,15 +213,15 @@ export function NewEvent() {
           onClick={() => setTickets((rows) => [...rows, { ...emptyTicket }])}
           className="w-full rounded-2xl bg-brand px-5 py-4 text-left font-heading text-lg text-on-brand sm:px-8 sm:text-xl"
         >
-          + Add ticket type
+          {t("newEvent.addType")}
         </button>
 
         {(formError || create.isError) && (
-          <ErrorState message={formError ?? errorMessage(create.error, "Could not create the event")} />
+          <ErrorState message={formError ?? errorMessage(create.error, t("newEvent.failed"))} />
         )}
         <div className="flex justify-end">
           <Button type="submit" loading={create.isPending} className="w-full px-8 py-4 text-xl sm:w-auto">
-            Confirm and Create
+            {t("newEvent.submit")}
           </Button>
         </div>
       </form>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { tOptional } from "../lib/i18n";
 
 export type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 
@@ -28,5 +29,5 @@ export function Badge({ tone = "neutral", children }: { tone?: BadgeTone; childr
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  return <Badge tone={statusTone[status] ?? "neutral"}>{status.replace(/_/g, " ")}</Badge>;
+  return <Badge tone={statusTone[status] ?? "neutral"}>{tOptional(`status.${status}`) ?? status.replace(/_/g, " ")}</Badge>;
 }
