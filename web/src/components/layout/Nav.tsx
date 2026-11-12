@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { LANGS, lang, setLang, t } from "../../lib/i18n";
 
 // Protected links (My tickets, Organizer, Profile) are always shown; RequireAuth sends guests to login.
-// Below md the links collapse into a menu button.
+// Below lg the links collapse into a menu button.
 export function Nav() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -18,9 +18,10 @@ export function Nav() {
   const shown = user?.is_admin ? [...links, { to: "/admin", label: t("nav.admin") }] : links;
 
   return (
-    <nav className="relative border-b border-black">
-      <div className="mx-auto flex max-w-6xl items-center px-4 py-5 text-black sm:px-6">
-        <Link to="/" className="font-heading text-xl" onClick={() => setOpen(false)}>
+    <nav className="sticky top-0 z-40 border-b border-brand-dark bg-brand font-nav text-white">
+      <div className="mx-auto flex max-w-6xl items-center px-4 py-5 sm:px-6">
+        <Link to="/" className="flex shrink-0 items-center gap-3 text-xl" onClick={() => setOpen(false)}>
+          <img src="/logo.png" alt="" className="h-8 w-auto" />
           BiletFlow
         </Link>
         <div role="group" aria-label={t("nav.language")} className="ml-auto flex gap-2 text-sm md:order-last md:ml-8">
@@ -48,7 +49,7 @@ export function Nav() {
         </button>
         <div
           id="nav-links"
-          className={`${open ? "flex" : "hidden"} absolute inset-x-0 top-full z-40 flex-col border-b border-black bg-white px-4 pb-4 font-heading md:static md:ml-auto md:flex md:flex-row md:gap-8 md:border-0 md:p-0 lg:gap-12`}
+          className={`${open ? "flex" : "hidden"} absolute inset-x-0 top-full z-40 flex-col border-b border-brand-dark bg-brand px-4 pb-4 sm:px-6 lg:static lg:ml-auto lg:flex lg:flex-row lg:gap-4 lg:border-0 lg:p-0 xl:gap-8`}
         >
           {shown.map((l) => (
             <NavLink
@@ -56,7 +57,7 @@ export function Nav() {
               to={l.to}
               end={l.end}
               onClick={() => setOpen(false)}
-              className={({ isActive }) => `py-3 md:py-0 ${isActive ? "underline underline-offset-8" : ""}`}
+              className={({ isActive }) => `py-3 lg:py-0 ${isActive ? "underline underline-offset-8" : ""}`}
             >
               {l.label}
             </NavLink>

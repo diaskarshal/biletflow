@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Unbounded";
+  src: url("/Unbounded-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;  
+  font-display: swap;
+}
+
 @theme {
+  --font-nav: "Unbounded", sans-serif;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-heading: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --color-brand: #002262;
