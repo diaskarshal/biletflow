@@ -32,8 +32,6 @@ curl localhost:8000/health
 - API docs: http://localhost:8000/docs
 - Mailhog (all outgoing email): http://localhost:8025
 
-The customer-facing site is in Kazakh (default) and Russian, with English as an extra option. Switch with Қаз / Рус / Eng in the top bar; the choice is remembered. Organizer and admin pages are in English.
-
 Demo accounts, password `password123`:
 
 - `admin@biletflow.kz` platform admin

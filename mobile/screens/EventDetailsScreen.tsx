@@ -18,9 +18,13 @@ import {
 } from "../api/events";
 
 import type { RootStackParamList } from "../navigation/AppNavigation";
-import {Alert, Pressable} from "react-native";
+import {Alert, Pressable, TextInput} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {createOrder} from "../api/orders";
+import { reportEvent } from "../api/events";
 import {useSession} from "../session/SessionContext";
+import { locale, t, tOptional } from "../i18n";
 
 type Props = NativeStackScreenProps<RootStackParamList, "EventDetails">;
 
@@ -29,6 +33,7 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
 
     const [event, setEvent] = useState<PublicEventDetails | null>(null);
     const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
+    const [promoCode, setPromoCode] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -52,7 +57,7 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
                     setError(
                         e instanceof Error
                             ? e.message
-                            : "Could not load this event."
+                            : t("event.openFailed")
                     );
                 }
             } finally {
@@ -71,7 +76,7 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
         return (
             <View style={styles.center}>
                 <ActivityIndicator size="large" color="#2563eb" />
-                <Text style={styles.loadingText}>Loading event...</Text>
+                <Text style={styles.loadingText}>{t("event.loading")}</Text>
             </View>
         );
     }
@@ -79,9 +84,9 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
     if (error || !event) {
         return (
             <View style={styles.center}>
-                <Text style={styles.errorTitle}>Could not open event</Text>
+                <Text style={styles.errorTitle}>{t("event.openFailed")}</Text>
                 <Text style={styles.errorText}>
-                    {error || "Event not found."}
+                    {error || t("event.notFound")}
                 </Text>
             </View>
         );
@@ -92,14 +97,14 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
 
     const timezone = event.display_timezone || "Asia/Almaty";
 
-    const date = new Intl.DateTimeFormat("en-US", {
+    const date = new Intl.DateTimeFormat(locale(), {
         month: "long",
         day: "numeric",
         year: "numeric",
         timeZone: timezone,
     }).format(new Date(event.starts_at));
 
-    const time = new Intl.DateTimeFormat("en-US", {
+    const time = new Intl.DateTimeFormat(locale(), {
         hour: "2-digit",
         minute: "2-digit",
         hourCycle: "h23",
@@ -127,7 +132,7 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
             )}
 
             <View style={styles.body}>
-                <Text style={styles.eyebrow}>EVENT DETAILS</Text>
+                <Text style={styles.eyebrow}>{t("event.eyebrow")}</Text>
 
                 <Text style={styles.title}>{event.title}</Text>
 
@@ -151,18 +156,18 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
                 )}
 
                 <View style={styles.slotsBox}>
-                    <Text style={styles.slotsLabel}>AVAILABLE SLOTS</Text>
+                    <Text style={styles.slotsLabel}>{t("event.slots")}</Text>
                     <Text style={styles.slotsValue}>
                         {slots.left} / {slots.total}
                     </Text>
                     <Text style={styles.slotsDescription}>
-                        Remaining tickets
+                        {t("event.remaining")}
                     </Text>
                 </View>
 
                 {event.description && (
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>About this event</Text>
+                        <Text style={styles.sectionTitle}>{t("event.about")}</Text>
                         <Text style={styles.description}>
                             {event.description}
                         </Text>
@@ -178,16 +183,23 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
                     }
                 >
                     <Text style={styles.contactButtonText}>
-                        Contact Organizer
+                        {t("event.contact")}
                     </Text>
                 </Pressable>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Tickets</Text>
+                    <Text style={styles.sectionTitle}>{t("event.tickets")}</Text>
+                    <TextInput
+                        style={styles.promoInput}
+                        value={promoCode}
+                        onChangeText={setPromoCode}
+                        placeholder={t("event.promo")}
+                        autoCapitalize="characters"
+                    />
 
                     {visibleTypes.length === 0 ? (
                         <Text style={styles.mutedText}>
-                            No ticket types are currently available.
+                            {t("event.noTypes")}
                         </Text>
                     ) : (
                         visibleTypes.map((ticket) => (
@@ -195,6 +207,7 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
                                 key={ticket.id}
                                 ticket={ticket}
                                 eventId = {event.id}
+                                promoCode = {promoCode.trim()}
                                 eventCancelled={event.status === "cancelled"}
                                 paidSalesEnabled={event.paid_sales_enabled}
                             />
@@ -203,34 +216,57 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Refund policy</Text>
+                    <Text style={styles.sectionTitle}>{t("event.refundPolicy")}</Text>
                     <Text style={styles.description}>
-                        {event.refund_policy === "full_until_48h"
-                            ? "Full refund up to 48 hours before the event."
-                            : event.refund_policy === "full_anytime"
-                                ? "Full refund any time before the event."
-                                : event.refund_policy === "no_refunds"
-                                    ? "No refunds."
-                                    : event.refund_policy}
+                        {tOptional(`refund.${event.refund_policy}`) ?? event.refund_policy}
                     </Text>
                 </View>
+
+                <ReportEvent eventId={event.id} />
             </View>
         </ScrollView>
+    );
+}
+
+function ReportEvent({ eventId }: { eventId: number }) {
+    const [reason, setReason] = useState("");
+    const [sent, setSent] = useState(false);
+    if (sent) return <Text style={styles.description}>{t("report.thanks")}</Text>;
+    return (
+        <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t("report.open")}</Text>
+            <TextInput style={styles.promoInput} value={reason} onChangeText={setReason} placeholder={t("report.placeholder")} multiline />
+            <Pressable
+                style={[styles.contactButton, !reason.trim() && styles.purchaseButtonDisabled]}
+                disabled={!reason.trim()}
+                onPress={() =>
+                    reportEvent(eventId, reason.trim()).then(
+                        () => setSent(true),
+                        (e) => Alert.alert(t("common.error"), e instanceof Error ? e.message : ""),
+                    )
+                }
+            >
+                <Text style={styles.contactButtonText}>{t("report.send")}</Text>
+            </Pressable>
+        </View>
     );
 }
 
 function TicketCard({
     ticket,
     eventId,
+    promoCode,
     eventCancelled,
     paidSalesEnabled,
 }: {
     ticket: TicketType;
+    promoCode: string;
     eventCancelled: boolean;
     paidSalesEnabled: boolean;
     eventId: number;
 }) {
     const {user} = useSession();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const [purchasing, setPurchasing] = useState(false);
     const remaining = Math.max(
         ticket.quantity_total -
@@ -242,25 +278,25 @@ function TicketCard({
     let unavailableReason: string | null = null;
 
     if (eventCancelled) {
-        unavailableReason = "Cancelled";
+        unavailableReason = t("event.reasonCancelled");
     } else if (ticket.price_kzt > 0 && !paidSalesEnabled) {
-        unavailableReason = "Not on sale yet";
+        unavailableReason = t("event.reasonNotOnSale");
     } else if (remaining <= 0) {
-        unavailableReason = "Sold out";
+        unavailableReason = t("event.reasonSoldOut");
     } else if (
         ticket.sales_start_at &&
         new Date(ticket.sales_start_at).getTime() > Date.now()
     ) {
-        unavailableReason = "Not on sale yet";
+        unavailableReason = t("event.reasonNotOnSale");
     } else if (
         ticket.sales_end_at &&
         new Date(ticket.sales_end_at).getTime() < Date.now()
     ) {
-        unavailableReason = "Sales closed";
+        unavailableReason = t("event.reasonClosed");
     }
 
     const isFree = ticket.price_kzt === 0;
-    const canPurchase = !unavailableReason && isFree && !purchasing;
+    const canPurchase = !unavailableReason && !purchasing;
 
     async function handlePurchase() {
         if (!user || !canPurchase) return;
@@ -282,26 +318,16 @@ function TicketCard({
                         ],
                     },
                 ],
+                promo_code: ticket.price_kzt > 0 && promoCode ? promoCode : null,
             });
 
-            if (order.status === "paid" && order.tickets.length > 0) {
-                Alert.alert(
-                    "Ticket purchased!",
-                    `Your ticket for this event is ready. You can find it in My Tickets.`
-                );
+            if (order.payment_id) {
+                navigation.navigate("Payment", { paymentId: order.payment_id });
             } else {
-                Alert.alert(
-                    "Order created",
-                    "Your order was created, but the ticket is not ready yet."
-                );
+                Alert.alert(t("event.purchasedTitle"), t("event.purchasedBody"));
             }
         } catch (error) {
-            Alert.alert(
-                "Purchase failed",
-                error instanceof Error
-                    ? error.message
-                    : "Could not purchase this ticket. Please try again."
-            );
+            Alert.alert(t("event.purchaseFailed"), error instanceof Error ? error.message : t("common.error"));
         } finally {
             setPurchasing(false);
         }
@@ -312,14 +338,14 @@ function TicketCard({
             <View style={styles.ticketInfo}>
                 <Text style={styles.ticketName}>{ticket.name}</Text>
                 <Text style={styles.ticketAvailability}>
-                    {unavailableReason ?? `${remaining} tickets available`}
+                    {unavailableReason ?? t("event.available", { n: remaining })}
                 </Text>
             </View>
 
             <View style = {styles.ticketActions}>
                 <Text style = {styles.ticketPrice}>
                     {isFree
-                        ? "Free"
+                        ? t("common.free")
                         : `${ticket.price_kzt.toLocaleString("ru-RU")} KZT`}
                 </Text>
 
@@ -332,12 +358,12 @@ function TicketCard({
                 >
                     <Text style = {styles.purchaseButtonText}>
                         {purchasing
-                            ? "Processing..."
+                            ? t("event.processing")
                             : unavailableReason
                                 ? unavailableReason
                                 : isFree
-                                    ? "Get ticket"
-                                    : "Coming soon"}
+                                    ? t("event.getTicket")
+                                    : t("event.buy")}
                     </Text>
                 </Pressable>
             </View>
@@ -346,6 +372,13 @@ function TicketCard({
 }
 
 const styles = StyleSheet.create({
+    promoInput: {
+        borderWidth: 1,
+        borderColor: "#999999",
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 10,
+    },
     ticketActions:{
         alignItems: "flex-end",
         gap: 9,

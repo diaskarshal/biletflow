@@ -1,6 +1,5 @@
 
 import {
-    View,
     Text,
     TextInput,
     Pressable,
@@ -15,6 +14,7 @@ import { useState } from "react";
 
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigation";
+import { t, type MessageKey } from "../i18n";
 
 import {
     createSupportCase,
@@ -26,15 +26,15 @@ type Props = NativeStackScreenProps<
     "NewSupportCase"
 >;
 
-const CATEGORIES: { value: SupportCategory; label: string }[] = [
-    { value: "ticket_delivery", label: "Ticket delivery" },
-    { value: "payment", label: "Payment" },
-    { value: "refund", label: "Refund" },
-    { value: "seating", label: "Seating" },
-    { value: "event_information", label: "Event information" },
-    { value: "check_in", label: "Check-in" },
-    { value: "account", label: "Account" },
-    { value: "technical", label: "Technical issue" },
+const CATEGORIES: { value: SupportCategory }[] = [
+    { value: "ticket_delivery" },
+    { value: "payment" },
+    { value: "refund" },
+    { value: "seating" },
+    { value: "event_information" },
+    { value: "check_in" },
+    { value: "account" },
+    { value: "technical" },
 ];
 
 export default function NewSupportCaseScreen({
@@ -59,7 +59,7 @@ export default function NewSupportCaseScreen({
 
     async function submitRequest() {
         if (!subject.trim() || !message.trim()) {
-            setError("Please fill in both the subject and message.");
+            setError(t("support.fillBoth"));
             return;
         }
 
@@ -76,8 +76,8 @@ export default function NewSupportCaseScreen({
             });
 
             Alert.alert(
-                "Request submitted",
-                `Your support request #${created.id} has been sent to the organizer.`,
+                t("support.submittedTitle"),
+                t("support.submittedBody", { id: created.id }),
                 [
                     {
                         text: "OK",
@@ -91,7 +91,7 @@ export default function NewSupportCaseScreen({
             setError(
                 err instanceof Error
                     ? err.message
-                    : "Could not submit your request."
+                    : t("common.error")
             );
         } finally {
             setSubmitting(false);
@@ -104,29 +104,29 @@ export default function NewSupportCaseScreen({
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
         >
-            <Text style={styles.title}>Contact the organizer</Text>
+            <Text style={styles.title}>{t("title.contactOrganizer")}</Text>
 
             <Text style={styles.description}>
-                About: This event
+                {ticketId ? t("support.aboutTicket", { id: ticketId }) : t("support.aboutEvent")}
             </Text>
 
-            <Text style={styles.label}>Category</Text>
+            <Text style={styles.label}>{t("support.categoryLabel")}</Text>
 
             <Pressable
                 style={styles.select}
                 onPress={() => setCategoryVisible(true)}
             >
                 <Text style={styles.selectText}>
-                    {selectedCategory?.label}
+                    {selectedCategory && t(`cat.${selectedCategory.value}` as MessageKey)}
                 </Text>
                 <Text style={styles.arrow}>▼</Text>
             </Pressable>
 
-            <Text style={styles.label}>Subject</Text>
+            <Text style={styles.label}>{t("support.subjectLabel")}</Text>
 
             <TextInput
                 style={styles.input}
-                placeholder="What is the problem?"
+                placeholder={t("support.subject")}
                 value={subject}
                 onChangeText={setSubject}
                 maxLength={200}
@@ -137,11 +137,11 @@ export default function NewSupportCaseScreen({
                 {subject.length}/200
             </Text>
 
-            <Text style={styles.label}>Message</Text>
+            <Text style={styles.label}>{t("support.messageLabel")}</Text>
 
             <TextInput
                 style={[styles.input, styles.messageInput]}
-                placeholder="Describe your problem in detail..."
+                placeholder={t("support.message")}
                 value={message}
                 onChangeText={setMessage}
                 multiline
@@ -170,7 +170,7 @@ export default function NewSupportCaseScreen({
                     <ActivityIndicator color="#ffffff" />
                 ) : (
                     <Text style={styles.submitText}>
-                        Send request
+                        {t("support.send")}
                     </Text>
                 )}
             </Pressable>
@@ -190,7 +190,7 @@ export default function NewSupportCaseScreen({
                         onPress={() => {}}
                     >
                         <Text style={styles.modalTitle}>
-                            Select a category
+                            {t("support.selectCategory")}
                         </Text>
 
                         {CATEGORIES.map((item) => (
@@ -209,7 +209,7 @@ export default function NewSupportCaseScreen({
                                             styles.selectedCategory,
                                     ]}
                                 >
-                                    {item.label}
+                                    {t(`cat.${item.value}` as MessageKey)}
                                 </Text>
                             </Pressable>
                         ))}

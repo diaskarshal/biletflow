@@ -1,6 +1,5 @@
 import { ApiError } from "../api/client";
 
-// What the door staff sees after a scan (SRS §4.8: valid, invalid, cancelled, refunded, already used).
 export type ScanOutcome =
     | { kind: "valid"; attendeeName: string; ticketId: number }
     | {
@@ -15,7 +14,6 @@ export type ScanOutcome =
           message: string;
       };
 
-// QR codes that are not admission tickets never reach the server.
 export function rejectedQrOutcome(kind: "link" | "unknown"): ScanOutcome {
     if (kind === "link") {
         return {
@@ -26,7 +24,6 @@ export function rejectedQrOutcome(kind: "link" | "unknown"): ScanOutcome {
     return { kind: "not_ticket", message: "This QR code is not a BiletFlow ticket." };
 }
 
-// Maps the backend's error codes from POST /api/v1/checkin (docs/api-contract.md) to a result.
 export function outcomeFromError(error: unknown): ScanOutcome {
     if (!(error instanceof ApiError)) {
         return { kind: "error", message: "Something went wrong. Scan again." };

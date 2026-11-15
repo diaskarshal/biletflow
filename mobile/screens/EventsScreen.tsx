@@ -25,7 +25,6 @@ const STATUS_LABEL: Record<EventItem["status"], string> = {
     completed: "Completed",
 };
 
-// Only published events can be scanned; the rest are shown but disabled.
 function isScannable(event: EventItem) {
     return event.status === "published";
 }
@@ -52,7 +51,6 @@ export default function EventsScreen({ navigation }: Props) {
         }
     }, []);
 
-    // Reload whenever the screen comes into focus (also after returning from the scanner).
     useFocusEffect(
         useCallback(() => {
             load();

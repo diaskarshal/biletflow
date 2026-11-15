@@ -19,6 +19,7 @@ import {
 import {useNavigation} from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigation";
+import { locale, t } from "../i18n";
 
 import {
     calculateSlots,
@@ -47,7 +48,7 @@ export default function EventsTabScreen() {
             setNextCursor(response.next_cursor);
         } catch(e) {
             setError(
-                e instanceof Error ? e.message: "Could not load events"
+                e instanceof Error ? e.message: t("events.loadFailed")
             );
         } finally {
             setLoading(false);
@@ -88,7 +89,7 @@ export default function EventsTabScreen() {
             setNextCursor(response.next_cursor);
         } catch (e) {
             setError(
-                e instanceof Error? e.message : "Could not load more events"
+                e instanceof Error? e.message : t("events.loadFailed")
             );
         } finally {
             setLoadingMore (false);
@@ -118,11 +119,11 @@ export default function EventsTabScreen() {
                 ListHeaderComponent={
                     <View>
                         <Text style = {styles.heading}>
-                            Discover Events
+                            {t("events.discover")}
                         </Text>
 
                         <Text style = {styles.subtitle}>
-                            Find something exciting happening around you!
+                            {t("events.subtitle")}
                         </Text>
 
                         <View style = {styles.searchContainer}>
@@ -130,7 +131,7 @@ export default function EventsTabScreen() {
 
                             <TextInput
                                 style={styles.searchInput}
-                                placeholder = "Search events or locations..."
+                                placeholder = {t("events.search")}
                                 placeholderTextColor = "#999"
                                 value = {search}
                                 onChangeText = {setSearch}
@@ -138,7 +139,7 @@ export default function EventsTabScreen() {
                         </View>
 
                         <Text style = {styles.sectionTitle}>
-                            Upcoming Events
+                            {t("events.upcoming")}
                         </Text>
 
                         {error !== "" && (
@@ -149,7 +150,7 @@ export default function EventsTabScreen() {
 
                                 <Pressable onPress={loadFirstPage}>
                                     <Text style = {styles.retryText}>
-                                        Try again
+                                        {t("common.tryAgain")}
                                     </Text>
                                 </Pressable>
                             </View>
@@ -169,11 +170,11 @@ export default function EventsTabScreen() {
                     !loading && !error ? (
                         <View style = {styles.emptyContainer}>
                             <Text style = {styles.emptyTitle}>
-                                No events found
+                                {t("events.none")}
                             </Text>
 
                             <Text style = {styles.emptyText}>
-                                Search for something else or check back later
+                                {t("events.noneHint")}
                             </Text>
                         </View>
                     ) : undefined
@@ -227,14 +228,14 @@ function EventCard({event}: {event: PublicEvent}) {
         };
     }, [event.id]);
 
-    const date = new Intl.DateTimeFormat("en-GB", {
+    const date = new Intl.DateTimeFormat(locale(), {
         month: "long",
         day: "numeric",
         year: "numeric",
         timeZone: event.display_timezone || "Asia/Almaty",
     }).format(new Date(event.starts_at));
 
-    const time = new Intl.DateTimeFormat("en-GB", {
+    const time = new Intl.DateTimeFormat(locale(), {
         hour: "numeric",
         minute: "2-digit",
         timeZone: event.display_timezone || "Asia/Almaty",
@@ -269,7 +270,7 @@ function EventCard({event}: {event: PublicEvent}) {
 
             <View style={styles.cardContent}>
                 <Text style={styles.cardEyebrow}>
-                    UPCOMING EVENT
+                    {t("events.badge")}
                 </Text>
 
                 <Text style={styles.eventTitle}>
@@ -300,16 +301,16 @@ function EventCard({event}: {event: PublicEvent}) {
                     <Text style={styles.infoText}>
                         {slotsLoaded
                             ? slots.total > 0
-                                ? `${slots.left} / ${slots.total} slots available`
-                                : "No ticket slots"
-                            : "Loading slots..."}
+                                ? t("events.slotsLeft", { left: slots.left, total: slots.total })
+                                : t("events.noSlots")
+                            : t("events.loadingSlots")}
                     </Text>
                 </View>
 
                 <View style={styles.cardDivider} />
 
                 <Text style={styles.cardBottomText}>
-                    Discover this event →
+                    {t("events.open")} →
                 </Text>
             </View>
         </Pressable>

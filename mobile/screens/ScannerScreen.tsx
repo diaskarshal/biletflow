@@ -13,13 +13,9 @@ import type { ScanOutcome } from "../utils/scanOutcome";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Scanner">;
 
-// A successful check-in closes itself so staff can keep scanning; problems stay until tapped.
 const VALID_AUTO_DISMISS_MS = 2500;
-// After a result is dismissed, ignore the same QR for a moment: it is usually still in front of
-// the camera and would otherwise be read again (and show "already used" right after "valid").
 const SAME_QR_COOLDOWN_MS = 3000;
 
-// Every result uses colour AND a symbol AND text, so it is readable without relying on colour.
 const OUTCOME_UI: Record<ScanOutcome["kind"], { color: string; symbol: string; label: string }> = {
     valid: { color: "#1b7a34", symbol: "✓", label: "VALID" },
     already_used: { color: "#b26a00", symbol: "!", label: "ALREADY USED" },
@@ -52,7 +48,6 @@ export default function ScannerScreen({ route, navigation }: Props) {
         });
     }, [navigation, eventId]);
 
-    // Refs, not state: the camera can report the same QR several times before a state update lands.
     const busy = useRef(false);
     const lastScan = useRef<{ data: string; at: number } | null>(null);
     const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

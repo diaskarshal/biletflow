@@ -2,15 +2,17 @@ import { ScrollView, StyleSheet, Text, View, Pressable, ActivityIndicator } from
 import { Image } from "expo-image";
 import { getAuthenticatedImageUrl } from "../api/client";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
+import type { RootStackParamList } from "../navigation/AppNavigation";
 import { useEffect, useState } from "react";
 import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { downloadAuthenticatedFile } from "../api/client";
+import { locale, t } from "../i18n";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TicketDetails">;
 
 export default function TicketDetailsScreen({route, navigation}: Props) {
-    const {ticket, event, orderStatus} = route.params;
+    const {ticket, event} = route.params;
     const [downloading, setDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState("");
     const [qrImage, setQrImage] = useState<{
@@ -32,7 +34,6 @@ export default function TicketDetailsScreen({route, navigation}: Props) {
                     setQrImage(image);
                 }
             } catch (error){
-                console.error("QR IMAGE ERROR", error);
 
                 if (active) {
                     setQrError(true);
@@ -48,7 +49,7 @@ export default function TicketDetailsScreen({route, navigation}: Props) {
     }, [ticket.id]);
 
     function formatDate(dateString: string) {
-        return new Date (dateString).toLocaleDateString("ru-RU", {
+        return new Date (dateString).toLocaleDateString(locale(), {
             weekday: "long",
             day: "numeric",
             month: "long",
@@ -57,7 +58,7 @@ export default function TicketDetailsScreen({route, navigation}: Props) {
     }
 
     function formatTime(dateString: string, timezone: string) {
-        return new Date(dateString).toLocaleTimeString("ru-RU", {
+        return new Date(dateString).toLocaleTimeString(locale(), {
             hour: "2-digit",
             minute: "2-digit",
             hourCycle: "h23",
@@ -71,49 +72,20 @@ async function downloadPdf() {
         setDownloading(true);
         setDownloadError("");
 
-        const directory =
-            FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
-
-        if (!directory) {
-            throw new Error("Could not access device storage.");
-        }
-
-        const fileUri = `${directory}ticket-${ticket.id}.pdf`;
+        const fileUri = `${FileSystem.cacheDirectory}ticket-${ticket.id}.pdf`;
 
         const uri = await downloadAuthenticatedFile(
             `/api/v1/tickets/${ticket.id}/pdf`,
             fileUri
         );
 
-        const permissions =
-            await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-
-        if (!permissions.granted) {
-            return;
-        }
-
-        const destinationUri =
-            await FileSystem.StorageAccessFramework.createFileAsync(
-                permissions.directoryUri,
-                `ticket-${ticket.id}.pdf`,
-                "application/pdf"
-            );
-
-        const base64 = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
-        });
-
-        await FileSystem.writeAsStringAsync(destinationUri, base64, {
-            encoding: FileSystem.EncodingType.Base64,
-        });
+        await Sharing.shareAsync(uri, { mimeType: "application/pdf", UTI: "com.adobe.pdf", dialogTitle: t("ticket.downloadPdf") });
 
     } catch (error) {
-        console.error("TICKET PDF ERROR:", error);
-
         setDownloadError(
             error instanceof Error
                 ? error.message
-                : "Could not save the ticket PDF."
+                : t("ticket.pdfFailed")
         );
     } finally {
         setDownloading(false);
@@ -139,13 +111,13 @@ async function downloadPdf() {
                                 contentFit="contain"
                             />
                         ) : qrError ? (
-                            <Text>Could not load QR code.</Text>
+                            <Text>{t("common.error")}</Text>
                         ) : (
                             <ActivityIndicator size="large" />
                         )}
                     </View>
                     <Text style = {styles.qrHint}>
-                        Show this code at the entrance.
+                        {t("ticket.showAtEntrance")}
                     </Text>
                 </View>
                 <Pressable style = {[styles.downloadButton, downloading && styles.disableButton,]} onPress = {downloadPdf} disabled = {downloading}>
@@ -153,7 +125,7 @@ async function downloadPdf() {
                         <ActivityIndicator color = "#ffffff" />
                     ) : (
                         <Text style = {styles.downloadButtonText}>
-                            Download PDF
+                            {t("ticket.downloadPdf")}
                         </Text>
                     )}
                 </Pressable>
@@ -162,8 +134,8 @@ async function downloadPdf() {
                 ): null}
 
                 <Pressable style = {styles.helpButton} onPress={() => navigation.navigate("NewSupportCase", { ticketId: ticket.id})}>
-                    <Text stle = {styles.helpButtonText}>
-                        Get help with this ticket
+                    <Text style = {styles.helpButtonText}>
+                        {t("ticket.help")}
                     </Text>
                 </Pressable>
             </View>

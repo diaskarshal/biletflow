@@ -87,3 +87,14 @@ export async function sendSupportMessage(
         body: JSON.stringify({ body }),
     });
 }
+
+export async function getSupportInbox(): Promise<SupportCase[]> {
+    return apiRequest("/api/v1/support/inbox");
+}
+
+export async function setSupportStatus(id: number, status: SupportStatus): Promise<SupportCaseDetail> {
+    return apiRequest(`/api/v1/support/cases/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+    });
+}

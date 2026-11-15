@@ -11,10 +11,6 @@ import { getCurrentUser, loginUser, logoutUser } from "../api/auth";
 import type { LoginData, User } from "../api/auth";
 import { ApiError, hasStoredTokens, setSessionExpiredHandler } from "../api/client";
 
-// loading     - checking for a saved session at launch
-// signedOut   - no valid session, show Login/Register
-// signedIn    - valid session, show the app
-// unreachable - a session may exist but the server can't be reached right now
 type SessionStatus = "loading" | "signedOut" | "signedIn" | "unreachable";
 
 type SessionValue = {

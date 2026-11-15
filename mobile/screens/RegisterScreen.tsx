@@ -7,6 +7,7 @@ import {
     StyleSheet,
 } from "react-native";
 import { registerUser } from "../api/auth";
+import { t } from "../i18n";
 
 export default function RegisterScreen() {
     const [fullName, setFullName] = useState("")
@@ -27,12 +28,12 @@ export default function RegisterScreen() {
                 password,
             });
 
-            setMessage("Registration complete. You can log in now.");
+            setMessage(t("register.done"));
         } catch (error) {
             if (error instanceof Error) {
                 setMessage(error.message);
             } else {
-                setMessage("Registration failed");
+                setMessage(t("common.error"));
             }
         } finally {
             setLoading(false);
@@ -41,18 +42,18 @@ export default function RegisterScreen() {
 
     return(
         <View style = {styles.container}>
-            <Text style = {styles.title}> Create account </Text>
+            <Text style = {styles.title}>{t("register.title")}</Text>
 
             <TextInput
                 style = {styles.input}
-                placeholder = "Full name"
+                placeholder = {t("register.fullName")}
                 value = {fullName}
                 onChangeText = {setFullName}
             />
 
             <TextInput
                 style = {styles.input}
-                placeholder = "Email"
+                placeholder = {t("login.email")}
                 value = {email}
                 onChangeText = {setEmail}
                 keyboardType = "email-address"
@@ -61,16 +62,19 @@ export default function RegisterScreen() {
 
             <TextInput
                 style = {styles.input}
-                placeholder = "Password"
+                placeholder = {t("login.password")}
                 value = {password}
                 onChangeText = {setPassword}
                 secureTextEntry
             />
+            <Text style = {[styles.hint, password.length > 0 && password.length < 8 && styles.hintError]}>
+                {t("register.passwordRule")}
+            </Text>
 
             <Button
-                title = {loading ? "Registering..." : "Register"}
+                title = {loading ? t("register.registering") : t("register.submit")}
                 onPress = {handleRegister}
-                disabled = {loading}
+                disabled = {loading || password.length < 8}
             />
 
             {message != "" && (
@@ -104,5 +108,12 @@ const styles = StyleSheet.create({
     message: {
         marginTop: 16,
         textAlign: "center",
+    },
+    hint: {
+        marginBottom: 12,
+        color: "#555555",
+    },
+    hintError: {
+        color: "#b00020",
     },
 })

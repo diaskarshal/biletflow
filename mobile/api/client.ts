@@ -1,17 +1,16 @@
 import * as SecureStore from "expo-secure-store";
+import { tOptional } from "../i18n";
 import * as FileSystem from "expo-file-system/legacy";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.136:8000";
 const REQUEST_TIMEOUT_MS = 15000;
 
-// Backend error envelope: {"error": {"code": "...", "message": "...", "details": {}}}
-// Screens should switch on `code`, not on the English message.
 export class ApiError extends Error {
     code: string;
     status: number;
 
     constructor(code: string, message: string, status = 0) {
-        super(message);
+        super(tOptional(`err.${code}`) ?? message);
         this.name = "ApiError";
         this.code = code;
         this.status = status;
@@ -37,7 +36,6 @@ export async function hasStoredTokens(): Promise<boolean> {
     return (await SecureStore.getItemAsync("access_token")) !== null;
 }
 
-// The session layer registers this so a rejected refresh token signs the user out.
 let onSessionExpired: (() => void) | null = null;
 
 export function setSessionExpiredHandler(handler: (() => void) | null) {
@@ -77,7 +75,6 @@ function refreshTokens(): Promise<boolean> {
                 body: JSON.stringify({ refresh_token }),
             });
         } catch {
-            // Network problem, not a rejected token: keep the session so it can recover.
             return false;
         }
 
@@ -95,7 +92,6 @@ function refreshTokens(): Promise<boolean> {
     return refreshing;
 }
 
-// Empty bodies (204) and non-JSON responses (proxy error pages) come back as null.
 async function readBody(response: Response): Promise<any> {
     const text = await response.text();
     if (!text) return null;
@@ -136,7 +132,7 @@ export async function apiRequest<T>(
     const response = await fetchWithTimeout(`${API_URL}${endpoint}`, {
         ...options,
         headers: {
-            "Content-Type": "application/json",
+            ...(typeof options?.body === "string" && { "Content-Type": "application/json" }),
             ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
             ...options?.headers,
         },
@@ -200,11 +196,7 @@ export async function downloadAuthenticatedFile(
 
 export async function getAuthenticatedImageUrl(endpoint: string) {
     const accessToken = await SecureStore.getItemAsync("access_token");
+    const headers: Record<string, string> = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 
-    return {
-        uri: `${API_URL}${endpoint}`,
-        headers: accessToken
-            ? { Authorization: `Bearer ${accessToken}` }
-            : {},
-    };
+    return { uri: `${API_URL}${endpoint}`, headers };
 }

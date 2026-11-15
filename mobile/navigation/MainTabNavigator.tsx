@@ -1,13 +1,4 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import {
-    View,
-    Text,
-    Pressable,
-    StyleSheet,
-} from "react-native";
-import { useNavigation} from "@react-navigation/native";
-import { NativeStackNavigationProp} from "@react-navigation/native-stack";
-import type { RootStackParamList } from "./AppNavigation";
 type TabParamList = {
     EventsTab: undefined;
     TicketsTab: undefined;
@@ -19,66 +10,15 @@ type TabParamList = {
 import { useSafeAreaInsets} from "react-native-safe-area-context";
 
 import {Ionicons} from "@expo/vector-icons";
+import { t } from "../i18n";
 
 import EventsTabScreen from "../screens/EventsTabScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import TicketsScreen from "../screens/TicketsScreen";
+import { OrganizerHomeScreen } from "../screens/OrganizerScreens";
+import { SupportScreen } from "../screens/SupportScreens";
 
 const Tab = createBottomTabNavigator<TabParamList>();
-
-function PlaceholderScreen({
-    title,
-    description,
-} : {
-    title: string;
-    description: string;
-}) {
-    return (
-        <View style = {styles.container}>
-            <Text style = {styles.title}>{title}</Text>
-            <Text style = {styles.description}>{description}</Text>
-        </View>
-    );
-}
-
-function TicketsTabScreen() {
-    return <TicketsScreen />;
-}
-
-function OrganizerTabScreen() {
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-    return (
-        <View style = {styles.container}>
-            <Text style = {styles.title}>Organizer</Text>
-            <Text style = {styles.description}>
-                Create and manage events
-            </Text>
-
-            <Pressable
-                style = {styles.button}
-                onPress={() => navigation.navigate("Events")} 
-        >       
-                <Text style = {styles.buttonText}>
-                 My events and check-in
-                 </Text>
-            </Pressable>
-        </View>
-    );
-}
-
-function SupportTabScreen() {
-    return(
-        <PlaceholderScreen
-            title="Support"
-            description="Get help with your account, events, and tickets"
-        />
-    );
-}
-
-function ProfileTabScreen() {
-    return <ProfileScreen />;
-}
 
 export default function MainTabNavigator(){
     const insets = useSafeAreaInsets();
@@ -130,71 +70,35 @@ export default function MainTabNavigator(){
             <Tab.Screen
                 name = "EventsTab"
                 component = {EventsTabScreen}
-                options = {{title: "Events", tabBarLabel: "Events"}}
+                options = {{title: t("tab.events"), tabBarLabel: t("tab.events")}}
             />
 
             <Tab.Screen
                 name = "TicketsTab"
-                component = {TicketsTabScreen}
+                component = {TicketsScreen}
                 options = {{
-                    title: "My Tickets",
-                    tabBarLabel: "Tickets",
+                    title: t("title.myTickets"),
+                    tabBarLabel: t("tab.tickets"),
                 }}
             />
 
             <Tab.Screen
                 name = "OrganizerTab"
-                component = {OrganizerTabScreen}
-                options = {{title: "Organizer", tabBarLabel: "Organizer"}}
+                component = {OrganizerHomeScreen}
+                options = {{title: t("tab.organizer"), tabBarLabel: t("tab.organizer")}}
             />
 
             <Tab.Screen
                 name = "SupportTab"
-                component = {SupportTabScreen}
-                options = {{title: "Support", tabBarLabel: "Support"}}
+                component = {SupportScreen}
+                options = {{title: t("tab.support"), tabBarLabel: t("tab.support")}}
             />
 
             <Tab.Screen
                 name="ProfileTab"
-                component = {ProfileTabScreen}
-                options= {{title: "Profile", tabBarLabel: "Profile"}}
+                component = {ProfileScreen}
+                options= {{title: t("tab.profile"), tabBarLabel: t("tab.profile")}}
             />
         </Tab.Navigator>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-        backgroundColor: "#fff",
-    },
-
-    title: {
-        fontSize: 26,
-        fontWeight: "bold",
-        marginBottom: 12,
-    },
-
-    description: {
-        fontSize: 15,
-        color: "#666",
-        textAlign: "center",
-        marginBottom: 24,
-    },
-
-    button: {
-        backgroundColor: "#2563eb",
-        paddingHorizontal: 24,
-        paddingVertical: 14,
-        borderRadius: 10,
-    },
-
-    buttonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "600",
-    },
-});

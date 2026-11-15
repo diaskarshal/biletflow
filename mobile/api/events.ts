@@ -18,7 +18,6 @@ export async function getMyEvents(): Promise<EventItem[]> {
     return apiRequest<EventItem[]>("/api/v1/checkin/events");
 }
 
-// Public event listing
 export type PublicEvent = {
     id: number;
     slug: string;
@@ -50,7 +49,6 @@ export async function getPublicEvents(
     );
 }
 
-// Individual event details
 export type PublicEventDetails = PublicEvent & {
     status: EventStatus;
     review_status: string;
@@ -66,7 +64,6 @@ export async function getPublicEventDetails(
     );
 }
 
-// Ticket types and availability
 export type TicketType = {
     id: number;
     name: string;
@@ -104,4 +101,10 @@ export function calculateSlots(ticketTypes: TicketType[]) {
         total,
         left: Math.max(total - taken, 0),
     };
+}
+export async function reportEvent(eventId: number, reason: string): Promise<void> {
+    await apiRequest<void>(`/api/v1/events/${eventId}/report`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+    });
 }

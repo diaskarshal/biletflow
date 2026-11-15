@@ -10,6 +10,8 @@ import { useNavigation} from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type {RootStackParamList} from "../navigation/AppNavigation";
 import { useSession } from "../session/SessionContext";
+import { requestPasswordReset } from "../api/auth";
+import { LanguageSwitcher, t } from "../i18n";
 
 type LoginNavigationProp = NativeStackNavigationProp<
     RootStackParamList,
@@ -31,25 +33,38 @@ export default function LoginScreen(){
         setMessage("");
 
         try{
-            // On success the session switches to signedIn and this screen unmounts.
             await signIn({ email, password });
         } catch (error){
             if (error instanceof Error){
                 setMessage(error.message);
             } else {
-                setMessage ("Login failed");
+                setMessage(t("common.error"));
             }
             setLoading(false);
         }
     }
 
+    async function handleForgot() {
+        if (!email.trim()) {
+            setMessage(t("login.enterEmail"));
+            return;
+        }
+        try {
+            await requestPasswordReset(email.trim());
+            setMessage(t("login.resetSent", { email: email.trim() }));
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : t("common.error"));
+        }
+    }
+
     return (
         <View style = {styles.container}>
-            <Text style = {styles.title}>Log in</Text>
+            <LanguageSwitcher />
+            <Text style = {styles.title}>{t("login.title")}</Text>
 
             <TextInput
                 style = {styles.input}
-                placeholder = "Email"
+                placeholder = {t("login.email")}
                 value = {email}
                 onChangeText = {setEmail}
                 keyboardType = "email-address"
@@ -58,22 +73,23 @@ export default function LoginScreen(){
 
             <TextInput
                 style = {styles.input}
-                placeholder = "Password"
+                placeholder = {t("login.password")}
                 value = {password}
                 onChangeText = {setPassword}
                 secureTextEntry
             />
 
             <Button
-                title = {loading ? "Logging in..." : "Log in"}
+                title = {loading ? t("login.loggingIn") : t("login.submit")}
                 onPress = {handleLogin}
                 disabled = {loading}
             />
 
             <Button
-                title = "Create an account"
+                title = {t("login.createAccount")}
                 onPress ={() => navigation.navigate("Register")}
             />
+            <Button title = {t("login.forgot")} onPress = {handleForgot} />
 
             {message !== "" && (
                 <Text style = {styles.message}>{message}</Text>

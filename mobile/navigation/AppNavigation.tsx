@@ -12,9 +12,13 @@ import ScannerScreen from "../screens/ScannerScreen";
 import MainTabNavigator from "./MainTabNavigator";
 import TicketDetailsScreen from "../screens/TicketDetailsScreen";
 import NewSupportCaseScreen from "../screens/NewSupportCaseScreen";
+import PaymentScreen from "../screens/PaymentScreen";
+import { SupportCaseScreen } from "../screens/SupportScreens";
+import { ManageEventScreen, NewEventScreen } from "../screens/OrganizerScreens";
 
 import type {OrderTicket, OrderEvent} from "../api/orders";
 import { useSession } from "../session/SessionContext";
+import { t } from "../i18n";
 
 export type RootStackParamList = {
     Login: undefined;
@@ -24,8 +28,12 @@ export type RootStackParamList = {
     EventDetails: {slug : string};
     Scanner: { eventId: number; title: string };
     Attendees: { eventId: number };
-    TicketDetails: {ticket: OrderTicket; event: OrderEvent; orderStatus: string};
-    NewSupportCase: {ticketId: number, eventId: number };
+    TicketDetails: {ticket: OrderTicket; event: OrderEvent};
+    NewSupportCase: { ticketId?: number; eventId?: number };
+    Payment: { paymentId: number };
+    SupportCase: { caseId: number };
+    NewEvent: undefined;
+    ManageEvent: { eventId: number };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -62,7 +70,7 @@ export default function AppNavigator() {
                     <Stack.Screen
                         name = "EventDetails"
                         component = {EventDetailsScreen}
-                        options = {{title: "Event details"}}
+                        options = {{title: t("title.eventDetails")}}
                     />
                     <Stack.Screen
                         name="Scanner"
@@ -77,12 +85,16 @@ export default function AppNavigator() {
                     <Stack.Screen
                         name = "TicketDetails"
                         component = {TicketDetailsScreen}
-                        options = {{ title: "Your ticket"}}
+                        options = {{ title: t("title.ticket")}}
                     />
+                    <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: t("title.payment") }} />
+                    <Stack.Screen name="SupportCase" component={SupportCaseScreen} options={{ title: t("title.supportCase") }} />
+                    <Stack.Screen name="NewEvent" component={NewEventScreen} options={{ title: "New event" }} />
+                    <Stack.Screen name="ManageEvent" component={ManageEventScreen} options={{ title: "Manage event" }} />
                     <Stack.Screen
                         name = "NewSupportCase"
                         component = {NewSupportCaseScreen}
-                        options = {{title : "Contact the organizer"}}
+                        options = {{title : t("title.contactOrganizer")}}
                     />
                 </Stack.Navigator>
             ) : (
@@ -90,12 +102,12 @@ export default function AppNavigator() {
                     <Stack.Screen
                         name="Login"
                         component={LoginScreen}
-                        options={{ title: "Log In" }}
+                        options={{ title: t("title.login") }}
                     />
                     <Stack.Screen
                         name="Register"
                         component={RegisterScreen}
-                        options={{ title: "Register" }}
+                        options={{ title: t("title.register") }}
                     />
                 </Stack.Navigator>
             )}

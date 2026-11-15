@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigation";
 import { getMyOrders, type Order, type OrderTicket } from "../api/orders";
+import { locale, t } from "../i18n";
 
 type TicketListItem = {
     ticket: OrderTicket;
@@ -41,12 +42,11 @@ export default function TicketsScreen() {
             const result = await getMyOrders();
             setOrders(result);
         } catch (e) {
-            console.error("MY TICKETS ERROR:", e);
 
             setError(
                 e instanceof Error
                     ? e.message
-                    : "Could not load your tickets."
+                    : t("tickets.loadFailed")
             );
         } finally {
             setLoading(false);
@@ -60,7 +60,8 @@ export default function TicketsScreen() {
         }, [loadOrders])
     );
 
-    const tickets: TicketListItem[] = orders.flatMap((order) =>
+    const awaiting = orders.filter((o) => o.status === "pending" && o.payment_id);
+    const tickets: TicketListItem[] = orders.filter((o) => ["paid", "cancelled", "refunded"].includes(o.status)).flatMap((order) =>
         order.tickets.map((ticket) => ({
             ticket,
             order,
@@ -68,7 +69,7 @@ export default function TicketsScreen() {
     );
 
     function formatDate(dateString: string) {
-        return new Date(dateString).toLocaleDateString("ru-RU", {
+        return new Date(dateString).toLocaleDateString(locale(), {
             weekday: "short",
             month: "long",
             day: "numeric",
@@ -77,7 +78,7 @@ export default function TicketsScreen() {
     }
 
     function formatTime(dateString: string, timezone: string) {
-        return new Date(dateString).toLocaleTimeString("ru-RU", {
+        return new Date(dateString).toLocaleTimeString(locale(), {
             hour: "numeric",
             minute: "2-digit",
             timeZone: timezone || "Asia/Almaty",
@@ -88,7 +89,7 @@ export default function TicketsScreen() {
         return (
             <View style={styles.center}>
                 <ActivityIndicator size="large" color="#2563eb" />
-                <Text style={styles.muted}>Loading your tickets...</Text>
+                <Text style={styles.muted}>{t("common.loading")}</Text>
             </View>
         );
     }
@@ -96,10 +97,10 @@ export default function TicketsScreen() {
     if (error && tickets.length === 0) {
         return (
             <View style={styles.center}>
-                <Text style={styles.title}>Could not load tickets</Text>
+                <Text style={styles.title}>{t("tickets.loadFailed")}</Text>
                 <Text style={styles.muted}>{error}</Text>
                 <Text style={styles.retry} onPress={() => void loadOrders()}>
-                    Try again
+                    {t("common.tryAgain")}
                 </Text>
             </View>
         );
@@ -108,9 +109,9 @@ export default function TicketsScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>My Tickets</Text>
+                <Text style={styles.title}>{t("title.myTickets")}</Text>
                 <Text style={styles.subtitle}>
-                    Your purchased event tickets
+                    {t("tickets.subtitle")}
                 </Text>
             </View>
 
@@ -127,13 +128,26 @@ export default function TicketsScreen() {
                         onRefresh={() => void loadOrders(true)}
                     />
                 }
+                ListHeaderComponent={
+                    <View>
+                        {awaiting.map((o) => (
+                            <Text
+                                key={o.id}
+                                style={styles.retry}
+                                onPress={() => navigation.navigate("Payment", { paymentId: o.payment_id as number })}
+                            >
+                                {t("tickets.awaiting", { event: o.event.title })}
+                            </Text>
+                        ))}
+                    </View>
+                }
                 ListEmptyComponent={
                     <View style={styles.empty}>
                         <Text style={styles.emptyTitle}>
-                            No tickets yet
+                            {t("tickets.none")}
                         </Text>
                         <Text style={styles.muted}>
-                            Tickets you purchase will appear here.
+                            {t("tickets.noneHint")}
                         </Text>
                     </View>
                 }
@@ -142,7 +156,7 @@ export default function TicketsScreen() {
                     const event = order.event;
 
                     return (
-                        <Pressable style={styles.ticketCard} onPress={() => navigation.navigate("TicketDetails", {ticket, event, orderStatus: order.status,})}>
+                        <Pressable style={styles.ticketCard} onPress={() => navigation.navigate("TicketDetails", {ticket, event})}>
                             <View style={styles.ticketTop}>
                                 <View style={styles.eventInfo}>
                                     <Text style={styles.eventTitle}>
@@ -171,19 +185,19 @@ export default function TicketsScreen() {
                             <View style={styles.divider} />
 
                             <Text style={styles.detailLabel}>
-                                TICKET HOLDER
+                                {t("tickets.holder")}
                             </Text>
                             <Text style={styles.detailValue}>
                                 {ticket.attendee_name}
                             </Text>
 
                             <Text style={styles.detailLabel}>
-                                VENUE
+                                {t("tickets.venue")}
                             </Text>
                             <Text style={styles.detailValue}>
                                 {event.venue_name ||
                                     event.venue_address ||
-                                    "Venue not specified"}
+                                    t("tickets.noVenue")}
                             </Text>
 
                             <View style={styles.ticketFooter}>

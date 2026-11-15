@@ -56,6 +56,7 @@ export type CreateOrderData = {
             email: string;
         }[];
     }[];
+    promo_code?: string | null;
 };
 
 export async function createOrder(data: CreateOrderData): Promise<Order> {
@@ -72,4 +73,23 @@ export async function createOrder(data: CreateOrderData): Promise<Order> {
 
 export async function getMyOrders(): Promise<Order[]> {
     return apiRequest<Order[]>("/api/v1/me/orders");
+}
+export type Payment = {
+    id: number;
+    purpose: "order" | "activation";
+    status: "pending" | "succeeded" | "failed" | "expired" | "refunded";
+    amount_kzt: number;
+    event_id: number;
+    event_title: string;
+};
+
+export function getPayment(id: number): Promise<Payment> {
+    return apiRequest<Payment>(`/api/v1/payments/${id}`);
+}
+
+export function simulatePayment(id: number, outcome: "success" | "failure" | "timeout"): Promise<Payment> {
+    return apiRequest<Payment>(`/api/v1/payments/${id}/simulate`, {
+        method: "POST",
+        body: JSON.stringify({ outcome }),
+    });
 }

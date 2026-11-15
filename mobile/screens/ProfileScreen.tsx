@@ -21,6 +21,8 @@ import {
     updateOrganizerProfile,
 } from "../api/profile";
 import type { OrganizerProfile } from "../api/profile";
+import { pickAndUpload } from "../api/upload";
+import { LanguageSwitcher, t, tOptional } from "../i18n";
 
 function Field({
     label,
@@ -86,12 +88,6 @@ function SectionTitle({ children }: { children: string }) {
     return <Text style={styles.sectionTitle}>{children}</Text>;
 }
 
-const verificationLabels: Record<string, string> = {
-    none: "Not submitted",
-    pending: "Waiting for admin review",
-    approved: "Approved",
-    rejected: "Rejected",
-};
 
 export default function ProfileScreen() {
     const { user, signOut, updateUser } = useSession();
@@ -132,7 +128,7 @@ export default function ProfileScreen() {
             setPayoutAccount(profile.payout_account ?? "");
         } catch (err: any) {
             setOrganizerError(
-                err?.message ?? "Could not load organizer profile."
+                err?.message ?? t("common.error")
             );
         } finally {
             setLoadingOrganizer(false);
@@ -148,7 +144,7 @@ export default function ProfileScreen() {
         clearMessages();
 
         if (!fullName.trim()) {
-            setError("Please enter your name.");
+            setError(t("profile.enterName"));
             return;
         }
 
@@ -158,9 +154,9 @@ export default function ProfileScreen() {
             const updatedUser = await updateAccountName(fullName.trim());
             updateUser(updatedUser);
 
-            setSuccess("Your name has been updated.");
+            setSuccess(t("profile.nameUpdated"));
         } catch (err: any) {
-            setError(err?.message ?? "Could not update your name.");
+            setError(err?.message ?? t("common.error"));
         } finally {
             setSavingName(false);
         }
@@ -172,9 +168,9 @@ export default function ProfileScreen() {
         try {
             setSendingEmail(true);
             await resendVerificationEmail();
-            setSuccess("Verification email sent. Check your inbox.");
+            setSuccess(t("profile.linkSent"));
         } catch (err: any) {
-            setError(err?.message ?? "Could not send verification email.");
+            setError(err?.message ?? t("common.error"));
         } finally {
             setSendingEmail(false);
         }
@@ -184,12 +180,12 @@ export default function ProfileScreen() {
         clearMessages();
 
         if (!currentPassword || !newPassword) {
-            setError("Please fill in both password fields.");
+            setError(t("profile.fillPasswords"));
             return;
         }
 
         if (newPassword.length < 8) {
-            setError("Your new password must contain at least 8 characters.");
+            setError(t("register.passwordRule"));
             return;
         }
 
@@ -200,9 +196,9 @@ export default function ProfileScreen() {
 
             setCurrentPassword("");
             setNewPassword("");
-            setSuccess("Your password has been changed.");
+            setSuccess(t("profile.passwordChanged"));
         } catch (err: any) {
-            setError(err?.message ?? "Could not change your password.");
+            setError(err?.message ?? t("common.error"));
         } finally {
             setChangingPassword(false);
         }
@@ -212,7 +208,7 @@ export default function ProfileScreen() {
         clearMessages();
 
         if (!displayName.trim() || !contactEmail.trim()) {
-            setError("Organizer name and contact email are required.");
+            setError(t("org.required"));
             return;
         }
 
@@ -227,9 +223,9 @@ export default function ProfileScreen() {
             });
 
             setOrganizer(updated);
-            setSuccess("Organizer profile updated.");
+            setSuccess(t("org.saved"));
         } catch (err: any) {
-            setError(err?.message ?? "Could not update organizer profile.");
+            setError(err?.message ?? t("common.error"));
         } finally {
             setSavingOrganizer(false);
         }
@@ -245,11 +241,25 @@ export default function ProfileScreen() {
 
             await loadOrganizerProfile();
         } catch (err: any) {
-            setError(err?.message ?? "Could not refreshe the page");
+            setError(err?.message ?? t("common.error"));
         } finally {
             setRefreshing(false);
         }
     } 
+
+    async function handleUploadDocument() {
+        setError("");
+        setSuccess("");
+        try {
+            const updated = await pickAndUpload<OrganizerProfile>("/api/v1/organizer/verification", "document");
+            if (updated) {
+                setOrganizer(updated);
+                setSuccess(t("profile.documentSent"));
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t("common.error"));
+        }
+    }
 
     async function handleLogout() {
         try {
@@ -257,7 +267,7 @@ export default function ProfileScreen() {
             clearMessages();
             await signOut();
         } catch {
-            setError("Could not log out. Please try again.");
+            setError(t("common.error"));
         } finally {
             setLoggingOut(false);
         }
@@ -283,10 +293,11 @@ export default function ProfileScreen() {
             }
         >
             <View style={styles.heading}>
-                <Text style={styles.title}>My Profile</Text>
+                <Text style={styles.title}>{t("profile.title")}</Text>
                 <Text style={styles.subtitle}>
-                    Manage your BiletFlow account
+                    {t("profile.subtitle")}
                 </Text>
+                <LanguageSwitcher />
             </View>
 
             <View style={styles.profileCard}>
@@ -296,37 +307,37 @@ export default function ProfileScreen() {
 
                 <View style={styles.userInfo}>
                     <Text style={styles.name}>
-                        {user?.full_name || "User"}
+                        {user?.full_name || ""}
                     </Text>
                     <Text style={styles.email}>
-                        {user?.email || "No email available"}
+                        {user?.email || t("profile.notProvided")}
                     </Text>
                 </View>
             </View>
 
-            <SectionTitle>Personal information</SectionTitle>
+            <SectionTitle>{t("profile.personal")}</SectionTitle>
 
             <View style={styles.card}>
                 <Field
-                    label="Full name"
+                    label={t("profile.fullName")}
                     value={fullName}
                     onChangeText={setFullName}
-                    placeholder="Your full name"
+                    placeholder={t("profile.namePlaceholder")}
                 />
 
-                <Text style={styles.label}>Email address</Text>
+                <Text style={styles.label}>{t("profile.emailAddress")}</Text>
                 <Text style={styles.readOnlyValue}>
-                    {user?.email || "Not provided"}
+                    {user?.email || t("profile.notProvided")}
                 </Text>
 
                 <ActionButton
-                    title="Save changes"
+                    title={t("profile.save")}
                     onPress={handleSaveName}
                     loading={savingName}
                 />
             </View>
 
-            <SectionTitle>Email verification</SectionTitle>
+            <SectionTitle>{t("profile.emailVerification")}</SectionTitle>
 
             <View style={styles.card}>
                 <View style={styles.statusRow}>
@@ -341,18 +352,18 @@ export default function ProfileScreen() {
                             { color: isEmailVerified ? "#16a34a" : "#d97706" },
                         ]}
                     >
-                        {isEmailVerified ? "Email confirmed" : "Email not verified"}
+                        {isEmailVerified ? t("profile.emailConfirmed") : t("profile.emailNotVerified")}
                     </Text>
                 </View>
 
                 {!isEmailVerified && (
                     <>
                         <Text style={styles.helpText}>
-                            Your email address is not confirmed yet. Check your inbox for the confirmation link.
+                            {t("profile.emailHint")}
                         </Text>
 
                         <ActionButton
-                            title="Send the link again"
+                            title={t("profile.resend")}
                             onPress={handleResendEmail}
                             loading={sendingEmail}
                         />
@@ -360,95 +371,94 @@ export default function ProfileScreen() {
                 )}
             </View>
 
-            <SectionTitle>Security</SectionTitle>
+            <SectionTitle>{t("profile.security")}</SectionTitle>
 
             <View style={styles.card}>
                 <Field
-                    label="Current password"
+                    label={t("profile.currentPassword")}
                     value={currentPassword}
                     onChangeText={setCurrentPassword}
-                    placeholder="Enter current password"
+                    placeholder={t("profile.currentPassword")}
                     secureTextEntry
                 />
 
                 <Field
-                    label="New password (at least 8 characters)"
+                    label={t("profile.newPasswordLabel")}
                     value={newPassword}
                     onChangeText={setNewPassword}
-                    placeholder="Enter new password"
+                    placeholder={t("profile.newPassword")}
                     secureTextEntry
                 />
 
                 <ActionButton
-                    title="Change password"
+                    title={t("profile.changePassword")}
                     onPress={handleChangePassword}
                     loading={changingPassword}
                 />
             </View>
 
-            <SectionTitle>Organizer profile</SectionTitle>
+            <SectionTitle>{t("org.title")}</SectionTitle>
 
             {loadingOrganizer ? (
                 <View style={styles.card}>
                     <ActivityIndicator color="#2563eb" />
                     <Text style={styles.helpText}>
-                        Loading organizer profile...
+                        {t("org.loading")}
                     </Text>
                 </View>
             ) : organizerError ? (
                 <View style={styles.card}>
                     <Text style={styles.error}>{organizerError}</Text>
                     <ActionButton
-                        title="Try again"
+                        title={t("common.tryAgain")}
                         onPress={loadOrganizerProfile}
                     />
                 </View>
             ) : organizer ? (
                 <View style={styles.card}>
                     <Text style={styles.helpText}>
-                        These details are used for your organizer account.
-                        They are separate from your personal account information.
+                        {t("org.hint")}
                     </Text>
 
                     <Field
-                        label="Organizer display name"
+                        label={t("org.displayName")}
                         value={displayName}
                         onChangeText={setDisplayName}
-                        placeholder="Organizer name"
+                        placeholder={t("org.displayName")}
                     />
 
                     <Field
-                        label="Contact email"
+                        label={t("org.contactEmail")}
                         value={contactEmail}
                         onChangeText={setContactEmail}
-                        placeholder="Contact email"
+                        placeholder={t("org.contactEmail")}
                         keyboardType="email-address"
                     />
 
                     <Field
-                        label="Phone number"
+                        label={t("org.phone")}
                         value={phone}
                         onChangeText={setPhone}
-                        placeholder="Phone number"
+                        placeholder={t("org.phone")}
                         keyboardType="phone-pad"
                     />
 
                     <Field
-                        label="Payout account (IBAN, test data only)"
+                        label={t("org.payout")}
                         value={payoutAccount}
                         onChangeText={setPayoutAccount}
-                        placeholder="Payout account details"
+                        placeholder={t("org.payout")}
                     />
 
                     <ActionButton
-                        title="Save organizer profile"
+                        title={t("org.save")}
                         onPress={handleSaveOrganizer}
                         loading={savingOrganizer}
                     />
 
                     <View style={styles.separator} />
 
-                    <Text style={styles.label}>Identity verification</Text>
+                    <Text style={styles.label}>{t("org.verification")}</Text>
 
                     <View style={styles.statusRow}>
                         <Ionicons
@@ -465,27 +475,31 @@ export default function ProfileScreen() {
                             }
                         />
                         <Text style={styles.statusText}>
-                            {verificationLabels[organizer.verification_status] ??
+                            {tOptional(`verification.${organizer.verification_status}`) ??
                                 organizer.verification_status}
                         </Text>
                     </View>
 
                     <Text style={styles.helpText}>
-                        Needed only to sell paid tickets. Upload any ID document; an admin reviews it.
+                        {t("org.verificationHint")}
                     </Text>
 
                     {organizer.verification_document ? (
                         <Text style={styles.smallText}>
-                            A verification document has been submitted.
+                            {t("org.documentSubmitted")}
                         </Text>
                     ) : null}
+
+                    {organizer.verification_status !== "approved" && (
+                        <ActionButton title={t("profile.uploadDocument")} onPress={handleUploadDocument} />
+                    )}
                 </View>
             ) : null}
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
             {success ? <Text style={styles.success}>{success}</Text> : null}
 
-            <SectionTitle>Session</SectionTitle>
+            <SectionTitle>{t("profile.session")}</SectionTitle>
 
             <Pressable
                 style={({ pressed }) => [
@@ -505,7 +519,7 @@ export default function ProfileScreen() {
                             size={21}
                             color="#dc2626"
                         />
-                        <Text style={styles.logoutText}>Log out</Text>
+                        <Text style={styles.logoutText}>{t("profile.logout")}</Text>
                     </>
                 )}
             </Pressable>
