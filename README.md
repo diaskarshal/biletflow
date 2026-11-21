@@ -22,12 +22,6 @@ docker compose exec api uv run alembic upgrade head
 docker compose exec api uv run python -m app.db.seed
 ```
 
-Check it worked:
-
-```bash
-curl localhost:8000/health
-```
-
 - Web app: http://localhost:5173
 - API docs: http://localhost:8000/docs
 - Mailhog (all outgoing email): http://localhost:8025

@@ -8,3 +8,4 @@
 - **Components:** `web/src/components/Button.tsx`, `web/src/components/Input.tsx` — thin
   wrappers over native `<button>`/`<input>` with the brand styling baked in via
   `className` composition. Extend these rather than styling raw elements inline.
+ 

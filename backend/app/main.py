@@ -24,7 +24,7 @@ from app.modules.payments.router import router as payments_router
 from app.modules.promos.router import router as promos_router
 from app.modules.support.router import router as support_router
 from app.modules.tickets.router import router as tickets_router
-
+ 
 app = FastAPI(title="BiletFlow API")
 
 app.add_middleware(

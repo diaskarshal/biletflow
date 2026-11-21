@@ -6,4 +6,4 @@ Fixes # (issue number)
 
 ## Type of Change
 - [ ] Bug fix
-- [ ] New feature
+- [ ] New feature 
