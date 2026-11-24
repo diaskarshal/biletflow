@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View, Pressable, ActivityIndicator } from "react-native";
+import { ScrollView, StyleSheet, Text, View, Pressable, ActivityIndicator, Linking } from "react-native";
+import { calendarFileUrl } from "../api/events";
 import { Image } from "expo-image";
 import { getAuthenticatedImageUrl } from "../api/client";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -132,6 +133,12 @@ async function downloadPdf() {
                 {downloadError ? (
                     <Text style = {styles.errorText}>{downloadError}</Text>
                 ): null}
+
+                {ticket.status === "valid" && event.visibility !== "private" && (
+                    <Pressable style = {styles.helpButton} onPress={() => Linking.openURL(calendarFileUrl(event.slug))}>
+                        <Text style = {styles.helpButtonText}>{t("cal.add")}</Text>
+                    </Pressable>
+                )}
 
                 <Pressable style = {styles.helpButton} onPress={() => navigation.navigate("NewSupportCase", { ticketId: ticket.id})}>
                     <Text style = {styles.helpButtonText}>

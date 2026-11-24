@@ -10,21 +10,22 @@ import type { RootStackParamList } from "../navigation/AppNavigation";
 import { classifyQrPayload } from "../utils/qr";
 import { outcomeFromError, rejectedQrOutcome } from "../utils/scanOutcome";
 import type { ScanOutcome } from "../utils/scanOutcome";
+import { t } from "../i18n";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Scanner">;
 
 const VALID_AUTO_DISMISS_MS = 2500;
 const SAME_QR_COOLDOWN_MS = 3000;
 
-const OUTCOME_UI: Record<ScanOutcome["kind"], { color: string; symbol: string; label: string }> = {
-    valid: { color: "#1b7a34", symbol: "✓", label: "VALID" },
-    already_used: { color: "#b26a00", symbol: "!", label: "ALREADY USED" },
-    cancelled: { color: "#b00020", symbol: "✕", label: "CANCELLED" },
-    refunded: { color: "#b00020", symbol: "✕", label: "REFUNDED" },
-    invalid: { color: "#b00020", symbol: "✕", label: "INVALID TICKET" },
-    not_ticket: { color: "#555555", symbol: "?", label: "NOT A TICKET" },
-    forbidden: { color: "#555555", symbol: "!", label: "NOT ALLOWED" },
-    error: { color: "#555555", symbol: "!", label: "SCAN FAILED" },
+const OUTCOME_UI: Record<ScanOutcome["kind"], { color: string; symbol: string }> = {
+    valid: { color: "#1b7a34", symbol: "✓" },
+    already_used: { color: "#b26a00", symbol: "!" },
+    cancelled: { color: "#b00020", symbol: "✕" },
+    refunded: { color: "#b00020", symbol: "✕" },
+    invalid: { color: "#b00020", symbol: "✕" },
+    not_ticket: { color: "#555555", symbol: "?" },
+    forbidden: { color: "#555555", symbol: "!" },
+    error: { color: "#555555", symbol: "!" },
 };
 
 export default function ScannerScreen({ route, navigation }: Props) {
@@ -43,7 +44,7 @@ export default function ScannerScreen({ route, navigation }: Props) {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <Button title="Search" onPress={() => navigation.navigate("Attendees", { eventId })} />
+                <Button title={t("scan.search")} onPress={() => navigation.navigate("Attendees", { eventId })} />
             ),
         });
     }, [navigation, eventId]);
@@ -122,18 +123,18 @@ export default function ScannerScreen({ route, navigation }: Props) {
         return (
             <View style={styles.center}>
                 <Text style={styles.permissionText}>
-                    BiletFlow needs camera access to scan ticket QR codes.
+                    {t("scan.permission")}
                 </Text>
                 {permission.canAskAgain ? (
-                    <Button title="Grant camera permission" onPress={requestPermission} />
+                    <Button title={t("scan.grant")} onPress={requestPermission} />
                 ) : (
-                    <Button title="Open settings" onPress={() => Linking.openSettings()} />
+                    <Button title={t("scan.settings")} onPress={() => Linking.openSettings()} />
                 )}
             </View>
         );
     }
 
-    const ui = outcome ? OUTCOME_UI[outcome.kind] : null;
+    const ui = outcome ? { ...OUTCOME_UI[outcome.kind], label: t(`scan.${outcome.kind}`) } : null;
 
     return (
         <View style={styles.container}>
@@ -147,13 +148,13 @@ export default function ScannerScreen({ route, navigation }: Props) {
             {summary && (
                 <View style={styles.countBar} pointerEvents="none">
                     <Text style={styles.countText}>
-                        Checked in {summary.checked_in} of {summary.registered}
+                        {t("manage.checkedIn", { n: summary.checked_in, total: summary.registered })}
                     </Text>
                 </View>
             )}
 
             <View style={styles.hintBar} pointerEvents="none">
-                <Text style={styles.hintText}>Point the camera at the ticket QR code</Text>
+                <Text style={styles.hintText}>{t("scan.hint")}</Text>
             </View>
 
             {outcome && ui && (
@@ -163,7 +164,7 @@ export default function ScannerScreen({ route, navigation }: Props) {
                     accessibilityRole="alert"
                     accessibilityLabel={`${ui.label}. ${
                         outcome.kind === "valid" ? outcome.attendeeName : outcome.message
-                    }. Tap to scan next.`}
+                    }. ${t("scan.next")}`}
                 >
                     <Text style={styles.resultSymbol}>{ui.symbol}</Text>
                     <Text style={styles.resultLabel}>{ui.label}</Text>
@@ -172,10 +173,10 @@ export default function ScannerScreen({ route, navigation }: Props) {
                     </Text>
                     {outcome.kind === "valid" && (
                         <Pressable style={styles.undoButton} onPress={() => undo(outcome.ticketId)}>
-                            <Text style={styles.undoText}>Undo check-in</Text>
+                            <Text style={styles.undoText}>{t("scan.undo")}</Text>
                         </Pressable>
                     )}
-                    <Text style={styles.resultHint}>Tap to scan next</Text>
+                    <Text style={styles.resultHint}>{t("scan.next")}</Text>
                 </Pressable>
             )}
         </View>

@@ -21,6 +21,7 @@ class OrderCreate(BaseModel):
     event_id: int
     items: list[OrderItemCreate] = Field(min_length=1)
     promo_code: str | None = None
+    access_key: str | None = None
 
 
 class OrderItemOut(BaseModel):

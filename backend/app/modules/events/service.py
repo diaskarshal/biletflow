@@ -47,6 +47,7 @@ def create_event(db: Session, user: User, data: dict) -> tuple[Event, list]:
 
     organizer = get_or_create_organizer_profile(db, user)
     event = Event(organizer_id=organizer.id, slug=_unique_slug(db, data["title"]), **data)
+    check_event_limits(db, event)
     db.add(event)
     db.flush()
 
@@ -72,13 +73,28 @@ def is_owner(db: Session, user: User, event: Event) -> bool:
     return organizer is not None and organizer.id == event.organizer_id
 
 
-def get_event_by_slug_for_viewer(db: Session, slug: str, user: User | None) -> Event:
+def can_see_private(db: Session, event: Event, user: User | None, key: str | None) -> bool:
+    if event.visibility != "private" or key == event.access_key:
+        return True
+    if user is None:
+        return False
+    return user.is_admin or is_owner(db, user, event) or (
+        db.query(Order).filter(Order.event_id == event.id, Order.user_id == user.id).first() is not None
+    )
+
+
+def get_event_by_slug_for_viewer(db: Session, slug: str, user: User | None, key: str | None = None) -> Event:
     event = db.query(Event).filter_by(slug=slug).one_or_none()
     if event is None or event.deleted_at is not None:
         raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
-    if event.status in ("published", "completed") and event.review_status == "approved" and event.suspended_at is None:
-        return event
     if user is not None and (user.is_admin or is_owner(db, user, event)):
+        return event
+    if (
+        event.status in ("published", "completed")
+        and event.review_status == "approved"
+        and event.suspended_at is None
+        and can_see_private(db, event, user, key)
+    ):
         return event
     raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
 
@@ -100,13 +116,18 @@ def require_event_admin(db: Session, user: User, event: Event) -> None:
         raise APIError("FORBIDDEN", "You are not authorized to check in tickets for this event", status_code=403)
 
 
-def list_published_events(db: Session, limit: int, cursor: int | None) -> tuple[list[Event], int | None]:
+def list_published_events(
+    db: Session, limit: int, cursor: int | None, q: str | None
+) -> tuple[list[Event], int | None]:
     query = db.query(Event).filter(
         Event.status == "published",
+        Event.visibility == "public",
         Event.review_status == "approved",
         Event.deleted_at.is_(None),
         Event.suspended_at.is_(None),
     )
+    if q and q.strip():
+        query = query.filter(Event.title.icontains(q.strip(), autoescape=True))
     if cursor is not None:
         query = query.filter(Event.id > cursor)
     events = query.order_by(Event.id).limit(limit + 1).all()
@@ -131,16 +152,36 @@ def require_not_suspended(event: Event) -> None:
         raise APIError("EVENT_SUSPENDED", "This event has been suspended by the platform", status_code=409)
 
 
+CLEARABLE_EVENT_FIELDS = {"category", "capacity", "registration_opens_at", "registration_closes_at"}
+
+
+def check_event_limits(db: Session, event: Event) -> None:
+    opens, closes = event.registration_opens_at, event.registration_closes_at
+    if opens and closes and closes <= opens:
+        raise APIError("INVALID_REGISTRATION_WINDOW", "Registration must close after it opens", status_code=400)
+    if event.capacity is not None:
+        taken = sum(t.quantity_sold + t.quantity_reserved for t in event_ticket_types(db, event))
+        if event.capacity < taken:
+            raise APIError(
+                "CAPACITY_BELOW_SOLD", f"{taken} tickets are already sold or held for this event", status_code=409
+            )
+
+
+def event_ticket_types(db: Session, event: Event) -> list[TicketType]:
+    return db.query(TicketType).filter_by(event_id=event.id).all()
+
+
 def update_event(db: Session, actor: User, event: Event, data: dict) -> Event:
     require_not_suspended(event)
+    data = {k: v for k, v in data.items() if v is not None or k in CLEARABLE_EVENT_FIELDS}
     changes = {
         field: str(value)
         for field, value in data.items()
-        if value is not None and (getattr(event, field) or None) != (value or None)
+        if (getattr(event, field) or None) != (value or None)
     }
     for field, value in data.items():
-        if value is not None:
-            setattr(event, field, value)
+        setattr(event, field, value)
+    check_event_limits(db, event)
     if changes and event.review_status == "rejected":
         event.review_status = "pending"
     if changes:
@@ -165,7 +206,7 @@ def _notify_ticket_holders(db: Session, event: Event) -> None:
         f"The organizer changed the details of {event.title}.\n\n"
         f"When: {starts:%d %b %Y, %H:%M} ({event.display_timezone})\n"
         f"Where: {venue}\n\n"
-        f"Your ticket is still valid. Event page: {settings.frontend_url}/events/{event.slug}\n"
+        f"Your ticket is still valid. Event page: {event_url(event)}\n"
     )
     emails = {
         email
@@ -373,6 +414,33 @@ def start_activation_payment(db: Session, user: User, event: Event) -> Payment:
     return payment
 
 
+def event_url(event: Event) -> str:
+    url = f"{settings.frontend_url}/events/{event.slug}"
+    return f"{url}?key={event.access_key}" if event.visibility == "private" else url
+
+
+def notify_payout_status(db: Session, event: Event, status: str) -> None:
+    organizer = db.get(OrganizerProfile, event.organizer_id)
+    owner = db.get(User, organizer.user_id)
+    account = organizer.payout_account or ""
+    bodies = {
+        "active": (
+            f"Paid sales are now active for {event.title}. Ticket revenue minus processing charges "
+            f"will be paid out to your payout account ending in {account[-4:]} after the event."
+        ),
+        "suspended": (
+            f"A platform admin suspended paid sales for {event.title}. Payouts for this event are on hold "
+            "until the platform resumes paid sales. Contact platform support for details."
+        ),
+        "resumed": f"Paid sales for {event.title} were resumed. Payouts for this event are no longer on hold.",
+    }
+    send_email(
+        owner.email,
+        f"Payout status for {event.title}: {status}",
+        f"Hi {owner.full_name},\n\n{bodies[status]}\n\nThis is a demonstration platform. No real money moves.\n",
+    )
+
+
 def complete_activation(db: Session, event: Event) -> None:
     event.activation_paid_at = datetime.now(UTC)
     event.paid_sales_enabled = event.paid_sales_suspended_at is None
@@ -388,6 +456,7 @@ def set_paid_sales_suspended(db: Session, actor: User, event: Event, suspended: 
     )
     db.commit()
     db.refresh(event)
+    notify_payout_status(db, event, "suspended" if suspended else "resumed")
     return event
 
 
@@ -419,3 +488,81 @@ def save_cover(file: UploadFile) -> str:
     name = f"{secrets.token_hex(16)}.{extension}"
     (settings.uploads_dir / name).write_bytes(data)
     return name
+
+
+def get_event_for_calendar(db: Session, slug: str, key: str | None) -> Event:
+    event = db.query(Event).filter_by(slug=slug).one_or_none()
+    if (
+        event is None
+        or event.deleted_at is not None
+        or event.suspended_at is not None
+        or event.review_status != "approved"
+        or event.status == "draft"
+        or (event.visibility == "private" and key != event.access_key)
+    ):
+        raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
+    return event
+
+
+def _ics_text(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,")
+        .replace("\r\n", "\\n").replace("\n", "\\n")
+    )
+
+
+def _ics_fold(line: str) -> str:
+    data, parts, limit = line.encode(), [], 75
+    while len(data) > limit:
+        cut = limit
+        while cut and (data[cut] & 0xC0) == 0x80:
+            cut -= 1
+        parts.append(data[:cut])
+        data, limit = data[cut:], 74
+    parts.append(data)
+    return "\r\n ".join(part.decode() for part in parts)
+
+
+def calendar_ics(db: Session, event: Event) -> bytes:
+    tz = ZoneInfo(event.display_timezone)
+    starts, ends = event.starts_at.astimezone(tz), event.ends_at.astimezone(tz)
+    offset = starts.utcoffset() or timedelta()
+    sign = "-" if offset < timedelta() else "+"
+    minutes = abs(int(offset.total_seconds())) // 60
+    tz_offset = f"{sign}{minutes // 60:02d}{minutes % 60:02d}"
+    sequence = (
+        db.query(AuditLog)
+        .filter(AuditLog.event_id == event.id, AuditLog.action_type.in_(("event.updated", "event.cancelled")))
+        .count()
+    )
+    url = event_url(event)
+    location = ", ".join(v for v in (event.venue_name, event.venue_address) if v)
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//BiletFlow//Event calendar//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "BEGIN:VTIMEZONE",
+        f"TZID:{event.display_timezone}",
+        "BEGIN:STANDARD",
+        "DTSTART:19700101T000000",
+        f"TZOFFSETFROM:{tz_offset}",
+        f"TZOFFSETTO:{tz_offset}",
+        "END:STANDARD",
+        "END:VTIMEZONE",
+        "BEGIN:VEVENT",
+        f"UID:event-{event.id}@biletflow",
+        f"SEQUENCE:{sequence}",
+        f"DTSTAMP:{datetime.now(UTC):%Y%m%dT%H%M%SZ}",
+        f"DTSTART;TZID={event.display_timezone}:{starts:%Y%m%dT%H%M%S}",
+        f"DTEND;TZID={event.display_timezone}:{ends:%Y%m%dT%H%M%S}",
+        f"SUMMARY:{_ics_text(event.title)}",
+        f"STATUS:{'CANCELLED' if event.status == 'cancelled' else 'CONFIRMED'}",
+        f"URL:{url}",
+    ]
+    if location:
+        lines.append(f"LOCATION:{_ics_text(location)}")
+    lines.append(f"DESCRIPTION:{_ics_text('\n\n'.join(filter(None, (event.description, url))))}")
+    lines += ["END:VEVENT", "END:VCALENDAR"]
+    return ("\r\n".join(_ics_fold(line) for line in lines) + "\r\n").encode()

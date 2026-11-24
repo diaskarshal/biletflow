@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from app.core.config import settings
 
 logger = logging.getLogger("biletflow")
+mimetypes.add_type("text/calendar", ".ics")
 
 
 def send_email(

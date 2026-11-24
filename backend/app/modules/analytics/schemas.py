@@ -17,6 +17,10 @@ class TypeSales(BaseModel):
     capacity: int
     sold: int
     revenue_kzt: int
+    available: int
+    reserved: int
+    refunded: int
+    checked_in: int
 
 
 class Analytics(BaseModel):
@@ -28,6 +32,8 @@ class Analytics(BaseModel):
     discount_kzt: int
     refunds_kzt: int
     net_kzt: int
+    fees_kzt: int
+    payout_kzt: int
     sales_by_day: list[DaySales]
     by_ticket_type: list[TypeSales]
     checked_in: int

@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { errorMessage, formatDate, formatPrice, formatTime, refundPolicyLabel } from "../lib/format";
 import { t } from "../lib/i18n";
 import { Button } from "./Button";
+import { CalendarLinks } from "./CalendarLinks";
 import { ErrorState } from "./EmptyState";
 import { Input } from "./Input";
 import { Modal } from "./Modal";
@@ -56,12 +57,12 @@ export function CheckoutModal({
   const order = useMutation({
     mutationFn: async () => {
       const { data, error } = await api.POST("/api/v1/orders", {
-        // A fresh key per attempt: retries of one click are deduplicated by the server, edits are not.
         params: { header: { "Idempotency-Key": crypto.randomUUID() } },
         body: {
           event_id: event.id,
           items: [{ ticket_type_id: ticketType.id, quantity: 1, attendees: [{ name, email }] }],
           promo_code: promo?.code ?? null,
+          access_key: new URLSearchParams(window.location.search).get("key"),
         },
       });
       if (error) throw error;
@@ -83,6 +84,7 @@ export function CheckoutModal({
         <div className="space-y-6">
           <h2 className="font-heading text-2xl sm:text-3xl">{t("checkout.issued")}</h2>
           <p>{t("checkout.ready", { type: ticketType.name, event: event.title })}</p>
+          <CalendarLinks event={event} />
           <Link to="/tickets" className="block rounded-xl bg-brand py-3 text-center font-heading text-on-brand">
             {t("checkout.viewTickets")}
           </Link>

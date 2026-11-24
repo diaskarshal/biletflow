@@ -6,11 +6,12 @@ import type { components } from "../api/schema";
 import { StatusBadge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { CoverUpload } from "../components/CoverUpload";
+import { EventSettings, settingsBody, settingsFrom, settingsValid, type Settings } from "../components/EventSettings";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { Spinner } from "../components/Spinner";
 import { useOrganizerEvents } from "../hooks/useOrganizerEvents";
-import { eventRange, localParts } from "../lib/eventTimes";
+import { eventRange, fromLocalInput, localParts, toLocalInput } from "../lib/eventTimes";
 import { downloadBlob } from "../lib/download";
 import {
   errorMessage,
@@ -25,7 +26,7 @@ import {
 } from "../lib/format";
 import { t } from "../lib/i18n";
 
-type Event = components["schemas"]["EventOut"];
+type Event = components["schemas"]["OrganizerEventOut"];
 
 export function ManageEvent() {
   const id = Number(useParams().id);
@@ -71,17 +72,20 @@ export function ManageEvent() {
               time: formatTime(event.starts_at, event.display_timezone),
             })}
           </span>
-          {event.status === "published" && (
-            <Link to={`/events/${event.slug}`} className="underline">
-              {t("manage.publicPage")}
-            </Link>
-          )}
+          <Link to={`/events/${event.slug}${event.visibility === "private" ? `?key=${event.access_key}` : ""}`} className="underline">
+            {t(event.status === "draft" ? "manage.preview" : "manage.publicPage")}
+          </Link>
           <Link to={`/organizer/events/${id}/analytics`} className="underline">
             {t("manage.analytics")}
           </Link>
           <EventActions event={event} />
           {(event.status === "published" || event.status === "draft") && <CancelEvent eventId={id} />}
         </div>
+        {event.visibility === "private" && (
+          <p className="break-all">
+            {t("manage.privateLink")} {`${window.location.origin}/events/${event.slug}?key=${event.access_key}`}
+          </p>
+        )}
       </div>
       {(event.status === "published" || event.status === "draft") && !event.suspended_at && (
         <>
@@ -172,6 +176,8 @@ function EditEvent({ event }: { event: Event }) {
     refundPolicy: event.refund_policy as RefundPolicy,
   };
   const [form, setForm] = useState(initial);
+  const initialSettings = settingsFrom(event);
+  const [settings, setSettings] = useState(initialSettings);
   const set = (field: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm({ ...form, [field]: e.target.value });
   const range = eventRange(form);
@@ -179,9 +185,13 @@ function EditEvent({ event }: { event: Event }) {
 
   const save = useMutation({
     mutationFn: async () => {
+      const changedSettings = Object.fromEntries(
+        Object.entries(settingsBody(settings)).filter(([k, v]) => v !== settingsBody(initialSettings)[k as keyof Settings]),
+      );
       const { error } = await api.PATCH("/api/v1/events/{event_id}", {
         params: { path: { event_id: event.id } },
         body: {
+          ...changedSettings,
           ...(form.title !== initial.title && { title: form.title.trim() }),
           ...(form.description !== initial.description && { description: form.description.trim() }),
           ...(form.venueName !== initial.venueName && { venue_name: form.venueName.trim() }),
@@ -255,8 +265,9 @@ function EditEvent({ event }: { event: Event }) {
             ))}
           </select>
         </label>
+        <EventSettings value={settings} onChange={setSettings} field={field} />
         <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
-          <Button type="submit" disabled={!range.valid} loading={save.isPending}>
+          <Button type="submit" disabled={!range.valid || !settingsValid(settings)} loading={save.isPending}>
             {t("manage.saveChanges")}
           </Button>
           {!range.valid && <span className="text-red-700">{t("form.endAfterStart")}</span>}
@@ -286,30 +297,10 @@ function TicketTypes({ eventId }: { eventId: number }) {
   return (
     <Section title={t("manage.ticketTypes")} note={t("manage.capacityNote")}>
       {types.isError && <ErrorState message={errorMessage(types.error)} />}
-      <div className="overflow-x-auto">
-        <table className="w-full max-w-3xl text-left">
-          <thead>
-            <tr className="border-b border-brand">
-              {[
-                t("manage.col.name"),
-                t("manage.col.sold"),
-                t("manage.col.priceKzt"),
-                t("manage.col.capacity"),
-                t("form.maxPerPerson"),
-                "",
-              ].map((h) => (
-                <th key={h} className="py-2 pr-3">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {types.data?.map((t) => (
-              <TicketTypeRow key={t.id} eventId={eventId} ticketType={t} />
-            ))}
-          </tbody>
-        </table>
+      <div className="grid max-w-4xl grid-cols-1 gap-4">
+        {types.data?.map((t) => (
+          <TicketTypeRow key={t.id} eventId={eventId} ticketType={t} />
+        ))}
       </div>
     </Section>
   );
@@ -317,14 +308,30 @@ function TicketTypes({ eventId }: { eventId: number }) {
 
 function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: components["schemas"]["TicketTypeOut"] }) {
   const queryClient = useQueryClient();
-  const [price, setPrice] = useState(String(ticketType.price_kzt));
-  const [capacity, setCapacity] = useState(String(ticketType.quantity_total));
-  const [limit, setLimit] = useState(ticketType.max_per_order ? String(ticketType.max_per_order) : "");
+  const initial = {
+    price: String(ticketType.price_kzt),
+    capacity: String(ticketType.quantity_total),
+    limit: ticketType.max_per_order ? String(ticketType.max_per_order) : "",
+    description: ticketType.description ?? "",
+    salesStart: toLocalInput(ticketType.sales_start_at),
+    salesEnd: toLocalInput(ticketType.sales_end_at),
+    hidden: ticketType.is_hidden,
+  };
+  const [form, setForm] = useState(initial);
+  const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await api.PATCH("/api/v1/ticket-types/{ticket_type_id}", {
         params: { path: { ticket_type_id: ticketType.id } },
-        body: { price_kzt: Number(price), quantity_total: Number(capacity), max_per_order: limit ? Number(limit) : null },
+        body: {
+          price_kzt: Number(form.price),
+          quantity_total: Number(form.capacity),
+          max_per_order: form.limit ? Number(form.limit) : null,
+          description: form.description.trim() || null,
+          sales_start_at: fromLocalInput(form.salesStart),
+          sales_end_at: fromLocalInput(form.salesEnd),
+          is_hidden: form.hidden,
+        },
       });
       if (error) throw error;
     },
@@ -333,39 +340,55 @@ function TicketTypeRow({ eventId, ticketType }: { eventId: number; ticketType: c
       queryClient.invalidateQueries({ queryKey: ["activity", eventId] });
     },
   });
-  const changed =
-    price !== String(ticketType.price_kzt) ||
-    capacity !== String(ticketType.quantity_total) ||
-    limit !== (ticketType.max_per_order ? String(ticketType.max_per_order) : "");
-  const filled = price !== "" && capacity !== "" && (limit === "" || Number(limit) >= 1);
+  const changed = (Object.keys(initial) as (keyof typeof initial)[]).some((k) => form[k] !== initial[k]);
+  const filled = form.price !== "" && form.capacity !== "" && (form.limit === "" || Number(form.limit) >= 1);
+  const field = "border-slate-400!";
   return (
-    <tr className="border-b border-slate-200">
-      <td className="py-2 pr-3">{ticketType.name}</td>
-      <td className="py-2 pr-3">{ticketType.quantity_sold}</td>
-      <td className="py-2 pr-3">
-        <Input type="number" min={0} aria-label={t("manage.priceOf", { name: ticketType.name })} className="w-32 border-slate-400!" value={price} onChange={(e) => setPrice(e.target.value)} />
-      </td>
-      <td className="py-2 pr-3">
-        <Input type="number" min={1} aria-label={t("manage.capacityOf", { name: ticketType.name })} className="w-28 border-slate-400!" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
-      </td>
-      <td className="py-2 pr-3">
-        <Input
-          type="number"
-          min={1}
-          placeholder={t("form.noLimit")}
-          aria-label={t("manage.limitOf", { name: ticketType.name })}
-          className="w-28 border-slate-400!"
-          value={limit}
-          onChange={(e) => setLimit(e.target.value)}
-        />
-      </td>
-      <td className="py-2">
-        <Button variant="secondary" disabled={!changed || !filled} loading={save.isPending} onClick={() => save.mutate()}>
+    <form
+      className="grid grid-cols-1 gap-3 border border-slate-300 p-4 sm:grid-cols-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+    >
+      <p className="font-heading text-xl sm:col-span-3">
+        {ticketType.name} · {t("manage.col.sold")}: {ticketType.quantity_sold}
+      </p>
+      <label className="space-y-1">
+        <span className="block">{t("manage.col.priceKzt")}</span>
+        <Input type="number" min={0} className={field} value={form.price} onChange={set("price")} />
+      </label>
+      <label className="space-y-1">
+        <span className="block">{t("manage.col.capacity")}</span>
+        <Input type="number" min={1} className={field} value={form.capacity} onChange={set("capacity")} />
+      </label>
+      <label className="space-y-1">
+        <span className="block">{t("form.maxPerPerson")}</span>
+        <Input type="number" min={1} placeholder={t("form.noLimit")} className={field} value={form.limit} onChange={set("limit")} />
+      </label>
+      <label className="space-y-1 sm:col-span-3">
+        <span className="block">{t("manage.typeDescription")}</span>
+        <Input className={field} value={form.description} onChange={set("description")} />
+      </label>
+      <label className="space-y-1">
+        <span className="block">{t("manage.salesStart")}</span>
+        <Input type="datetime-local" className={field} value={form.salesStart} onChange={set("salesStart")} />
+      </label>
+      <label className="space-y-1">
+        <span className="block">{t("manage.salesEnd")}</span>
+        <Input type="datetime-local" className={field} value={form.salesEnd} onChange={set("salesEnd")} />
+      </label>
+      <label className="flex items-center gap-2 self-end pb-2">
+        <input type="checkbox" checked={form.hidden} onChange={(e) => setForm({ ...form, hidden: e.target.checked })} />
+        {t("manage.hidden")}
+      </label>
+      <div className="sm:col-span-3">
+        <Button type="submit" variant="secondary" disabled={!changed || !filled} loading={save.isPending}>
           {t("common.save")}
         </Button>
         {save.isError && <ErrorState message={errorMessage(save.error)} />}
-      </td>
-    </tr>
+      </div>
+    </form>
   );
 }
 

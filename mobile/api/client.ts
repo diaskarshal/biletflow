@@ -1,8 +1,8 @@
 import * as SecureStore from "expo-secure-store";
-import { tOptional } from "../i18n";
+import { t, tOptional } from "../i18n";
 import * as FileSystem from "expo-file-system/legacy";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.136:8000";
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.136:8000";
 const REQUEST_TIMEOUT_MS = 15000;
 
 export class ApiError extends Error {
@@ -107,7 +107,7 @@ function toApiError(response: Response, data: any): ApiError {
     if (!error) {
         return new ApiError(
             `HTTP_${response.status}`,
-            `Server error (${response.status}). Please try again.`,
+            `${t("common.error")} (${response.status})`,
             response.status
         );
     }
@@ -119,7 +119,7 @@ function toApiError(response: Response, data: any): ApiError {
         return new ApiError(error.code, message, response.status);
     }
 
-    return new ApiError(error.code, error.message ?? "Request failed", response.status);
+    return new ApiError(error.code, error.message ?? t("common.error"), response.status);
 }
 
 export async function apiRequest<T>(
@@ -186,7 +186,7 @@ export async function downloadAuthenticatedFile(
 
         throw new ApiError(
             `HTTP_${result.status}`,
-            `Could not download the ticket PDF (${result.status}).`,
+            `${t("ticket.pdfFailed")} (${result.status})`,
             result.status
         );
     }

@@ -41,6 +41,9 @@ def get_ticket_type_or_404(db: Session, ticket_type_id: int) -> TicketType:
     return ticket_type
 
 
+CLEARABLE_TYPE_FIELDS = {"max_per_order", "description", "sales_start_at", "sales_end_at"}
+
+
 def update_ticket_type(db: Session, actor: User, ticket_type: TicketType, data: dict) -> TicketType:
     taken = ticket_type.quantity_sold + ticket_type.quantity_reserved
     if data.get("quantity_total") is not None and data["quantity_total"] < taken:
@@ -50,11 +53,13 @@ def update_ticket_type(db: Session, actor: User, ticket_type: TicketType, data: 
     changes = {
         field: f"{getattr(ticket_type, field)} -> {value}"
         for field, value in data.items()
-        if (value is not None or field == "max_per_order") and getattr(ticket_type, field) != value
+        if (value is not None or field in CLEARABLE_TYPE_FIELDS) and getattr(ticket_type, field) != value
     }
     for field, value in data.items():
-        if value is not None or field == "max_per_order":
+        if value is not None or field in CLEARABLE_TYPE_FIELDS:
             setattr(ticket_type, field, value)
+    if ticket_type.sales_start_at and ticket_type.sales_end_at and ticket_type.sales_end_at <= ticket_type.sales_start_at:
+        raise APIError("INVALID_SALES_WINDOW", "Sales must end after they start", status_code=400)
     if changes:
         audit.record(
             db, actor, "ticket_type.updated", "ticket_type", ticket_type.id, ticket_type.event_id,

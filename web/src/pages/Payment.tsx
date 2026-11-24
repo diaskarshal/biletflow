@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { Button } from "../components/Button";
+import { CalendarLinks } from "../components/CalendarLinks";
 import { ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
+import { useEvent } from "../hooks/useEvent";
 import { errorMessage, formatPrice } from "../lib/format";
 import { t, tOptional } from "../lib/i18n";
 
@@ -87,6 +89,7 @@ export function Payment() {
       ) : (
         <div className="space-y-3">
           <p className="text-lg font-semibold">{tOptional(`pay.result.${p.status}`) ?? p.status}</p>
+          {p.purpose === "order" && p.status === "succeeded" && <PaidEventCalendar slug={p.event_slug} />}
           <Link to={back.to} className="underline">
             {back.label}
           </Link>
@@ -94,6 +97,11 @@ export function Payment() {
       )}
     </div>
   );
+}
+
+function PaidEventCalendar({ slug }: { slug: string }) {
+  const event = useEvent(slug);
+  return event.data ? <CalendarLinks event={event.data} /> : null;
 }
 
 function Row({ k, v }: { k: string; v: string }) {

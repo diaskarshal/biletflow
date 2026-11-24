@@ -81,8 +81,8 @@ def test_golden_path(organizer_token: str, attendee_token: str, monkeypatch: pyt
     [email] = sent
     assert email["to"] == "attendee-ticket@test.kz"
     assert "01 Dec 2026, 23:00" in email["body"]
-    qr, pdf = email["attachments"].values()
-    assert qr.startswith(b"\x89PNG") and pdf.startswith(b"%PDF")
+    qr, pdf, ics = email["attachments"].values()
+    assert qr.startswith(b"\x89PNG") and pdf.startswith(b"%PDF") and ics.startswith(b"BEGIN:VCALENDAR")
     ticket_pdf = client.get(f"/api/v1/tickets/{ticket['id']}/pdf", headers=att_headers)
     assert ticket_pdf.headers["content-type"] == "application/pdf"
 

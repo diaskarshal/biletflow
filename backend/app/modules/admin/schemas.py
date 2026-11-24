@@ -21,6 +21,10 @@ class ActivationFee(BaseModel):
     amount_kzt: int = Field(ge=0)
 
 
+class ProcessingFee(BaseModel):
+    percent: float = Field(ge=0, le=20)
+
+
 class ActivationOut(BaseModel):
     event_id: int
     title: str

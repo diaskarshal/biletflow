@@ -42,7 +42,7 @@ export default function EventsTabScreen() {
         try{
             setError("");
 
-            const response = await getPublicEvents();
+            const response = await getPublicEvents(undefined, search.trim());
 
             setEvents(response.items);
             setNextCursor(response.next_cursor);
@@ -54,10 +54,11 @@ export default function EventsTabScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [search]);
 
     useEffect(() => {
-        void loadFirstPage();
+        const timer = setTimeout(() => void loadFirstPage(), 300);
+        return () => clearTimeout(timer);
     }, [loadFirstPage]);
     
     const refresh = () => {
@@ -73,7 +74,7 @@ export default function EventsTabScreen() {
         try {
             setLoadingMore(true);
 
-            const response = await getPublicEvents(nextCursor);
+            const response = await getPublicEvents(nextCursor, search.trim());
 
             setEvents((previous) => {
                 const existingIds = new Set(previous.map((event) => event.id));
@@ -96,21 +97,10 @@ export default function EventsTabScreen() {
         }
     };
 
-    const filteredEvents = events.filter((event) => {
-        const query = search.trim().toLowerCase();
-
-        if (!query) return true;
-
-        return (
-            event.title.toLowerCase().includes(query) ||
-            (event.venue_address ?? "").toLowerCase().includes(query)
-        );
-    });
-
     return (
         <View style = {styles.container}>
             <FlatList
-                data = {filteredEvents}
+                data = {events}
                 keyExtractor = {(item) => item.id.toString()}
                 renderItem = {({item}) => <EventCard event = {item} />}
                 contentContainerStyle = {styles.listContent}

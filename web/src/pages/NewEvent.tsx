@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import { Button } from "../components/Button";
 import { ErrorState } from "../components/EmptyState";
 import { CoverUpload } from "../components/CoverUpload";
+import { EventSettings, settingsBody, settingsFrom, settingsValid } from "../components/EventSettings";
 import { Input } from "../components/Input";
 import { Textarea } from "../components/Textarea";
 import { DISPLAY_TIMEZONE, eventRange } from "../lib/eventTimes";
@@ -14,7 +15,6 @@ import { t } from "../lib/i18n";
 type TicketRow = { name: string; price: string; slots: string; limit: string };
 
 const emptyTicket: TicketRow = { name: "", price: "0", slots: "", limit: "" };
-// Light grey fields on the blue card, per the design.
 const field = "bg-on-brand!";
 
 export function NewEvent() {
@@ -31,6 +31,7 @@ export function NewEvent() {
     timeTo: "",
     refundPolicy: "full_until_48h" as RefundPolicy,
   });
+  const [settings, setSettings] = useState(settingsFrom());
   const [tickets, setTickets] = useState<TicketRow[]>([{ ...emptyTicket }]);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -53,23 +54,17 @@ export function NewEvent() {
           starts_at: range.starts_at,
           ends_at: range.ends_at,
           display_timezone: DISPLAY_TIMEZONE,
-          visibility: "public",
-          capacity: ticket_types.reduce((n, t) => n + t.quantity_total, 0),
+          ...settingsBody(settings),
           refund_policy: form.refundPolicy,
           ticket_types,
         },
       });
       if (error) throw error;
-      const { error: publishError } = await api.POST("/api/v1/events/{event_id}/publish", {
-        params: { path: { event_id: event.id } },
-      });
-      if (publishError) throw publishError;
       return event;
     },
-    onSuccess: () => {
+    onSuccess: (event) => {
       queryClient.invalidateQueries({ queryKey: ["organizer-events"] });
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      navigate("/organizer");
+      navigate(`/organizer/events/${event.id}`);
     },
   });
 
@@ -86,6 +81,10 @@ export function NewEvent() {
     e.preventDefault();
     if (!eventRange(form).valid) {
       setFormError(t("form.endAfterStart"));
+      return;
+    }
+    if (!settingsValid(settings)) {
+      setFormError(t("form.regWindow"));
       return;
     }
     if (tickets.some((t) => Number(t.slots) < 1 || Number(t.price) < 0)) {
@@ -150,6 +149,7 @@ export function NewEvent() {
               </select>
             </Label>
           </div>
+          <EventSettings value={settings} onChange={setSettings} field={field} />
         </div>
 
         <h2 className="pt-4 font-heading text-2xl">{t("common.tickets")}</h2>
@@ -216,6 +216,7 @@ export function NewEvent() {
           {t("newEvent.addType")}
         </button>
 
+        <p>{t("newEvent.draftNote")}</p>
         {(formError || create.isError) && (
           <ErrorState message={formError ?? errorMessage(create.error, t("newEvent.failed"))} />
         )}

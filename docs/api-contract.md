@@ -31,8 +31,9 @@ POST   /api/v1/organizer/verification     multipart, field "document"
 
 ```
 POST   /api/v1/events                     may include ticket_types: [...] inline
-GET    /api/v1/events                     public, published, approved and not suspended, paginated
-GET    /api/v1/events/{slug}              published/completed and approved: public. Otherwise owner or admin only
+GET    /api/v1/events                     public visibility, published, approved and not suspended, paginated; ?q= searches titles
+GET    /api/v1/events/{slug}              published/completed and approved: public. Otherwise owner or admin only. Private events also need ?key= (or an order for the event)
+GET    /api/v1/events/{slug}/calendar.ics public .ics file for approved events (STATUS:CANCELLED once cancelled), private events need ?key=
 PATCH  /api/v1/events/{id}                owner, not while suspended. Date or venue changes email
                                           every valid ticket holder
 POST   /api/v1/events/{id}/publish        owner, draft only. Submits the event for admin review (review_status pending)
@@ -43,7 +44,7 @@ POST   /api/v1/events/{id}/cancel         owner, refunds paid orders, voids pend
 POST   /api/v1/events/{id}/report         any user, {reason}, one open report per user and event
 GET    /api/v1/events/{id}/activity       owner, organizer_staff or admin. ?date_from&date_to&action=<prefix>
 GET    /api/v1/events/{id}/analytics      owner. ?date_from&date_to&ticket_type_id
-GET    /api/v1/organizer/events
+GET    /api/v1/organizer/events            includes access_key for private links
 
 POST   /api/v1/events/{id}/staff          owner, {email, role: event_admin|organizer_staff}
 GET    /api/v1/events/{id}/staff          owner
@@ -60,7 +61,7 @@ POST   /api/v1/events/{id}/activation/payment      -> {payment_id} for the activ
 ## Orders, payments, tickets
 
 ```
-POST   /api/v1/orders                     header Idempotency-Key, optional promo_code.
+POST   /api/v1/orders                     header Idempotency-Key, optional promo_code, access_key for private events. Checks registration window, ticket sales window, hidden types and event capacity.
                                           Free orders are paid at once. Paid orders hold seats for
                                           15 minutes and return payment_id
 GET    /api/v1/orders/{id}
@@ -130,6 +131,8 @@ GET    /api/v1/admin/organizers?status=
 POST   /api/v1/admin/organizers/{id}/verification    {status: approved|rejected}
 GET    /api/v1/admin/settings/activation-fee
 PUT    /api/v1/admin/settings/activation-fee         {amount_kzt}
+GET    /api/v1/admin/settings/processing-fee
+PUT    /api/v1/admin/settings/processing-fee         {percent}, stored on each new paid order as fee_kzt
 GET    /api/v1/admin/activations
 POST   /api/v1/admin/events/{id}/paid-sales          {suspended}
 GET    /api/v1/admin/payments?status=                failed (default), refunded, expired, succeeded, pending

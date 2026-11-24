@@ -17,7 +17,8 @@ FONT = Path(__file__).resolve().parents[2] / "assets" / "fonts" / "DejaVuSans-Bo
 
 
 def campaign_link(campaign: PromoCampaign, event: Event) -> str:
-    return f"{settings.frontend_url}/events/{event.slug}?promo={campaign.token}"
+    link = f"{settings.frontend_url}/events/{event.slug}?promo={campaign.token}"
+    return f"{link}&key={event.access_key}" if event.visibility == "private" else link
 
 
 def create_campaign(db: Session, actor: User, event: Event, data: dict) -> PromoCampaign:

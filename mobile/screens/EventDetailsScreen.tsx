@@ -18,11 +18,11 @@ import {
 } from "../api/events";
 
 import type { RootStackParamList } from "../navigation/AppNavigation";
-import {Alert, Pressable, TextInput} from "react-native";
+import {Alert, Linking, Pressable, TextInput} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {createOrder} from "../api/orders";
-import { reportEvent } from "../api/events";
+import { calendarFileUrl, googleCalendarUrl, reportEvent } from "../api/events";
 import {useSession} from "../session/SessionContext";
 import { locale, t, tOptional } from "../i18n";
 
@@ -155,6 +155,14 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
                     </View>
                 )}
 
+                {event.category && (
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoText}>
+                            {t("event.category")}: {tOptional(`category.${event.category}`) ?? event.category}
+                        </Text>
+                    </View>
+                )}
+
                 <View style={styles.slotsBox}>
                     <Text style={styles.slotsLabel}>{t("event.slots")}</Text>
                     <Text style={styles.slotsValue}>
@@ -187,6 +195,22 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
                     </Text>
                 </Pressable>
 
+                {event.review_status === "approved" && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>{t("cal.add")}</Text>
+                        {event.status !== "cancelled" && (
+                            <Pressable style={styles.contactButton} onPress={() => Linking.openURL(googleCalendarUrl(event))}>
+                                <Text style={styles.contactButtonText}>Google Calendar</Text>
+                            </Pressable>
+                        )}
+                        <Pressable style={styles.contactButton} onPress={() => Linking.openURL(calendarFileUrl(event.slug))}>
+                            <Text style={styles.contactButtonText}>
+                                {t(event.status === "cancelled" ? "cal.cancelled" : "cal.ics")}
+                            </Text>
+                        </Pressable>
+                    </View>
+                )}
+
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{t("event.tickets")}</Text>
                     <TextInput
@@ -208,7 +232,7 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
                                 ticket={ticket}
                                 eventId = {event.id}
                                 promoCode = {promoCode.trim()}
-                                eventCancelled={event.status === "cancelled"}
+                                eventReason={eventReason(event)}
                                 paidSalesEnabled={event.paid_sales_enabled}
                             />
                         ))
@@ -252,16 +276,24 @@ function ReportEvent({ eventId }: { eventId: number }) {
     );
 }
 
+function eventReason(event: PublicEventDetails) {
+    const now = Date.now();
+    if (event.status === "cancelled") return t("event.reasonCancelled");
+    if (event.registration_opens_at && Date.parse(event.registration_opens_at) > now) return t("event.reasonRegNotOpen");
+    if (event.registration_closes_at && Date.parse(event.registration_closes_at) < now) return t("event.reasonRegClosed");
+    return null;
+}
+
 function TicketCard({
     ticket,
     eventId,
     promoCode,
-    eventCancelled,
+    eventReason,
     paidSalesEnabled,
 }: {
     ticket: TicketType;
     promoCode: string;
-    eventCancelled: boolean;
+    eventReason: string | null;
     paidSalesEnabled: boolean;
     eventId: number;
 }) {
@@ -277,8 +309,8 @@ function TicketCard({
 
     let unavailableReason: string | null = null;
 
-    if (eventCancelled) {
-        unavailableReason = t("event.reasonCancelled");
+    if (eventReason) {
+        unavailableReason = eventReason;
     } else if (ticket.price_kzt > 0 && !paidSalesEnabled) {
         unavailableReason = t("event.reasonNotOnSale");
     } else if (remaining <= 0) {
@@ -337,6 +369,7 @@ function TicketCard({
         <View style={styles.ticketCard}>
             <View style={styles.ticketInfo}>
                 <Text style={styles.ticketName}>{ticket.name}</Text>
+                {ticket.description ? <Text style={styles.ticketAvailability}>{ticket.description}</Text> : null}
                 <Text style={styles.ticketAvailability}>
                     {unavailableReason ?? t("event.available", { n: remaining })}
                 </Text>

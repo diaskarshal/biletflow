@@ -20,6 +20,7 @@ import { Layout } from "./components/layout/Layout";
 import { RequireAuth } from "./components/layout/RequireAuth";
 
 const queryClient = new QueryClient();
+window.addEventListener("auth:logout", () => queryClient.clear());
 
 function App() {
     return (

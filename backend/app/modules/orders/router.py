@@ -47,6 +47,7 @@ def create_order(
         [item.model_dump() for item in body.items],
         idempotency_key,
         body.promo_code,
+        body.access_key,
     )
     return _to_order_out(db, order)
 

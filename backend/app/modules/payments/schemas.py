@@ -11,6 +11,7 @@ class PaymentOut(BaseModel):
     amount_kzt: int
     event_id: int
     event_title: str
+    event_slug: str
     order_id: int | None
     created_at: datetime
 

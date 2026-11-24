@@ -3,25 +3,29 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { Button } from "../components/Button";
+import { CalendarLinks } from "../components/CalendarLinks";
 import { CheckoutModal } from "../components/CheckoutModal";
 import { slotsLeft } from "../components/EventCard";
 import { EventImage } from "../components/EventImage";
 import { ErrorState } from "../components/EmptyState";
 import { Spinner } from "../components/Spinner";
 import { useAuth } from "../context/AuthContext";
-import { useEvent } from "../hooks/useEvent";
+import { useEvent, type EventWithTypes } from "../hooks/useEvent";
 import { errorMessage, formatDate, formatPrice, formatTime, refundPolicyLabel } from "../lib/format";
 import { t } from "../lib/i18n";
+import type { MessageKey } from "../lib/messages";
 import type { components } from "../api/schema";
 
 type TicketType = components["schemas"]["TicketTypeOut"];
 
-// Why a ticket type can't be bought right now, or null if it can.
-function unavailableReason(ticket: TicketType, eventCancelled: boolean, paidSalesEnabled: boolean) {
-  if (eventCancelled) return t("event.reasonCancelled");
+function unavailableReason(ticket: TicketType, event: EventWithTypes) {
+  const now = Date.now();
+  if (event.status === "cancelled") return t("event.reasonCancelled");
+  if (event.registration_opens_at && new Date(event.registration_opens_at).getTime() > now) return t("event.reasonRegNotOpen");
+  if (event.registration_closes_at && new Date(event.registration_closes_at).getTime() < now) return t("event.reasonRegClosed");
+  const paidSalesEnabled = event.paid_sales_enabled;
   if (ticket.price_kzt > 0 && !paidSalesEnabled) return t("event.reasonNotOnSale");
   if (ticket.quantity_total - ticket.quantity_sold - ticket.quantity_reserved <= 0) return t("event.reasonSoldOut");
-  const now = Date.now();
   if (ticket.sales_start_at && new Date(ticket.sales_start_at).getTime() > now) return t("event.reasonNotOnSale");
   if (ticket.sales_end_at && new Date(ticket.sales_end_at).getTime() < now) return t("event.reasonClosed");
   return null;
@@ -31,9 +35,9 @@ export function EventPage() {
   const { slug = "" } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const event = useEvent(slug);
-  const [selected, setSelected] = useState<TicketType | null>(null);
   const [params] = useSearchParams();
+  const event = useEvent(slug, params.get("key"));
+  const [selected, setSelected] = useState<TicketType | null>(null);
   const token = params.get("promo");
   const promo = useQuery({
     queryKey: ["promo", event.data?.id, token],
@@ -64,7 +68,7 @@ export function EventPage() {
 
   function choose(t: TicketType) {
     if (!user) {
-      navigate(`/login?next=${encodeURIComponent(`/events/${slug}${token ? `?promo=${token}` : ""}`)}`);
+      navigate(`/login?next=${encodeURIComponent(`/events/${slug}${window.location.search}`)}`);
       return;
     }
     setSelected(t);
@@ -80,6 +84,7 @@ export function EventPage() {
             <Row k={t("common.date")} v={formatDate(e.starts_at, e.display_timezone)} />
             <Row k={t("common.time")} v={formatTime(e.starts_at, e.display_timezone)} />
             <Row k={t("common.slots")} v={`${slots.left} / ${slots.total}`} />
+            {e.category && <Row k={t("event.category")} v={t(`category.${e.category}` as MessageKey)} />}
           </dl>
           {e.venue_address && <p className="mt-1 text-lg sm:text-2xl">{e.venue_address}</p>}
           {cancelled && <p className="mt-4 font-heading text-xl text-red-700">{t("event.cancelled")}</p>}
@@ -100,7 +105,7 @@ export function EventPage() {
           {promo.isError && <p className="mt-4 text-red-700">{errorMessage(promo.error, t("event.promoInvalid"))}</p>}
           <div className="mt-auto grid grid-cols-2 gap-3 pt-8 sm:gap-5 lg:grid-cols-3">
             {types.map((tt) => {
-              const reason = unavailableReason(tt, cancelled, e.paid_sales_enabled);
+              const reason = unavailableReason(tt, e);
               return (
                 <button
                   key={tt.id}
@@ -110,6 +115,7 @@ export function EventPage() {
                   className="rounded-2xl bg-brand px-3 py-4 font-heading text-lg sm:text-xl text-on-brand transition hover:bg-brand-dark disabled:opacity-50"
                 >
                   <div>{tt.name}</div>
+                  {tt.description && <div className="font-sans text-sm">{tt.description}</div>}
                   <div>{reason ?? (tt.price_kzt === 0 ? t("common.free") : formatPrice(tt.price_kzt))}</div>
                 </button>
               );
@@ -118,6 +124,7 @@ export function EventPage() {
         </div>
       </div>
       {e.description && <p className="mt-8 whitespace-pre-line text-lg sm:text-2xl">{e.description}</p>}
+      {e.review_status === "approved" && <CalendarLinks event={e} />}
       <p className="mt-6">{t("event.refundPolicy", { policy: refundPolicyLabel(e.refund_policy) })}</p>
       <p className="mt-2">
         <Link className="underline" to={`/support/new?event_id=${e.id}`}>

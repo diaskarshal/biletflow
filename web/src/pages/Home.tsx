@@ -1,9 +1,11 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { Button } from "../components/Button";
 import { EventCard } from "../components/EventCard";
 import { EmptyState, ErrorState } from "../components/EmptyState";
+import { Input } from "../components/Input";
 import { Spinner } from "../components/Spinner";
 import { errorMessage } from "../lib/format";
 import { t } from "../lib/i18n";
@@ -11,18 +13,24 @@ import { t } from "../lib/i18n";
 const FEED_ID = "events";
 
 export function Home() {
+  const [search, setSearch] = useState("");
+  const [q, setQ] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setQ(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
   const events = useInfiniteQuery({
-    queryKey: ["events"],
+    queryKey: ["events", q],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       const { data, error } = await api.GET("/api/v1/events", {
-        // The schema types the cursor as a number, the API returns a string.
-        params: { query: { limit: 12, cursor: pageParam as unknown as number | undefined } },
+        params: { query: { limit: 12, cursor: pageParam as unknown as number | undefined, q: q || undefined } },
       });
       if (error) throw error;
       return data;
     },
     getNextPageParam: (last) => last.next_cursor ?? undefined,
+    placeholderData: keepPreviousData,
   });
 
   const items = events.data?.pages.flatMap((p) => p.items) ?? [];
@@ -30,10 +38,18 @@ export function Home() {
   return (
     <>
       <Hero />
-      <section id={FEED_ID} className="mx-auto max-w-6xl scroll-mt-6 space-y-16 px-4 py-8 sm:px-6 sm:py-12">
+      <section id={FEED_ID} className="mx-auto max-w-6xl scroll-mt-6 space-y-8 px-4 py-8 sm:px-6 sm:py-12">
+        <Input
+          type="search"
+          aria-label={t("home.search")}
+          placeholder={t("home.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-md"
+        />
         {events.isLoading && <Spinner />}
         {events.isError && <ErrorState message={errorMessage(events.error, t("home.loadFailed"))} />}
-        {events.isSuccess && items.length === 0 && <EmptyState title={t("home.empty")} />}
+        {events.isSuccess && items.length === 0 && <EmptyState title={t(q ? "home.noMatch" : "home.empty")} />}
         {items.length > 0 && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((e) => (
@@ -55,7 +71,6 @@ export function Home() {
 
 const linkClass = "text-accent underline underline-offset-8 hover:decoration-4";
 
-// Fills the first screen under the nav, so the feed starts below the fold.
 function Hero() {
   function scrollToFeed(e: React.MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
@@ -74,7 +89,6 @@ function Hero() {
         {t("home.after1")}
         <br />
         {t("home.before2")}
-        {/* RequireAuth sends guests to login and back here afterwards. */}
         <Link to="/organizer/events/new" className={linkClass}>
           {t("home.link2")}
         </Link>

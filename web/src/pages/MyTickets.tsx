@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { Button } from "../components/Button";
+import { CalendarLinks } from "../components/CalendarLinks";
 import { EventCard } from "../components/EventCard";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Modal } from "../components/Modal";
@@ -17,7 +18,7 @@ type Ticket = components["schemas"]["TicketOut"];
 type EventOut = components["schemas"]["EventOut"];
 
 export function MyTickets() {
-  const [shown, setShown] = useState<Ticket | null>(null);
+  const [shown, setShown] = useState<{ ticket: Ticket; event: EventOut } | null>(null);
 
   const orders = useQuery({
     queryKey: ["my-orders"],
@@ -44,18 +45,22 @@ export function MyTickets() {
           {t("tickets.awaiting", { id: o.id, event: o.event.title, amount: formatPrice(o.total_kzt) })}{" "}
           <Link to={`/pay/${o.payment_id}`} className="font-semibold underline">
             {t("tickets.completePayment")}
+          </Link>{" "}
+          <Link to={`/support/new?order_id=${o.id}`} className="underline">
+            {t("tickets.orderHelp")}
           </Link>
         </p>
       ))}
       {orders.isSuccess && tickets.length === 0 && <EmptyState title={t("tickets.empty")}>{t("tickets.emptyHint")}</EmptyState>}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {tickets.map(({ ticket, event }) => (
-          <TicketCard key={ticket.id} ticket={ticket} event={event} onOpen={() => setShown(ticket)} />
+          <TicketCard key={ticket.id} ticket={ticket} event={event} onOpen={() => setShown({ ticket, event })} />
         ))}
       </div>
       {shown && (
         <Modal onClose={() => setShown(null)} label={t("tickets.qrLabel")}>
-          <QrCode ticket={shown} />
+          <QrCode ticket={shown.ticket} />
+          {shown.ticket.status === "valid" && <CalendarLinks event={shown.event} />}
         </Modal>
       )}
     </div>
@@ -71,7 +76,6 @@ function TicketCard({ ticket, event, onOpen }: { ticket: Ticket; event: EventOut
 }
 
 function QrCode({ ticket }: { ticket: Ticket }) {
-  // The QR endpoint needs the bearer token, so a plain <img src> won't work: fetch as a blob.
   const qr = useQuery({
     queryKey: ["ticket-qr", ticket.id],
     queryFn: async () => {

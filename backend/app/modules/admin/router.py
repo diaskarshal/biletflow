@@ -12,6 +12,7 @@ from app.modules.admin.schemas import (
     OrganizerReviewOut,
     PaymentRow,
     PendingEventRow,
+    ProcessingFee,
     PromoRow,
     ReportOut,
     ReviewDecision,
@@ -51,6 +52,18 @@ def set_activation_fee(
     body: ActivationFee, _: User = Depends(get_admin_user), db: Session = Depends(get_db)
 ) -> dict:
     return {"amount_kzt": service.set_activation_fee(db, body.amount_kzt)}
+
+
+@router.get("/settings/processing-fee", response_model=ProcessingFee)
+def get_processing_fee(_: User = Depends(get_admin_user), db: Session = Depends(get_db)) -> dict:
+    return {"percent": service.get_processing_fee_percent(db)}
+
+
+@router.put("/settings/processing-fee", response_model=ProcessingFee)
+def set_processing_fee(
+    body: ProcessingFee, _: User = Depends(get_admin_user), db: Session = Depends(get_db)
+) -> dict:
+    return {"percent": service.set_processing_fee_percent(db, body.percent)}
 
 
 @router.get("/activations", response_model=list[ActivationOut])

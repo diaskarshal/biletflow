@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, Query, Request, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db, get_optional_user
@@ -16,6 +16,7 @@ from app.modules.events.schemas import (
     EventOut,
     EventUpdate,
     EventWithTicketTypesOut,
+    OrganizerEventOut,
     PaymentRef,
     StaffCreate,
     StaffOut,
@@ -40,22 +41,38 @@ def create_event(
 
 @router.get("/events", response_model=EventListOut)
 def list_events(
-    limit: int = Query(20, ge=1, le=100), cursor: int | None = None, db: Session = Depends(get_db)
+    limit: int = Query(20, ge=1, le=100),
+    cursor: int | None = None,
+    q: str | None = Query(None, max_length=100),
+    db: Session = Depends(get_db),
 ) -> EventListOut:
-    events, next_cursor = service.list_published_events(db, limit, cursor)
+    events, next_cursor = service.list_published_events(db, limit, cursor, q)
     return EventListOut(items=events, next_cursor=str(next_cursor) if next_cursor else None)
 
 
-@router.get("/organizer/events", response_model=list[EventOut])
+@router.get("/organizer/events", response_model=list[OrganizerEventOut])
 def organizer_events(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[Event]:
     return service.list_organizer_events(db, user)
 
 
 @router.get("/events/{slug}", response_model=EventOut)
 def get_event(
-    slug: str, user: User | None = Depends(get_optional_user), db: Session = Depends(get_db)
+    slug: str,
+    key: str | None = None,
+    user: User | None = Depends(get_optional_user),
+    db: Session = Depends(get_db),
 ) -> Event:
-    return service.get_event_by_slug_for_viewer(db, slug, user)
+    return service.get_event_by_slug_for_viewer(db, slug, user, key)
+
+
+@router.get("/events/{slug}/calendar.ics")
+def event_calendar(slug: str, key: str | None = None, db: Session = Depends(get_db)) -> Response:
+    event = service.get_event_for_calendar(db, slug, key)
+    return Response(
+        content=service.calendar_ics(db, event),
+        media_type="text/calendar; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{event.slug}.ics"'},
+    )
 
 
 @router.patch("/events/{event_id}", response_model=EventOut)

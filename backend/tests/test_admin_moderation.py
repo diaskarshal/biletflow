@@ -117,7 +117,7 @@ def test_new_events_need_admin_approval(monkeypatch):
     assert (published["status"], published["review_status"]) == ("published", "pending")
 
     def public_ids():
-        return [e["id"] for e in client.get("/api/v1/events?limit=100").json()["items"]]
+        return [e["id"] for e in client.get("/api/v1/events", params={"q": event["title"]}).json()["items"]]
 
     assert event_id not in public_ids()
     assert client.get(f"/api/v1/events/{slug}").status_code == 404

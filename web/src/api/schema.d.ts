@@ -262,6 +262,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{slug}/calendar.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Event Calendar */
+        get: operations["event_calendar_api_v1_events__slug__calendar_ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}": {
         parameters: {
             query?: never;
@@ -982,6 +999,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/settings/processing-fee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Processing Fee */
+        get: operations["get_processing_fee_api_v1_admin_settings_processing_fee_get"];
+        /** Set Processing Fee */
+        put: operations["set_processing_fee_api_v1_admin_settings_processing_fee_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/activations": {
         parameters: {
             query?: never;
@@ -1284,6 +1319,10 @@ export interface components {
             refunds_kzt: number;
             /** Net Kzt */
             net_kzt: number;
+            /** Fees Kzt */
+            fees_kzt: number;
+            /** Payout Kzt */
+            payout_kzt: number;
             /** Sales By Day */
             sales_by_day: components["schemas"]["DaySales"][];
             /** By Ticket Type */
@@ -1561,7 +1600,7 @@ export interface components {
             /** Description */
             description?: string | null;
             /** Category */
-            category?: string | null;
+            category?: ("concert" | "conference" | "workshop" | "sports" | "theatre" | "meetup" | "festival" | "other") | null;
             /** Venue Name */
             venue_name?: string | null;
             /** Venue Address */
@@ -1586,8 +1625,9 @@ export interface components {
             /**
              * Visibility
              * @default public
+             * @enum {string}
              */
-            visibility: string;
+            visibility: "public" | "unlisted" | "private";
             /** Capacity */
             capacity?: number | null;
             /** Registration Opens At */
@@ -1688,7 +1728,7 @@ export interface components {
             /** Description */
             description?: string | null;
             /** Category */
-            category?: string | null;
+            category?: ("concert" | "conference" | "workshop" | "sports" | "theatre" | "meetup" | "festival" | "other") | null;
             /** Venue Name */
             venue_name?: string | null;
             /** Venue Address */
@@ -1700,7 +1740,7 @@ export interface components {
             /** Ends At */
             ends_at?: string | null;
             /** Visibility */
-            visibility?: string | null;
+            visibility?: ("public" | "unlisted" | "private") | null;
             /** Capacity */
             capacity?: number | null;
             /** Registration Opens At */
@@ -1829,6 +1869,8 @@ export interface components {
             items: components["schemas"]["OrderItemCreate"][];
             /** Promo Code */
             promo_code?: string | null;
+            /** Access Key */
+            access_key?: string | null;
         };
         /** OrderItemCreate */
         OrderItemCreate: {
@@ -1903,6 +1945,66 @@ export interface components {
              */
             created_at: string;
         };
+        /** OrganizerEventOut */
+        OrganizerEventOut: {
+            /** Id */
+            id: number;
+            /** Organizer Id */
+            organizer_id: number;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Category */
+            category: string | null;
+            /** Venue Name */
+            venue_name: string | null;
+            /** Venue Address */
+            venue_address: string | null;
+            /** Cover Image Url */
+            cover_image_url: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Display Timezone */
+            display_timezone: string;
+            /** Visibility */
+            visibility: string;
+            /** Status */
+            status: string;
+            /** Capacity */
+            capacity: number | null;
+            /** Registration Opens At */
+            registration_opens_at: string | null;
+            /** Registration Closes At */
+            registration_closes_at: string | null;
+            /** Paid Sales Enabled */
+            paid_sales_enabled: boolean;
+            /** Refund Policy */
+            refund_policy: string;
+            /** Suspended At */
+            suspended_at: string | null;
+            /** Review Status */
+            review_status: string;
+            /** Review Note */
+            review_note: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Access Key */
+            access_key: string;
+        };
         /** OrganizerProfileOut */
         OrganizerProfileOut: {
             /** Id */
@@ -1967,6 +2069,8 @@ export interface components {
             event_id: number;
             /** Event Title */
             event_title: string;
+            /** Event Slug */
+            event_slug: string;
             /** Order Id */
             order_id: number | null;
             /**
@@ -2026,6 +2130,11 @@ export interface components {
              * Format: date-time
              */
             submitted_at: string;
+        };
+        /** ProcessingFee */
+        ProcessingFee: {
+            /** Percent */
+            percent: number;
         };
         /** PromoPreview */
         PromoPreview: {
@@ -2302,6 +2411,14 @@ export interface components {
             sold: number;
             /** Revenue Kzt */
             revenue_kzt: number;
+            /** Available */
+            available: number;
+            /** Reserved */
+            reserved: number;
+            /** Refunded */
+            refunded: number;
+            /** Checked In */
+            checked_in: number;
         };
         /** UploadOut */
         UploadOut: {
@@ -2781,6 +2898,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 cursor?: number | null;
+                q?: string | null;
             };
             header?: never;
             path?: never;
@@ -2856,14 +2974,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EventOut"][];
+                    "application/json": components["schemas"]["OrganizerEventOut"][];
                 };
             };
         };
     };
     get_event_api_v1_events__slug__get: {
         parameters: {
-            query?: never;
+            query?: {
+                key?: string | null;
+            };
             header?: never;
             path: {
                 slug: string;
@@ -2879,6 +2999,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    event_calendar_api_v1_events__slug__calendar_ics_get: {
+        parameters: {
+            query?: {
+                key?: string | null;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -4390,6 +4543,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActivationFee"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_processing_fee_api_v1_admin_settings_processing_fee_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessingFee"];
+                };
+            };
+        };
+    };
+    set_processing_fee_api_v1_admin_settings_processing_fee_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessingFee"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcessingFee"];
                 };
             };
             /** @description Validation Error */

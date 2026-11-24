@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.db.models import Order, User
 from app.db.session import SessionLocal
 from app.main import app
+from app.modules.events import service as events_service
 from app.modules.orders import service as orders_service
 from app.modules.payments import service as payments_service
 from tests.helpers import approve
@@ -55,6 +56,8 @@ def test_paid_sales_activation_and_checkout(monkeypatch: pytest.MonkeyPatch):
     sent = []
     monkeypatch.setattr(orders_service, "send_email", lambda **kw: sent.append(kw))
     monkeypatch.setattr(payments_service, "send_email", lambda **kw: sent.append(kw))
+    payouts = []
+    monkeypatch.setattr(events_service, "send_email", lambda to, subject, body: payouts.append(subject))
     org, buyer, admin = _login("organizer"), _login("buyer"), _login("admin", admin=True)
 
     event = client.post(
@@ -98,6 +101,7 @@ def test_paid_sales_activation_and_checkout(monkeypatch: pytest.MonkeyPatch):
     assert _pay(org, fee["payment_id"], "success").json()["status"] == "succeeded"
     status = client.get(f"/api/v1/events/{event_id}/activation", headers=org).json()
     assert status["fee_paid"] and status["paid_sales_enabled"]
+    assert payouts and payouts[-1].endswith(": active")
 
     order = _buy(buyer, event_id, vip_id).json()
     assert order["status"] == "pending" and order["payment_id"]
@@ -114,6 +118,9 @@ def test_paid_sales_activation_and_checkout(monkeypatch: pytest.MonkeyPatch):
     assert paid["status"] == "paid" and paid["tickets"][0]["status"] == "valid"
     assert (_vip(event_id)["quantity_sold"], _vip(event_id)["quantity_reserved"]) == (1, 0)
     assert len(sent) == 1
+    assert paid["fee_kzt"] == 125
+    stats = client.get(f"/api/v1/events/{event_id}/analytics", headers=org).json()
+    assert (stats["fees_kzt"], stats["payout_kzt"]) == (125, 4875)
     assert _pay(buyer, order["payment_id"], "failure").json()["error"]["code"] == "PAYMENT_CLOSED"
 
     failed = _buy(buyer, event_id, vip_id).json()

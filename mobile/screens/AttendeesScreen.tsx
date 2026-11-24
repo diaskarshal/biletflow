@@ -4,15 +4,9 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { checkInById, getSummary, searchAttendees, undoCheckIn } from "../api/checkin";
 import type { Attendee, CheckinSummary } from "../api/checkin";
 import type { RootStackParamList } from "../navigation/AppNavigation";
+import { t, tOptional } from "../i18n";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Attendees">;
-
-const STATUS_LABEL: Record<string, string> = {
-    valid: "Not checked in",
-    checked_in: "Checked in",
-    cancelled: "Cancelled",
-    refunded: "Refunded",
-};
 
 export default function AttendeesScreen({ route }: Props) {
     const { eventId } = route.params;
@@ -31,7 +25,7 @@ export default function AttendeesScreen({ route }: Props) {
             setSummary(counts);
             setError("");
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Could not load attendees");
+            setError(e instanceof Error ? e.message : t("manage.attendeesFailed"));
         }
     }, [eventId, query]);
 
@@ -49,7 +43,7 @@ export default function AttendeesScreen({ route }: Props) {
             }
             await load();
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Action failed");
+            setError(e instanceof Error ? e.message : t("common.error"));
         }
     }
 
@@ -57,12 +51,12 @@ export default function AttendeesScreen({ route }: Props) {
         <View style={styles.container}>
             {summary && (
                 <Text style={styles.counts}>
-                    Checked in {summary.checked_in} of {summary.registered}
+                    {t("manage.checkedIn", { n: summary.checked_in, total: summary.registered })}
                 </Text>
             )}
             <TextInput
                 style={styles.input}
-                placeholder="Search by name or email"
+                placeholder={t("att.search")}
                 value={query}
                 onChangeText={setQuery}
                 autoCapitalize="none"
@@ -72,21 +66,21 @@ export default function AttendeesScreen({ route }: Props) {
             <FlatList
                 data={attendees}
                 keyExtractor={(a) => String(a.ticket_id)}
-                ListEmptyComponent={<Text style={styles.empty}>No attendees found.</Text>}
+                ListEmptyComponent={<Text style={styles.empty}>{t("att.none")}</Text>}
                 renderItem={({ item }) => (
                     <View style={styles.row}>
                         <View style={styles.info}>
                             <Text style={styles.name}>{item.attendee_name}</Text>
                             <Text>{item.attendee_email}</Text>
                             <Text>
-                                {item.ticket_type_name} · {STATUS_LABEL[item.status] ?? item.status}
+                                {item.ticket_type_name} · {tOptional(`att.${item.status}`) ?? item.status}
                             </Text>
                         </View>
                         {item.status === "valid" && (
-                            <Button title="Check in" onPress={() => act(item)} />
+                            <Button title={t("att.checkIn")} onPress={() => act(item)} />
                         )}
                         {item.status === "checked_in" && (
-                            <Button title="Undo" color="#b00020" onPress={() => act(item)} />
+                            <Button title={t("att.undo")} color="#b00020" onPress={() => act(item)} />
                         )}
                     </View>
                 )}

@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigation";
 import { getMyOrders, type Order, type OrderTicket } from "../api/orders";
-import { locale, t } from "../i18n";
+import { locale, t, tOptional } from "../i18n";
 
 type TicketListItem = {
     ticket: OrderTicket;
@@ -139,6 +139,15 @@ export default function TicketsScreen() {
                                 {t("tickets.awaiting", { event: o.event.title })}
                             </Text>
                         ))}
+                        {awaiting.map((o) => (
+                            <Text
+                                key={`help-${o.id}`}
+                                style={styles.retry}
+                                onPress={() => navigation.navigate("NewSupportCase", { orderId: o.id })}
+                            >
+                                {t("tickets.orderHelp", { id: o.id })}
+                            </Text>
+                        ))}
                     </View>
                 }
                 ListEmptyComponent={
@@ -177,7 +186,7 @@ export default function TicketsScreen() {
 
                                 <View style={styles.statusBadge}>
                                     <Text style={styles.statusText}>
-                                        {ticket.status.toUpperCase()}
+                                        {tOptional(`tickets.st.${ticket.status}`) ?? ticket.status}
                                     </Text>
                                 </View>
                             </View>
@@ -202,10 +211,10 @@ export default function TicketsScreen() {
 
                             <View style={styles.ticketFooter}>
                                 <Text style={styles.ticketNumber}>
-                                    Ticket #{ticket.id}
+                                    {t("tickets.number", { id: ticket.id })}
                                 </Text>
                                 <Text style={styles.orderStatus}>
-                                    Order: {order.status}
+                                    {t("tickets.order", { status: tOptional(`order.${order.status}`) ?? order.status })}
                                 </Text>
                             </View>
                         </Pressable>

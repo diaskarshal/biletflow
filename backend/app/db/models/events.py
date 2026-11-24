@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime
 
 from sqlalchemy import CheckConstraint, ForeignKey, func
@@ -20,6 +21,7 @@ class Event(Base):
         CheckConstraint(
             "review_status in ('pending','approved','rejected')", name="ck_events_review_status"
         ),
+        CheckConstraint("capacity IS NULL OR capacity > 0", name="ck_events_capacity"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -35,6 +37,7 @@ class Event(Base):
     ends_at: Mapped[datetime]
     display_timezone: Mapped[str] = mapped_column(default="Asia/Almaty")
     visibility: Mapped[str] = mapped_column(default="public")
+    access_key: Mapped[str] = mapped_column(default=lambda: secrets.token_hex(8))
     status: Mapped[str] = mapped_column(default="draft")
     capacity: Mapped[int | None]
     registration_opens_at: Mapped[datetime | None]

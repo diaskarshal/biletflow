@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { calendarFileUrl } from "../api/events";
 import { getPayment, simulatePayment, type Payment } from "../api/orders";
 import type { RootStackParamList } from "../navigation/AppNavigation";
 import { t, tOptional } from "../i18n";
@@ -64,6 +65,14 @@ export default function PaymentScreen({ route, navigation }: Props) {
             ) : (
                 <>
                     <Text style={styles.result}>{tOptional(`pay.result.${payment.status}`) ?? payment.status}</Text>
+                    {payment.purpose === "order" && payment.status === "succeeded" && (
+                        <Pressable
+                            style={[styles.button, styles.secondary]}
+                            onPress={() => Linking.openURL(calendarFileUrl(payment.event_slug))}
+                        >
+                            <Text style={[styles.buttonText, styles.secondaryText]}>{t("cal.add")}</Text>
+                        </Pressable>
+                    )}
                     <Pressable style={styles.button} onPress={() => navigation.goBack()}>
                         <Text style={styles.buttonText}>{t("pay.done")}</Text>
                     </Pressable>

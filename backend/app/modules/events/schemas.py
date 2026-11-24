@@ -6,21 +6,23 @@ from pydantic import BaseModel, EmailStr, Field, StringConstraints
 from app.modules.tickets.schemas import TicketTypeCreate, TicketTypeOut
 
 RefundPolicy = Literal["full_until_48h", "full_anytime", "no_refunds"]
+Category = Literal["concert", "conference", "workshop", "sports", "theatre", "meetup", "festival", "other"]
+Visibility = Literal["public", "unlisted", "private"]
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 
 
 class EventCreate(BaseModel):
     title: Title
     description: str | None = None
-    category: str | None = None
+    category: Category | None = None
     venue_name: str | None = None
     venue_address: str | None = None
     cover_image_url: str | None = None
     starts_at: datetime
     ends_at: datetime
     display_timezone: str = "Asia/Almaty"
-    visibility: str = "public"
-    capacity: int | None = None
+    visibility: Visibility = "public"
+    capacity: int | None = Field(default=None, gt=0)
     registration_opens_at: datetime | None = None
     registration_closes_at: datetime | None = None
     refund_policy: RefundPolicy = "full_until_48h"
@@ -30,14 +32,14 @@ class EventCreate(BaseModel):
 class EventUpdate(BaseModel):
     title: Title | None = None
     description: str | None = None
-    category: str | None = None
+    category: Category | None = None
     venue_name: str | None = None
     venue_address: str | None = None
     cover_image_url: str | None = None
     starts_at: datetime | None = None
     ends_at: datetime | None = None
-    visibility: str | None = None
-    capacity: int | None = None
+    visibility: Visibility | None = None
+    capacity: int | None = Field(default=None, gt=0)
     registration_opens_at: datetime | None = None
     registration_closes_at: datetime | None = None
     refund_policy: RefundPolicy | None = None
@@ -69,6 +71,10 @@ class EventOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class OrganizerEventOut(EventOut):
+    access_key: str
 
 
 class EventWithTicketTypesOut(EventOut):

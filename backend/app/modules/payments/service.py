@@ -28,6 +28,7 @@ def to_out(db: Session, payment: Payment) -> dict:
         "amount_kzt": payment.amount_kzt,
         "event_id": payment.event_id,
         "event_title": db.get(Event, payment.event_id).title,
+        "event_slug": db.get(Event, payment.event_id).slug,
         "order_id": payment.order_id,
         "created_at": payment.created_at,
     }
@@ -63,6 +64,8 @@ def apply_provider_result(db: Session, payment: Payment, outcome: str, payer: Us
 
     if tickets:
         orders_service.send_ticket_emails(db, event, tickets)
+    if payment.purpose == "activation" and status == "succeeded" and event.paid_sales_enabled:
+        events_service.notify_payout_status(db, event, "active")
     if payment.purpose == "order" and status == "failed":
         send_email(
             to=payer.email,

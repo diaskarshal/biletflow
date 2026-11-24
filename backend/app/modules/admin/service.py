@@ -36,6 +36,22 @@ def set_activation_fee(db: Session, amount_kzt: int) -> int:
     return amount_kzt
 
 
+PROCESSING_FEE_KEY = "processing_fee_percent"
+
+
+def get_processing_fee_percent(db: Session) -> float:
+    setting = db.get(Setting, PROCESSING_FEE_KEY)
+    return float(setting.value) if setting else 2.5
+
+
+def set_processing_fee_percent(db: Session, percent: float) -> float:
+    setting = db.get(Setting, PROCESSING_FEE_KEY) or Setting(key=PROCESSING_FEE_KEY, value="")
+    setting.value = str(percent)
+    db.add(setting)
+    db.commit()
+    return percent
+
+
 def list_organizers(db: Session, status: str | None) -> list[dict]:
     query = db.query(OrganizerProfile, User).join(User, User.id == OrganizerProfile.user_id)
     if status:

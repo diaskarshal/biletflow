@@ -29,7 +29,7 @@ export type RootStackParamList = {
     Scanner: { eventId: number; title: string };
     Attendees: { eventId: number };
     TicketDetails: {ticket: OrderTicket; event: OrderEvent};
-    NewSupportCase: { ticketId?: number; eventId?: number };
+    NewSupportCase: { ticketId?: number; eventId?: number; orderId?: number };
     Payment: { paymentId: number };
     SupportCase: { caseId: number };
     NewEvent: undefined;
@@ -65,7 +65,7 @@ export default function AppNavigator() {
                     <Stack.Screen
                         name="Events"
                         component={EventsScreen}
-                        options={{ title: "My events" }}
+                        options={{ title: t("organizer.title") }}
                     />
                     <Stack.Screen
                         name = "EventDetails"
@@ -80,7 +80,7 @@ export default function AppNavigator() {
                     <Stack.Screen
                         name="Attendees"
                         component={AttendeesScreen}
-                        options={{ title: "Attendees" }}
+                        options={{ title: t("manage.attendees") }}
                     />
                     <Stack.Screen
                         name = "TicketDetails"
@@ -89,8 +89,8 @@ export default function AppNavigator() {
                     />
                     <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: t("title.payment") }} />
                     <Stack.Screen name="SupportCase" component={SupportCaseScreen} options={{ title: t("title.supportCase") }} />
-                    <Stack.Screen name="NewEvent" component={NewEventScreen} options={{ title: "New event" }} />
-                    <Stack.Screen name="ManageEvent" component={ManageEventScreen} options={{ title: "Manage event" }} />
+                    <Stack.Screen name="NewEvent" component={NewEventScreen} options={{ title: t("newEvent.title") }} />
+                    <Stack.Screen name="ManageEvent" component={ManageEventScreen} options={{ title: t("title.manageEvent") }} />
                     <Stack.Screen
                         name = "NewSupportCase"
                         component = {NewSupportCaseScreen}

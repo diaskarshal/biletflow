@@ -27,6 +27,7 @@ export type OrderEvent = {
     display_timezone: string;
     venue_name: string | null;
     venue_address: string | null;
+    visibility: string;
 };
 
 export type Order = {
@@ -81,6 +82,7 @@ export type Payment = {
     amount_kzt: number;
     event_id: number;
     event_title: string;
+    event_slug: string;
 };
 
 export function getPayment(id: number): Promise<Payment> {

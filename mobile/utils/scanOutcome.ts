@@ -1,4 +1,5 @@
 import { ApiError } from "../api/client";
+import { t } from "../i18n";
 
 export type ScanOutcome =
     | { kind: "valid"; attendeeName: string; ticketId: number }
@@ -18,34 +19,34 @@ export function rejectedQrOutcome(kind: "link" | "unknown"): ScanOutcome {
     if (kind === "link") {
         return {
             kind: "not_ticket",
-            message: "This is a link or promo QR code, not an admission ticket.",
+            message: t("scan.msgLink"),
         };
     }
-    return { kind: "not_ticket", message: "This QR code is not a BiletFlow ticket." };
+    return { kind: "not_ticket", message: t("scan.msgUnknown") };
 }
 
 export function outcomeFromError(error: unknown): ScanOutcome {
     if (!(error instanceof ApiError)) {
-        return { kind: "error", message: "Something went wrong. Scan again." };
+        return { kind: "error", message: t("scan.msgError") };
     }
 
     switch (error.code) {
         case "ALREADY_CHECKED_IN":
-            return { kind: "already_used", message: "This ticket has already been used." };
+            return { kind: "already_used", message: t("scan.msgUsed") };
         case "TICKET_CANCELLED":
-            return { kind: "cancelled", message: "This ticket has been cancelled." };
+            return { kind: "cancelled", message: t("scan.msgCancelled") };
         case "TICKET_REFUNDED":
-            return { kind: "refunded", message: "This ticket has been refunded." };
+            return { kind: "refunded", message: t("scan.msgRefunded") };
         case "TICKET_INVALID":
-            return { kind: "invalid", message: error.message };
+            return { kind: "invalid", message: t(error.status === 404 ? "scan.msgNotFound" : "scan.msgWrongEvent") };
         case "TICKET_UNPAID":
-            return { kind: "invalid", message: "This ticket has not been paid for." };
+            return { kind: "invalid", message: t("scan.msgUnpaid") };
         case "FORBIDDEN":
-            return { kind: "forbidden", message: "You are not assigned to check in for this event." };
+            return { kind: "forbidden", message: t("scan.msgForbidden") };
         case "NETWORK_ERROR":
             return {
                 kind: "error",
-                message: "No connection to the server. Nobody was checked in. Scan again to retry.",
+                message: t("scan.msgNetwork"),
             };
         default:
             return { kind: "error", message: error.message };

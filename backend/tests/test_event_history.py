@@ -98,6 +98,7 @@ def test_public_listing_pages_cover_every_event():
             e.id
             for e in db.query(Event).filter(
                 Event.status == "published",
+                Event.visibility == "public",
                 Event.review_status == "approved",
                 Event.deleted_at.is_(None),
                 Event.suspended_at.is_(None),
@@ -123,3 +124,13 @@ def test_cover_upload():
     text = client.post("/api/v1/uploads/cover", headers=org, files={"image": ("notes.txt", b"hello", "text/plain")})
     assert text.json()["error"]["code"] == "INVALID_IMAGE"
     assert client.post("/api/v1/uploads/cover", files={"image": ("cover.png", png.getvalue(), "image/png")}).status_code == 401
+
+
+def test_public_search_by_title():
+    org, _ = _login("organizer")
+    event = _event(org)
+    client.post(f"/api/v1/events/{event['id']}/publish", headers=org)
+    approve(event["id"])
+    found = client.get("/api/v1/events", params={"q": event["title"].upper(), "limit": 100}).json()["items"]
+    assert [e["id"] for e in found] == [event["id"]]
+    assert client.get("/api/v1/events", params={"q": "%"}).json()["items"] == []

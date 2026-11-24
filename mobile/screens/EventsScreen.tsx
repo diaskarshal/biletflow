@@ -15,14 +15,15 @@ import type { EventItem } from "../api/events";
 import type { RootStackParamList } from "../navigation/AppNavigation";
 import { useSession } from "../session/SessionContext";
 import { formatEventDate } from "../utils/formatDate";
+import { t, type MessageKey } from "../i18n";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Events">;
 
-const STATUS_LABEL: Record<EventItem["status"], string> = {
-    draft: "Draft",
-    published: "Open for check-in",
-    cancelled: "Cancelled",
-    completed: "Completed",
+const STATUS_LABEL: Record<EventItem["status"], MessageKey> = {
+    draft: "status.draft",
+    published: "ev.open",
+    cancelled: "status.cancelled",
+    completed: "status.completed",
 };
 
 function isScannable(event: EventItem) {
@@ -38,7 +39,7 @@ export default function EventsScreen({ navigation }: Props) {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            headerRight: () => <Button title="Log out" onPress={signOut} />,
+            headerRight: () => <Button title={t("profile.logout")} onPress={signOut} />,
         });
     }, [navigation, signOut]);
 
@@ -47,7 +48,7 @@ export default function EventsScreen({ navigation }: Props) {
         try {
             setEvents(await getMyEvents());
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Could not load events");
+            setError(e instanceof Error ? e.message : t("events.loadFailed"));
         }
     }, []);
 
@@ -75,7 +76,7 @@ export default function EventsScreen({ navigation }: Props) {
         return (
             <View style={styles.center}>
                 <Text style={styles.errorText}>{error}</Text>
-                <Button title="Try again" onPress={load} />
+                <Button title={t("common.tryAgain")} onPress={load} />
             </View>
         );
     }
@@ -89,13 +90,13 @@ export default function EventsScreen({ navigation }: Props) {
             onRefresh={handleRefresh}
             ListHeaderComponent={
                 <View>
-                    <Text style={styles.greeting}>Hi, {user?.full_name}</Text>
-                    <Text style={styles.subtitle}>Choose an event to check people in.</Text>
+                    <Text style={styles.greeting}>{t("ev.hi", { name: user?.full_name ?? "" })}</Text>
+                    <Text style={styles.subtitle}>{t("ev.choose")}</Text>
                     {error !== "" && <Text style={styles.errorText}>{error}</Text>}
                 </View>
             }
             ListEmptyComponent={
-                <Text style={styles.empty}>No events found for this account.</Text>
+                <Text style={styles.empty}>{t("ev.none")}</Text>
             }
             renderItem={({ item }) => {
                 const scannable = isScannable(item);
@@ -120,7 +121,7 @@ export default function EventsScreen({ navigation }: Props) {
                             <Text style={styles.cardLine}>{item.venue_name}</Text>
                         )}
                         <Text style={[styles.status, scannable && styles.statusOpen]}>
-                            {STATUS_LABEL[item.status]}
+                            {t(STATUS_LABEL[item.status])}
                         </Text>
                     </Pressable>
                 );

@@ -89,6 +89,22 @@ By default, every email (for account confirmation, tickets, and password reset) 
 
 For Gmail, turn on 2-Step Verification and create an app password at https://myaccount.google.com/apppasswords (your normal password will not work). Then run `docker compose up -d` in `infra/`. Links in emails point to http://localhost:5173 by default, so they only open on the computer running the app. To open them on a phone (same Wi-Fi), also add `FRONTEND_URL=http://<your computer's LAN IP>:5173` to `infra/.env` and run `docker compose up -d` again.
 
+## Backups
+
+Back up the database (run in `infra/`), for example once a day:
+
+```bash
+docker compose exec -T postgres pg_dump -U biletflow -Fc biletflow > backup-$(date +%F).dump
+```
+
+Restore a backup into the running database:
+
+```bash
+docker compose exec -T postgres pg_restore -U biletflow -d biletflow --clean --if-exists < backup-2026-11-24.dump
+```
+
+Uploaded cover images and documents live in `backend/uploads/`, so copy that folder together with the dump.
+
 ## Tests
 
 In Docker:

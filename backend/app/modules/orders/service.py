@@ -16,6 +16,7 @@ from app.db.models import (
     TicketType,
     User,
 )
+from app.modules.admin import service as admin_service
 from app.modules.events import service as events_service
 from app.modules.promos import service as promos_service
 from app.modules.tickets import service as tickets_service
@@ -36,6 +37,7 @@ def ticket_email_body(event: Event, ticket: Ticket) -> str:
         f"Ticket: #{ticket.id}",
         "",
         "Your QR code and a printable PDF ticket are attached. Show either at the entrance.",
+        "Open the attached .ics file to add the event to your calendar.",
         "You can also find it under My tickets on BiletFlow.",
     ]
     return "\n".join(lines)
@@ -51,19 +53,27 @@ def create_order(
     items_data: list[dict],
     idempotency_key: str,
     promo_code: str | None = None,
+    access_key: str | None = None,
 ) -> Order:
     existing = db.query(Order).filter_by(idempotency_key=idempotency_key).one_or_none()
     if existing is not None:
         return existing
 
     expire_stale_orders(db)
-    event = events_service.get_event_or_404(db, event_id)
+    event = db.query(Event).filter_by(id=event_id).with_for_update().one_or_none()
+    if event is None or event.deleted_at is not None or not events_service.can_see_private(db, event, user, access_key):
+        raise APIError("EVENT_NOT_FOUND", "Event not found", status_code=404)
     if event.status != "published":
         raise APIError("EVENT_NOT_PUBLISHED", "This event is not open for registration", status_code=409)
     if event.suspended_at is not None:
         raise APIError("EVENT_SUSPENDED", "This event has been suspended by the platform", status_code=409)
     if event.review_status != "approved":
         raise APIError("EVENT_NOT_APPROVED", "This event is waiting for platform approval", status_code=409)
+    now = datetime.now(UTC)
+    if event.registration_opens_at and now < event.registration_opens_at:
+        raise APIError("REGISTRATION_NOT_OPEN", "Registration for this event has not opened yet", status_code=409)
+    if event.registration_closes_at and now > event.registration_closes_at:
+        raise APIError("REGISTRATION_CLOSED", "Registration for this event is closed", status_code=409)
 
     lines = []
     for item in items_data:
@@ -72,6 +82,12 @@ def create_order(
             raise APIError(
                 "INVALID_TICKET_TYPE", "Ticket type does not belong to this event", status_code=400
             )
+        if ticket_type.is_hidden:
+            raise APIError("TICKET_TYPE_NOT_FOUND", "Ticket type not found", status_code=404)
+        if (ticket_type.sales_start_at and now < ticket_type.sales_start_at) or (
+            ticket_type.sales_end_at and now > ticket_type.sales_end_at
+        ):
+            raise APIError("SALES_CLOSED", f"{ticket_type.name} tickets are not on sale right now", status_code=409)
         if len(item["attendees"]) != item["quantity"]:
             raise APIError(
                 "INVALID_REQUEST", "Number of attendees must match quantity", status_code=400
@@ -95,6 +111,11 @@ def create_order(
                     status_code=409,
                 )
         lines.append((ticket_type, item))
+
+    if event.capacity is not None:
+        taken = sum(t.quantity_sold + t.quantity_reserved for t in events_service.event_ticket_types(db, event))
+        if taken + sum(item["quantity"] for _, item in lines) > event.capacity:
+            raise APIError("INVENTORY_UNAVAILABLE", "This event has reached its capacity", status_code=409)
 
     subtotal = sum(tt.price_kzt * item["quantity"] for tt, item in lines)
     if subtotal > 0 and not event.paid_sales_enabled:
@@ -120,6 +141,7 @@ def create_order(
         idempotency_key=idempotency_key,
         subtotal_kzt=subtotal,
         discount_kzt=discount,
+        fee_kzt=round(total * admin_service.get_processing_fee_percent(db) / 100),
         total_kzt=total,
         promo_campaign_id=campaign.id if campaign else None,
         expires_at=datetime.now(UTC) + timedelta(minutes=HOLD_MINUTES) if paid else None,
@@ -177,6 +199,7 @@ def send_ticket_emails(db: Session, event: Event, tickets: list[Ticket]) -> None
             attachments={
                 f"ticket-{ticket.id}.png": tickets_service.qr_png(ticket),
                 f"ticket-{ticket.id}.pdf": tickets_service.ticket_pdf(db, ticket),
+                f"{event.slug}.ics": events_service.calendar_ics(db, event),
             },
         )
 
@@ -302,6 +325,7 @@ def _notify_voided(db: Session, event: Event, order: Order, reason: str) -> None
         to=buyer.email,
         subject=f"{reason}: {event.title}",
         body=f"Hi {buyer.full_name},\n\n{reason} for {event.title} (order #{order.id}).\n{money}",
+        attachments={f"{event.slug}.ics": events_service.calendar_ics(db, event)} if event.status == "cancelled" else None,
     )
 
 

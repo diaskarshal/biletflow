@@ -28,6 +28,7 @@ export function Admin() {
       <Reports />
       <Verifications />
       <ActivationFee />
+      <ProcessingFee />
       <Activations />
       <Payments />
       <Promos />
@@ -97,19 +98,52 @@ function ActivationFee() {
   });
   return (
     <Block title="Paid sales activation fee">
-      {fee.data && <FeeForm initial={fee.data.amount_kzt} />}
+      {fee.data && (
+        <SettingForm
+          id="fee"
+          label="KZT per event"
+          initial={fee.data.amount_kzt}
+          save={async (value) => {
+            const { error } = await api.PUT("/api/v1/admin/settings/activation-fee", { body: { amount_kzt: value } });
+            if (error) throw error;
+          }}
+        />
+      )}
     </Block>
   );
 }
 
-function FeeForm({ initial }: { initial: number }) {
-  const [value, setValue] = useState(String(initial));
-  const save = useMutation({
-    mutationFn: async () => {
-      const { error } = await api.PUT("/api/v1/admin/settings/activation-fee", { body: { amount_kzt: Number(value) } });
+function ProcessingFee() {
+  const fee = useQuery({
+    queryKey: ["admin-processing-fee"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/api/v1/admin/settings/processing-fee");
       if (error) throw error;
+      return data;
     },
   });
+  return (
+    <Block title="Payment processing charge">
+      <p>Deducted from each paid order and shown to organizers as fees. Changes apply to new orders.</p>
+      {fee.data && (
+        <SettingForm
+          id="processing"
+          label="Percent of each paid order"
+          step={0.1}
+          initial={fee.data.percent}
+          save={async (value) => {
+            const { error } = await api.PUT("/api/v1/admin/settings/processing-fee", { body: { percent: value } });
+            if (error) throw error;
+          }}
+        />
+      )}
+    </Block>
+  );
+}
+
+function SettingForm(props: { id: string; label: string; initial: number; step?: number; save: (value: number) => Promise<void> }) {
+  const [value, setValue] = useState(String(props.initial));
+  const save = useMutation({ mutationFn: () => props.save(Number(value)) });
 
   return (
     <>
@@ -120,8 +154,8 @@ function FeeForm({ initial }: { initial: number }) {
           save.mutate();
         }}
       >
-        <label htmlFor="fee">KZT per event</label>
-        <Input id="fee" type="number" min={0} required className="max-w-40 border-slate-400!" value={value} onChange={(e) => setValue(e.target.value)} />
+        <label htmlFor={props.id}>{props.label}</label>
+        <Input id={props.id} type="number" min={0} step={props.step ?? 1} required className="max-w-40 border-slate-400!" value={value} onChange={(e) => setValue(e.target.value)} />
         <Button type="submit" loading={save.isPending}>
           Save
         </Button>

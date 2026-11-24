@@ -120,12 +120,23 @@ export function Analytics() {
             </Table>
           </Block>
           <Block title={t("analytics.revenue")}>
-            <Table head={[t("manage.col.gross"), t("manage.col.discounts"), t("analytics.refunds"), t("manage.col.net")]}>
+            <Table
+              head={[
+                t("manage.col.gross"),
+                t("manage.col.discounts"),
+                t("analytics.refunds"),
+                t("manage.col.net"),
+                t("analytics.fees"),
+                t("analytics.payout"),
+              ]}
+            >
               <tr>
                 <td className="py-2 pr-4">{formatKzt(a.gross_kzt)}</td>
                 <td className="py-2 pr-4">{formatKzt(a.discount_kzt)}</td>
                 <td className="py-2 pr-4">{formatKzt(a.refunds_kzt)}</td>
-                <td className="py-2 pr-4 font-bold">{formatKzt(a.net_kzt)}</td>
+                <td className="py-2 pr-4">{formatKzt(a.net_kzt)}</td>
+                <td className="py-2 pr-4">{formatKzt(a.fees_kzt)}</td>
+                <td className="py-2 pr-4 font-bold">{formatKzt(a.payout_kzt)}</td>
               </tr>
             </Table>
           </Block>
@@ -151,6 +162,27 @@ export function Analytics() {
                 text={t("analytics.typeText", { sold: tt.sold, capacity: tt.capacity, amount: formatKzt(tt.revenue_kzt) })}
               />
             ))}
+            <Table
+              head={[
+                t("manage.col.name"),
+                t("analytics.available"),
+                t("analytics.reserved"),
+                t("manage.col.sold"),
+                t("analytics.refunded"),
+                t("analytics.checkedInCol"),
+              ]}
+            >
+              {a.by_ticket_type.map((tt) => (
+                <tr key={tt.ticket_type_id}>
+                  <td className="py-2 pr-4">{tt.name}</td>
+                  <td className="py-2 pr-4">{tt.available}</td>
+                  <td className="py-2 pr-4">{tt.reserved}</td>
+                  <td className="py-2 pr-4">{tt.sold}</td>
+                  <td className="py-2 pr-4">{tt.refunded}</td>
+                  <td className="py-2 pr-4">{tt.checked_in}</td>
+                </tr>
+              ))}
+            </Table>
           </Block>
           <Block title={t("analytics.checkin")}>
             <Bar

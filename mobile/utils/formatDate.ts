@@ -4,10 +4,12 @@ function parseBackendDate(iso: string): Date {
     return new Date(hasZone ? trimmed : `${trimmed}Z`);
 }
 
+import { locale } from "../i18n";
+
 export function formatEventDate(iso: string, timeZone: string): string {
     const date = parseBackendDate(iso);
     try {
-        return date.toLocaleString("en-GB", {
+        return date.toLocaleString(locale(), {
             timeZone,
             day: "numeric",
             month: "short",

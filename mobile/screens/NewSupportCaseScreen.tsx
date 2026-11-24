@@ -41,7 +41,7 @@ export default function NewSupportCaseScreen({
     route,
     navigation,
 }: Props) {
-    const { ticketId, eventId } = route.params;
+    const { ticketId, eventId, orderId } = route.params;
 
     const [category, setCategory] =
         useState<SupportCategory>("ticket_delivery");
@@ -72,7 +72,7 @@ export default function NewSupportCaseScreen({
                 category,
                 subject: subject.trim(),
                 message: message.trim(),
-                ...(ticketId ? { ticket_id: ticketId } : { event_id: eventId }),
+                ...(ticketId ? { ticket_id: ticketId } : orderId ? { order_id: orderId } : { event_id: eventId }),
             });
 
             Alert.alert(
@@ -107,7 +107,11 @@ export default function NewSupportCaseScreen({
             <Text style={styles.title}>{t("title.contactOrganizer")}</Text>
 
             <Text style={styles.description}>
-                {ticketId ? t("support.aboutTicket", { id: ticketId }) : t("support.aboutEvent")}
+                {ticketId
+                    ? t("support.aboutTicket", { id: ticketId })
+                    : orderId
+                      ? t("support.aboutOrder", { id: orderId })
+                      : t("support.aboutEvent")}
             </Text>
 
             <Text style={styles.label}>{t("support.categoryLabel")}</Text>

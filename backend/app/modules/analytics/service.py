@@ -27,7 +27,7 @@ def event_analytics(
         .filter(Order.event_id == event.id, Order.status.in_(("paid", "refunded")), OrderItem.ticket_type_id.in_(type_ids))
         .all()
     )
-    gross = discount = refunds = 0
+    gross = discount = refunds = fees = 0
     by_day: dict[date, list[int]] = defaultdict(lambda: [0, 0])
     by_type: dict[int, list[int]] = defaultdict(lambda: [0, 0])
     for item, order in rows:
@@ -41,18 +41,18 @@ def event_analytics(
         if order.status == "refunded":
             refunds += item_gross - item_discount
             continue
+        fees += order.fee_kzt * item_gross // order.subtotal_kzt if order.subtotal_kzt else 0
         for bucket in (by_day[day], by_type[item.ticket_type_id]):
             bucket[0] += item.quantity
             bucket[1] += item_gross - item_discount
 
     capacity = sum(t.quantity_total for t in types)
     sold_now = sum(t.quantity_sold for t in types)
-    statuses = [
-        status
-        for (status,) in db.query(Ticket.status).filter(
-            Ticket.ticket_type_id.in_(type_ids), Ticket.status.in_(("valid", "checked_in"))
-        )
-    ]
+    ticket_rows = db.query(Ticket.ticket_type_id, Ticket.status).filter(Ticket.ticket_type_id.in_(type_ids)).all()
+    counts: dict[tuple[int, str], int] = defaultdict(int)
+    for type_id, status in ticket_rows:
+        counts[(type_id, status)] += 1
+    statuses = [status for _, status in ticket_rows if status in ("valid", "checked_in")]
     checked_in = statuses.count("checked_in")
 
     return {
@@ -64,6 +64,8 @@ def event_analytics(
         "discount_kzt": discount,
         "refunds_kzt": refunds,
         "net_kzt": gross - discount - refunds,
+        "fees_kzt": fees,
+        "payout_kzt": gross - discount - refunds - fees,
         "sales_by_day": [
             {"day": day, "tickets": tickets, "revenue_kzt": revenue}
             for day, (tickets, revenue) in sorted(by_day.items())
@@ -75,6 +77,10 @@ def event_analytics(
                 "capacity": t.quantity_total,
                 "sold": by_type[t.id][0],
                 "revenue_kzt": by_type[t.id][1],
+                "available": t.quantity_total - t.quantity_sold - t.quantity_reserved,
+                "reserved": t.quantity_reserved,
+                "refunded": counts[(t.id, "refunded")],
+                "checked_in": counts[(t.id, "checked_in")],
             }
             for t in types
         ],

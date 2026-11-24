@@ -51,6 +51,8 @@ export type Analytics = {
     checked_in: number;
     absent: number;
     checkin_percent: number;
+    fees_kzt: number;
+    payout_kzt: number;
 };
 
 export type EventAttendee = {
@@ -79,13 +81,11 @@ const post = <T>(endpoint: string, body?: unknown) =>
 
 export const getOrganizerEvents = () => apiRequest<OrganizerEvent[]>("/api/v1/organizer/events");
 
-export async function createEvent(data: NewEvent): Promise<OrganizerEvent> {
-    const event = await post<OrganizerEvent>("/api/v1/events", data);
-    return post<OrganizerEvent>(`/api/v1/events/${event.id}/publish`);
-}
+export const createEvent = (data: NewEvent) => post<OrganizerEvent>("/api/v1/events", data);
 
 export const publishEvent = (id: number) => post<OrganizerEvent>(`/api/v1/events/${id}/publish`);
 export const unpublishEvent = (id: number) => post<OrganizerEvent>(`/api/v1/events/${id}/unpublish`);
+export const duplicateEvent = (id: number) => post<OrganizerEvent>(`/api/v1/events/${id}/duplicate`);
 export const cancelEvent = (id: number) => post<OrganizerEvent>(`/api/v1/events/${id}/cancel`);
 export const getActivation = (id: number) => apiRequest<Activation>(`/api/v1/events/${id}/activation`);
 export const acceptTerms = (id: number) => post<Activation>(`/api/v1/events/${id}/activation/terms`);
