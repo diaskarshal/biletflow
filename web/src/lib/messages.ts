@@ -474,6 +474,7 @@ const en = {
   "err.INVALID_REGISTRATION_WINDOW": "Registration must close after it opens",
   "err.INVALID_SALES_WINDOW": "Sales must end after they start",
   "err.TICKET_TYPE_NOT_FOUND": "This ticket type is not available",
+  "home.next": "Coming up next",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -954,6 +955,7 @@ const ru: Record<MessageKey, string> = {
   "err.INVALID_REGISTRATION_WINDOW": "Регистрация должна закрываться позже, чем открывается",
   "err.INVALID_SALES_WINDOW": "Продажи должны заканчиваться позже, чем начинаются",
   "err.TICKET_TYPE_NOT_FOUND": "Этот тип билета недоступен",
+  "home.next": "Ближайшее событие",
 };
 
 const kk: Record<MessageKey, string> = {
@@ -1432,6 +1434,7 @@ const kk: Record<MessageKey, string> = {
   "err.INVALID_REGISTRATION_WINDOW": "Тіркеу ашылғаннан кейін жабылуы керек",
   "err.INVALID_SALES_WINDOW": "Сату басталғаннан кейін аяқталуы керек",
   "err.TICKET_TYPE_NOT_FOUND": "Бұл билет түрі қолжетімсіз",
+  "home.next": "Жақындағы іс-шара",
 };
 
 export const messages = { kk, ru, en };
