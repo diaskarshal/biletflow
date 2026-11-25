@@ -1,8 +1,4 @@
-# API Contract v1.0
-
-The full API surface for the final version. The frontend generates its client from the backend's
-OpenAPI schema (`npm run generate:api`), so any change here goes together with a regenerated
-`web/src/api/schema.d.ts`.
+# API Contract v1.1
 
 ## Accounts
 
@@ -30,12 +26,23 @@ POST   /api/v1/organizer/verification     multipart, field "document"
 ## Events
 
 ```
-POST   /api/v1/events                     may include ticket_types: [...] inline
-GET    /api/v1/events                     public visibility, published, approved and not suspended, paginated; ?q= searches titles
-GET    /api/v1/events/{slug}              published/completed and approved: public. Otherwise owner or admin only. Private events also need ?key= (or an order for the event)
-GET    /api/v1/events/{slug}/calendar.ics public .ics file for approved events (STATUS:CANCELLED once cancelled), private events need ?key=
-PATCH  /api/v1/events/{id}                owner, not while suspended. Date or venue changes email
+POST   /api/v1/events                     creates a draft. {title, description?, category?, venue_name?,
+                                          venue_address?, cover_image_url?, starts_at, ends_at,
+                                          visibility?, capacity?, registration_opens_at?,
+                                          registration_closes_at?, refund_policy?, ticket_types?: [...]}
+GET    /api/v1/events                     public visibility, published, approved and not suspended.
+                                          ?q= searches titles, ?limit&cursor
+GET    /api/v1/events/{slug}              published/completed and approved: public. Otherwise owner or
+                                          admin only. Private events also need ?key= (or an order
+                                          for the event)
+GET    /api/v1/events/{slug}/calendar.ics .ics file for approved events, STATUS:CANCELLED once
+                                          cancelled. Private events need ?key=
+PATCH  /api/v1/events/{id}                owner, not while suspended. null clears category, capacity
+                                          and the registration times. Date or venue changes email
                                           every valid ticket holder
+POST   /api/v1/uploads/cover              signed in, multipart "image", JPEG/PNG/WebP up to 5 MB
+                                          -> {url: "/uploads/<name>"}. The URL is relative: clients
+                                          prefix the API address
 POST   /api/v1/events/{id}/publish        owner, draft only. Submits the event for admin review (review_status pending)
 POST   /api/v1/events/{id}/unpublish      owner, published and no paid or pending orders
 POST   /api/v1/events/{id}/duplicate      owner, not while suspended, new draft with the same details
@@ -43,15 +50,21 @@ POST   /api/v1/events/{id}/duplicate      owner, not while suspended, new draft 
 POST   /api/v1/events/{id}/cancel         owner, refunds paid orders, voids pending ones, emails holders
 POST   /api/v1/events/{id}/report         any user, {reason}, one open report per user and event
 GET    /api/v1/events/{id}/activity       owner, organizer_staff or admin. ?date_from&date_to&action=<prefix>
-GET    /api/v1/events/{id}/analytics      owner. ?date_from&date_to&ticket_type_id
-GET    /api/v1/organizer/events            includes access_key for private links
+GET    /api/v1/events/{id}/analytics      owner. ?date_from&date_to&ticket_type_id. Capacity, sales by
+                                          day and by ticket type (available, reserved, sold,
+                                          refunded, checked in), gross, discounts, refunds, net,
+                                          processing fees, estimated payout, campaigns, attendance
+GET    /api/v1/organizer/events           my events, each with access_key for the private link
 
 POST   /api/v1/events/{id}/staff          owner, {email, role: event_admin|organizer_staff}
 GET    /api/v1/events/{id}/staff          owner
 
 POST   /api/v1/events/{id}/ticket-types
 GET    /api/v1/events/{id}/ticket-types
-PATCH  /api/v1/ticket-types/{id}          capacity cannot go below sold + held (CAPACITY_BELOW_SOLD)
+PATCH  /api/v1/ticket-types/{id}          owner. {name?, description?, price_kzt?, quantity_total?,
+                                          sales_start_at?, sales_end_at?, max_per_order?, is_hidden?}.
+                                          null clears description, sales times and max_per_order.
+                                          Capacity cannot go below sold + held
 
 GET    /api/v1/events/{id}/activation              paid-sales checklist
 POST   /api/v1/events/{id}/activation/terms
@@ -61,9 +74,10 @@ POST   /api/v1/events/{id}/activation/payment      -> {payment_id} for the activ
 ## Orders, payments, tickets
 
 ```
-POST   /api/v1/orders                     header Idempotency-Key, optional promo_code, access_key for private events. Checks registration window, ticket sales window, hidden types and event capacity.
-                                          Free orders are paid at once. Paid orders hold seats for
-                                          15 minutes and return payment_id
+POST   /api/v1/orders                     header Idempotency-Key. {event_id, items, promo_code?,
+                                          access_key?}. Free orders are paid at once. Paid orders
+                                          hold seats for 15 minutes, return payment_id and record
+                                          the processing fee as fee_kzt
 GET    /api/v1/orders/{id}
 POST   /api/v1/orders/{id}/cancel         event owner, refunds a paid order or cancels a free one
 GET    /api/v1/events/{id}/attendees      owner
@@ -139,37 +153,3 @@ GET    /api/v1/admin/payments?status=                failed (default), refunded,
 GET    /api/v1/admin/promos
 GET    /api/v1/admin/export/{orders|payments}.csv
 ```
-
-## Conventions
-
-- **Errors** always look like `{"error": {"code": "INVENTORY_UNAVAILABLE", "message": "...", "details": {}}}`.
-  The frontend switches on `code` and displays `message`. Implemented in `backend/app/core/errors.py`.
-- **Auth**: `Authorization: Bearer <access_token>`. Access token 30 minutes, refresh token 30 days.
-  Suspended users get `ACCOUNT_SUSPENDED` (403) on login, refresh and every authenticated call.
-  Session tokens carry a fingerprint of the password hash, so a password change or reset ends
-  every older session.
-- **Suspended events** are hidden, cannot be edited or duplicated, and a payment that completes
-  after the suspension is recorded as failed and releases its seats.
-- **Pagination**: `?limit=&cursor=`.
-- **Times**: every timestamp is UTC with an offset (`2026-12-01T13:00:00Z`). Show it in the
-  event's `display_timezone`.
-- **`POST /api/v1/checkin`** is one call that validates and checks in. A partial unique index on
-  `check_in_records` prevents a double entry when two phones scan the same ticket.
-- **Promo redemptions** are counted with one conditional UPDATE, so two buyers cannot both use
-  the last redemption. A failed or expired payment gives the redemption back.
-- **Campaign QR codes** are links to the event page. The scanner rejects them before any
-  network call and the check-in endpoints never accept them.
-
-## Known simplifications
-
-- **Payments are simulated.** `POST /payments/{id}/simulate` stands in for the provider webhook.
-- **Seat holds expire lazily.** Stale pending orders are released on the next checkout, payment
-  view or My tickets load, not by a background job.
-- **`POST /auth/logout` is a no-op.** JWTs are stateless; nothing is revoked server-side.
-- **Any authenticated user can create events.** Verification only gates paid-sales activation.
-- **Staff are added by email** and must already have an account. There is no endpoint to remove
-  staff yet.
-- **Email address changes are not supported.** Only the name and password can be edited.
-- **The email cooldown lives in process memory.** It resets on restart and is per worker.
-- **Ticket-holder update emails are sent inside the request**, one by one. Fine for demo-sized
-  events; move to a background job before large events.

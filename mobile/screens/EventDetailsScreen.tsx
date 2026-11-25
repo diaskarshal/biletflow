@@ -1,3 +1,4 @@
+import { mediaUrl } from "../api/client";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -119,7 +120,7 @@ export default function EventDetailsScreen({ route, navigation }: Props) {
         >
             {event.cover_image_url ? (
                 <Image
-                    source={{ uri: event.cover_image_url }}
+                    source={{ uri: mediaUrl(event.cover_image_url) }}
                     style={styles.coverImage}
                     resizeMode="cover"
                 />

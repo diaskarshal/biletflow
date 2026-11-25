@@ -1,3 +1,4 @@
+import { mediaUrl } from "../api/client";
 import { useCallback, useEffect, useState} from "react";
 import {
     ActivityIndicator,
@@ -245,7 +246,7 @@ function EventCard({event}: {event: PublicEvent}) {
         >
             {event.cover_image_url && !imageFailed ? (
                 <Image
-                    source={{ uri: event.cover_image_url }}
+                    source={{ uri: mediaUrl(event.cover_image_url) }}
                     style={styles.coverImage}
                     resizeMode="cover"
                     onError={() => setImageFailed(true)}

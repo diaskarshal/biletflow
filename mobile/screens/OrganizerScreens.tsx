@@ -1,3 +1,4 @@
+import { mediaUrl } from "../api/client";
 import { useCallback, useState, type ReactNode } from "react";
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -176,7 +177,7 @@ export function NewEventScreen({ navigation }: NativeStackScreenProps<RootStackP
             <Field label={t("om.end")} value={form.end} onChangeText={set("end")} placeholder="21:00" />
 
             <Section title={t("manage.cover")}>
-                {cover && <Image source={{ uri: cover }} style={styles.cover} />}
+                {cover && <Image source={{ uri: mediaUrl(cover) }} style={styles.cover} />}
                 <Button title={t(cover ? "cover.change" : "cover.choose")} kind="secondary" onPress={uploadCover} />
             </Section>
 

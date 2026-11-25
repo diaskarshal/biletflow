@@ -2,6 +2,8 @@ import * as SecureStore from "expo-secure-store";
 import { t, tOptional } from "../i18n";
 import * as FileSystem from "expo-file-system/legacy";
 
+export const mediaUrl = (url: string) => (url.startsWith("/") ? `${API_URL}${url}` : url);
+
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.136:8000";
 const REQUEST_TIMEOUT_MS = 15000;
 

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { api, mediaUrl } from "../api/client";
 import { errorMessage } from "../lib/format";
 import { t } from "../lib/i18n";
 import { buttonClass } from "./Button";
@@ -42,7 +42,7 @@ export function CoverUpload({ value, onChange }: { value: string; onChange: (url
       {upload.isError && <ErrorState message={errorMessage(upload.error, t("cover.failed"))} />}
       {value && (
         <div className="flex items-center gap-3">
-          <img src={value} alt={t("cover.preview")} className="h-24 w-20 border border-slate-300 object-cover" />
+          <img src={mediaUrl(value)} alt={t("cover.preview")} className="h-24 w-20 border border-slate-300 object-cover" />
           <button type="button" className="underline" onClick={() => onChange("")}>
             {t("cover.remove")}
           </button>

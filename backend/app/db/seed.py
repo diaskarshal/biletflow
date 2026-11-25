@@ -1,10 +1,14 @@
+import shutil
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
+from app.core.config import settings
 from app.core.security import hash_password
 from app.db.models import Event, OrganizerProfile, TicketType, User
 from app.db.session import SessionLocal
 
 now = datetime.now(UTC)
+COVERS = Path(__file__).parent / "seed_covers"
 
 
 def get_or_create_user(db, email: str, full_name: str) -> User:
@@ -42,6 +46,13 @@ def get_or_create_event(db, organizer: OrganizerProfile, slug: str, **fields) ->
     return event
 
 
+def set_cover(event: Event) -> None:
+    name = f"{event.slug}.jpg"
+    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(COVERS / name, settings.uploads_dir / name)
+    event.cover_image_url = f"/uploads/{name}"
+
+
 def get_or_create_ticket_type(db, event: Event, name: str, **fields) -> TicketType:
     tt = db.query(TicketType).filter_by(event_id=event.id, name=name).one_or_none()
     if tt:
@@ -70,18 +81,8 @@ def seed() -> None:
             ends_at=now + timedelta(days=14, hours=2),
             status="draft",
         )
-        published_event = get_or_create_event(
-            db,
-            aru_org,
-            "student-tech-meetup",
-            title="Student Tech Meetup",
-            venue_name="Nazarbayev University",
-            starts_at=now + timedelta(days=7),
-            ends_at=now + timedelta(days=7, hours=3),
-            status="published",
-            review_status="approved",
-            capacity=200,
-        )
+        db.query(Event).filter_by(slug="student-tech-meetup", deleted_at=None).update({"deleted_at": now})
+        db.query(Event).filter_by(slug="open-air-movie-night").update({"slug": "movie-night"})
         cancelled_event = get_or_create_event(
             db,
             arman_org,
@@ -125,8 +126,8 @@ def seed() -> None:
         movie_night = get_or_create_event(
             db,
             arman_org,
-            "open-air-movie-night",
-            title="Open-Air Movie Night",
+            "movie-night",
+            title="Movie Night",
             description="Classic Kazakh films on a big screen in the park.",
             venue_name="Central Park",
             venue_address="Gogol 1, Almaty",
@@ -135,18 +136,15 @@ def seed() -> None:
             status="published",
             review_status="approved",
         )
+        movie_night.title = "Movie Night"
+        for event in (jazz, pitch_day, movie_night):
+            set_cover(event)
         get_or_create_ticket_type(db, jazz, "Standard", price_kzt=4000, quantity_total=120)
         get_or_create_ticket_type(db, jazz, "VIP", price_kzt=9000, quantity_total=30)
         get_or_create_ticket_type(db, pitch_day, "Visitor", price_kzt=0, quantity_total=80)
         get_or_create_ticket_type(db, movie_night, "Free Entry", price_kzt=0, quantity_total=300)
         get_or_create_ticket_type(
             db, draft_event, "General Admission", price_kzt=0, quantity_total=100
-        )
-        get_or_create_ticket_type(
-            db, published_event, "Free Entry", price_kzt=0, quantity_total=150
-        )
-        get_or_create_ticket_type(
-            db, published_event, "VIP", price_kzt=5000, quantity_total=50
         )
         get_or_create_ticket_type(
             db, cancelled_event, "General Admission", price_kzt=0, quantity_total=300

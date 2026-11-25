@@ -67,4 +67,6 @@ const auth: Middleware = {
 };
 
 export const api = createClient<paths>({ baseUrl });
+
+export const mediaUrl = (url: string) => (url.startsWith("/") ? `${baseUrl}${url}` : url);
 api.use(auth);

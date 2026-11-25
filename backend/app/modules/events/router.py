@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, Query, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db, get_optional_user
@@ -97,8 +97,8 @@ def publish_event(
 
 
 @router.post("/uploads/cover", response_model=UploadOut, status_code=201)
-def upload_cover(request: Request, image: UploadFile, _: User = Depends(get_current_user)) -> dict:
-    return {"url": str(request.url_for("uploads", path=service.save_cover(image)))}
+def upload_cover(image: UploadFile, _: User = Depends(get_current_user)) -> dict:
+    return {"url": f"/uploads/{service.save_cover(image)}"}
 
 
 @router.post("/events/{event_id}/unpublish", response_model=EventOut)
