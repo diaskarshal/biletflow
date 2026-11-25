@@ -17,7 +17,7 @@ export function Profile() {
         <h1 className="text-2xl font-bold sm:text-3xl">{t("nav.profile")}</h1>
         <p>{user?.email}</p>
         <EmailStatus />
-        <Button variant="secondary" onClick={logout}>
+        <Button variant="danger" onClick={logout}>
           {t("profile.logout")}
         </Button>
       </section>

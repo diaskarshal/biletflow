@@ -56,7 +56,8 @@ export default function AppNavigator() {
     return (
         <NavigationContainer>
             {status === "signedIn" ? (
-                <Stack.Navigator initialRouteName = "MainTabs">
+                <Stack.Navigator initialRouteName = "MainTabs"
+                screenOptions = {{headerBackButtonDisplayMode: "minimal"}}>
                     <Stack.Screen
                         name = "MainTabs"
                         component = {MainTabNavigator}
