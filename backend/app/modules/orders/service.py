@@ -113,7 +113,7 @@ def create_order(
         lines.append((ticket_type, item))
 
     if event.capacity is not None:
-        taken = sum(t.quantity_sold + t.quantity_reserved for t in events_service.event_ticket_types(db, event))
+        taken = sum(t.quantity_sold + t.quantity_reserved for t in tickets_service.list_ticket_types(db, event))
         if taken + sum(item["quantity"] for _, item in lines) > event.capacity:
             raise APIError("INVENTORY_UNAVAILABLE", "This event has reached its capacity", status_code=409)
 

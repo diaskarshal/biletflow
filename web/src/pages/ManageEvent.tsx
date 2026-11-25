@@ -6,7 +6,7 @@ import type { components } from "../api/schema";
 import { StatusBadge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { CoverUpload } from "../components/CoverUpload";
-import { EventSettings, settingsBody, settingsFrom, settingsValid, type Settings } from "../components/EventSettings";
+import { EventSettings, settingsBody, settingsFrom, settingsValid } from "../components/EventSettings";
 import { EmptyState, ErrorState } from "../components/EmptyState";
 import { Input } from "../components/Input";
 import { Spinner } from "../components/Spinner";
@@ -176,8 +176,7 @@ function EditEvent({ event }: { event: Event }) {
     refundPolicy: event.refund_policy as RefundPolicy,
   };
   const [form, setForm] = useState(initial);
-  const initialSettings = settingsFrom(event);
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState(settingsFrom(event));
   const set = (field: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm({ ...form, [field]: e.target.value });
   const range = eventRange(form);
@@ -185,13 +184,10 @@ function EditEvent({ event }: { event: Event }) {
 
   const save = useMutation({
     mutationFn: async () => {
-      const changedSettings = Object.fromEntries(
-        Object.entries(settingsBody(settings)).filter(([k, v]) => v !== settingsBody(initialSettings)[k as keyof Settings]),
-      );
       const { error } = await api.PATCH("/api/v1/events/{event_id}", {
         params: { path: { event_id: event.id } },
         body: {
-          ...changedSettings,
+          ...settingsBody(settings),
           ...(form.title !== initial.title && { title: form.title.trim() }),
           ...(form.description !== initial.description && { description: form.description.trim() }),
           ...(form.venueName !== initial.venueName && { venue_name: form.venueName.trim() }),

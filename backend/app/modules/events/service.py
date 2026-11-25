@@ -160,15 +160,11 @@ def check_event_limits(db: Session, event: Event) -> None:
     if opens and closes and closes <= opens:
         raise APIError("INVALID_REGISTRATION_WINDOW", "Registration must close after it opens", status_code=400)
     if event.capacity is not None:
-        taken = sum(t.quantity_sold + t.quantity_reserved for t in event_ticket_types(db, event))
+        taken = sum(t.quantity_sold + t.quantity_reserved for t in tickets_service.list_ticket_types(db, event))
         if event.capacity < taken:
             raise APIError(
                 "CAPACITY_BELOW_SOLD", f"{taken} tickets are already sold or held for this event", status_code=409
             )
-
-
-def event_ticket_types(db: Session, event: Event) -> list[TicketType]:
-    return db.query(TicketType).filter_by(event_id=event.id).all()
 
 
 def update_event(db: Session, actor: User, event: Event, data: dict) -> Event:
@@ -526,10 +522,7 @@ def _ics_fold(line: str) -> str:
 def calendar_ics(db: Session, event: Event) -> bytes:
     tz = ZoneInfo(event.display_timezone)
     starts, ends = event.starts_at.astimezone(tz), event.ends_at.astimezone(tz)
-    offset = starts.utcoffset() or timedelta()
-    sign = "-" if offset < timedelta() else "+"
-    minutes = abs(int(offset.total_seconds())) // 60
-    tz_offset = f"{sign}{minutes // 60:02d}{minutes % 60:02d}"
+    tz_offset = f"{starts:%z}"
     sequence = (
         db.query(AuditLog)
         .filter(AuditLog.event_id == event.id, AuditLog.action_type.in_(("event.updated", "event.cancelled")))
