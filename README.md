@@ -18,9 +18,10 @@ cd biletflow
 cp .env.example .env
 cd infra
 docker compose up -d --build
-docker compose exec api uv run alembic upgrade head
 docker compose exec api uv run python -m app.db.seed
 ```
+
+The API applies database migrations by itself every time it starts.
 
 - Web app: http://localhost:5173
 - API docs: http://localhost:8000/docs
@@ -37,8 +38,9 @@ After pulling new code run:
 ```bash
 cd infra
 docker compose up -d --build -V
-docker compose exec api uv run alembic upgrade head
 ```
+
+`docker compose down -v` deletes the database. After that, run the seed command again to get the demo data back.
 
 ## Backend dev (without Docker)
 

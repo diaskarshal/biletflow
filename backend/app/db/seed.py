@@ -1,6 +1,7 @@
 import shutil
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from app.core.config import settings
 from app.core.security import hash_password
@@ -9,6 +10,17 @@ from app.db.session import SessionLocal
 
 now = datetime.now(UTC)
 COVERS = Path(__file__).parent / "seed_covers"
+def dec(day: int, hour: int) -> datetime:
+    return datetime(2026, 12, day, hour, tzinfo=ZoneInfo("Asia/Almaty"))
+
+
+DATES = {
+    "draft-standup-night": (dec(26, 19), dec(26, 21)),
+    "cancelled-charity-run": (dec(13, 9), dec(13, 12)),
+    "almaty-jazz-night": (dec(12, 19), dec(12, 22)),
+    "astana-startup-pitch-day": (dec(5, 10), dec(5, 14)),
+    "movie-night": (dec(19, 20), dec(19, 22)),
+}
 
 
 def get_or_create_user(db, email: str, full_name: str) -> User:
@@ -40,7 +52,8 @@ def get_or_create_event(db, organizer: OrganizerProfile, slug: str, **fields) ->
     event = db.query(Event).filter_by(slug=slug).one_or_none()
     if event:
         return event
-    event = Event(organizer_id=organizer.id, slug=slug, **fields)
+    starts_at, ends_at = DATES[slug]
+    event = Event(organizer_id=organizer.id, slug=slug, starts_at=starts_at, ends_at=ends_at, **fields)
     db.add(event)
     db.flush()
     return event
@@ -77,8 +90,6 @@ def seed() -> None:
             "draft-standup-night",
             title="Standup Comedy Night (Draft)",
             venue_name="Almaty Arena",
-            starts_at=now + timedelta(days=14),
-            ends_at=now + timedelta(days=14, hours=2),
             status="draft",
         )
         db.query(Event).filter_by(slug="student-tech-meetup", deleted_at=None).update({"deleted_at": now})
@@ -89,8 +100,6 @@ def seed() -> None:
             "cancelled-charity-run",
             title="Charity Run (Cancelled)",
             venue_name="Astana Central Park",
-            starts_at=now - timedelta(days=3),
-            ends_at=now - timedelta(days=3, hours=-2),
             status="cancelled",
         )
 
@@ -102,8 +111,6 @@ def seed() -> None:
             description="An evening of live jazz with local bands.",
             venue_name="Kazakh National Philharmonic",
             venue_address="Tole Bi 35, Almaty",
-            starts_at=now + timedelta(days=10),
-            ends_at=now + timedelta(days=10, hours=3),
             status="published",
             review_status="approved",
             paid_sales_enabled=True,
@@ -118,8 +125,6 @@ def seed() -> None:
             description="Ten student teams pitch their startups to local investors.",
             venue_name="Astana Hub",
             venue_address="Mangilik El 55/8, Astana",
-            starts_at=now + timedelta(days=12),
-            ends_at=now + timedelta(days=12, hours=4),
             status="published",
             review_status="approved",
         )
@@ -131,12 +136,12 @@ def seed() -> None:
             description="Classic Kazakh films on a big screen in the park.",
             venue_name="Central Park",
             venue_address="Gogol 1, Almaty",
-            starts_at=now + timedelta(days=20),
-            ends_at=now + timedelta(days=20, hours=2),
             status="published",
             review_status="approved",
         )
         movie_night.title = "Movie Night"
+        for event in (draft_event, cancelled_event, jazz, pitch_day, movie_night):
+            event.starts_at, event.ends_at = DATES[event.slug]
         for event in (jazz, pitch_day, movie_night):
             set_cover(event)
         get_or_create_ticket_type(db, jazz, "Standard", price_kzt=4000, quantity_total=120)
