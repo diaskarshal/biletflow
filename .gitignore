@@ -3,6 +3,10 @@
 info/
 
 .env
+.env.*
+!.env.example
+!.env.vercel.example
+.vercel/
 alembic.ini
 
 __pycache__/

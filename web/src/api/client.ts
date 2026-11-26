@@ -1,7 +1,11 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "./schema";
 
-export const baseUrl = import.meta.env.VITE_API_URL ?? `${window.location.protocol}//${window.location.hostname}:8000`;
+export const baseUrl = (import.meta.env.VITE_API_URL || (
+    import.meta.env.DEV
+        ? `${window.location.protocol}//${window.location.hostname}:8000`
+        : window.location.origin
+)).replace(/\/+$/, "");
 
 type Tokens = { access_token: string; refresh_token: string };
 

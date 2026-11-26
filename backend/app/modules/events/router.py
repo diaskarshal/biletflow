@@ -98,7 +98,7 @@ def publish_event(
 
 @router.post("/uploads/cover", response_model=UploadOut, status_code=201)
 def upload_cover(image: UploadFile, _: User = Depends(get_current_user)) -> dict:
-    return {"url": f"/uploads/{service.save_cover(image)}"}
+    return {"url": service.save_cover(image)}
 
 
 @router.post("/events/{event_id}/unpublish", response_model=EventOut)

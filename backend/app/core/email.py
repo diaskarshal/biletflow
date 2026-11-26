@@ -12,6 +12,8 @@ mimetypes.add_type("text/calendar", ".ics")
 def send_email(
     to: str, subject: str, body: str, attachments: dict[str, bytes] | None = None
 ) -> None:
+    if not settings.smtp_enabled:
+        return
     message = EmailMessage()
     message["From"] = settings.email_from
     message["To"] = to

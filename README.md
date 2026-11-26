@@ -4,6 +4,8 @@ Event ticketing platform for SWE course project work: event pages, free/paid tic
 
 The API is listed in [docs/api-contract.md](docs/api-contract.md).
 
+Vercel deployment instructions are in [docs/deploy-vercel.md](docs/deploy-vercel.md).
+
 ## Requirements
 
 - Docker

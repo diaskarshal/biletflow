@@ -1,0 +1,16 @@
+.git
+.vercel
+.github
+.env*
+**/.env*
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/dist
+backend/uploads
+backend/tests
+mobile
+infra
+docs
