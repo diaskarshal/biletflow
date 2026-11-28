@@ -28,8 +28,24 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     localStorage.clear();
+});
+
+it("uses the website origin for production API requests and uploaded images", async () => {
+    vi.stubEnv("DEV", false);
+    vi.stubEnv("VITE_API_URL", "");
+    const { baseUrl, mediaUrl } = await import("./client");
+    expect(baseUrl).toBe(window.location.origin);
+    expect(mediaUrl("https://images.example.com/cover.jpg")).toBe("https://images.example.com/cover.jpg");
+});
+
+it("allows an explicit API origin without a trailing slash", async () => {
+    vi.stubEnv("VITE_API_URL", "https://api.example.com/");
+    const { baseUrl, mediaUrl } = await import("./client");
+    expect(baseUrl).toBe("https://api.example.com");
+    expect(mediaUrl("/uploads/cover.jpg")).toBe("https://api.example.com/uploads/cover.jpg");
 });
 
 it("refreshes on 401 and retries with the new token", async () => {

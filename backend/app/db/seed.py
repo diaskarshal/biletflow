@@ -1,10 +1,11 @@
-import shutil
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from app.core.config import settings
 from app.core.security import hash_password
+from app.core.storage import save_cover_bytes
 from app.db.models import Event, OrganizerProfile, TicketType, User
 from app.db.session import SessionLocal
 
@@ -27,7 +28,8 @@ def get_or_create_user(db, email: str, full_name: str) -> User:
     user = db.query(User).filter_by(email=email).one_or_none()
     if user:
         return user
-    user = User(email=email, password_hash=hash_password("password123"), full_name=full_name)
+    password = os.environ.get("DEMO_PASSWORD", "password123")
+    user = User(email=email, password_hash=hash_password(password), full_name=full_name)
     db.add(user)
     db.flush()
     return user
@@ -61,9 +63,9 @@ def get_or_create_event(db, organizer: OrganizerProfile, slug: str, **fields) ->
 
 def set_cover(event: Event) -> None:
     name = f"{event.slug}.jpg"
-    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(COVERS / name, settings.uploads_dir / name)
-    event.cover_image_url = f"/uploads/{name}"
+    event.cover_image_url = save_cover_bytes(
+        name, (COVERS / name).read_bytes(), "image/jpeg", overwrite=True
+    )
 
 
 def get_or_create_ticket_type(db, event: Event, name: str, **fields) -> TicketType:
@@ -77,6 +79,8 @@ def get_or_create_ticket_type(db, event: Event, name: str, **fields) -> TicketTy
 
 
 def seed() -> None:
+    if settings.vercel and len(os.environ.get("DEMO_PASSWORD", "")) < 8:
+        raise ValueError("Set DEMO_PASSWORD to at least 8 characters before seeding Vercel")
     with SessionLocal() as db:
         get_or_create_user(db, "admin@biletflow.kz", "Platform Admin").is_admin = True
         aru = get_or_create_user(db, "aru@biletflow.kz", "Aru Organizer")

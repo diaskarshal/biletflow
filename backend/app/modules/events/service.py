@@ -13,6 +13,7 @@ from app.core import audit
 from app.core.config import settings
 from app.core.email import send_email
 from app.core.errors import APIError
+from app.core.storage import save_cover_bytes
 from app.db.models import (
     AuditLog,
     Event,
@@ -465,14 +466,14 @@ def list_activations(db: Session) -> list[Event]:
     )
 
 
-MAX_COVER_BYTES = 5 * 1024 * 1024
+MAX_COVER_BYTES = 4 * 1024 * 1024
 COVER_FORMATS = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}
 
 
 def save_cover(file: UploadFile) -> str:
     data = file.file.read(MAX_COVER_BYTES + 1)
     if len(data) > MAX_COVER_BYTES:
-        raise APIError("IMAGE_TOO_LARGE", "The image must be 5 MB or smaller", status_code=413)
+        raise APIError("IMAGE_TOO_LARGE", "The image must be 4 MB or smaller", status_code=413)
     try:
         image = Image.open(io.BytesIO(data))
         image.verify()
@@ -482,8 +483,7 @@ def save_cover(file: UploadFile) -> str:
     if extension is None:
         raise APIError("INVALID_IMAGE", "Upload a JPEG, PNG or WebP image", status_code=400)
     name = f"{secrets.token_hex(16)}.{extension}"
-    (settings.uploads_dir / name).write_bytes(data)
-    return name
+    return save_cover_bytes(name, data, Image.MIME[image.format])
 
 
 def get_event_for_calendar(db: Session, slug: str, key: str | None) -> Event:

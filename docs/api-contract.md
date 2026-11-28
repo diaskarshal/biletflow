@@ -40,7 +40,7 @@ GET    /api/v1/events/{slug}/calendar.ics .ics file for approved events, STATUS:
 PATCH  /api/v1/events/{id}                owner, not while suspended. null clears category, capacity
                                           and the registration times. Date or venue changes email
                                           every valid ticket holder
-POST   /api/v1/uploads/cover              signed in, multipart "image", JPEG/PNG/WebP up to 5 MB
+POST   /api/v1/uploads/cover              signed in, multipart "image", JPEG/PNG/WebP up to 4 MB
                                           -> {url: "/uploads/<name>"}. The URL is relative: clients
                                           prefix the API address
 POST   /api/v1/events/{id}/publish        owner, draft only. Submits the event for admin review (review_status pending)

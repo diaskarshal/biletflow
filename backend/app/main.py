@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -38,8 +38,9 @@ app.add_exception_handler(APIError, api_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(Exception, unhandled_error_handler)
 
-settings.uploads_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=settings.uploads_dir), name="uploads")
+if settings.uploads_backend == "local":
+    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=settings.uploads_dir), name="uploads")
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(events_router, prefix="/api/v1")
@@ -59,11 +60,12 @@ class HealthResponse(BaseModel):
 
 
 @app.get("/health")
-def health() -> HealthResponse:
+def health(response: Response) -> HealthResponse:
     db_status = "ok"
     try:
         with SessionLocal() as db:
             db.execute(text("SELECT 1"))
     except Exception:
         db_status = "error"
-    return HealthResponse(status="ok", db=db_status)
+        response.status_code = 503
+    return HealthResponse(status="ok" if db_status == "ok" else "error", db=db_status)

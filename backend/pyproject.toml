@@ -17,6 +17,7 @@ dependencies = [
     "bcrypt>=4.2",
     "tzdata>=2026.3",
     "reportlab>=5.1.0",
+    "vercel-blob>=0.5.0",
 ]
 
 [dependency-groups]
